@@ -1,0 +1,15 @@
+// Place your settings in this file to overwrite default and user settings.
+{
+    "eslint.enable": true,
+    "eslint.options": {
+        
+    },
+    "json.schemas": [
+        {
+            "fileMatch": [
+                "/.eslintrc"
+            ],
+            "url": "http://json.schemastore.org/eslintrc"
+        }
+    ]
+}

@@ -1,0 +1,8 @@
+{
+    "version": "0.1.0",
+    "command": "${workspaceRoot}/SOMETHING_INTERSTING",
+    "isShellCommand": true,
+    "tasks": [
+        
+    ]
+}
