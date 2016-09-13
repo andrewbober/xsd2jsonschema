@@ -7,7 +7,7 @@
 var customTypes = require('./customTypes');
 var XsdFile = require('./xsdFile');
 var JsonSchemaFile = require('./jsonSchemaFile');
-var BreadthFirstTraversal = require('./breadthFirstTraversal');
+var DepthFirstTraversal = require('./depthFirstTraversal');
 var path = require('path');
 var fs = require('fs');
 var util = require('util');
@@ -57,7 +57,7 @@ function Xsd2JsonSchema(customConverter, xsdBaseDirectory, xsdFilenames, _option
 			processSchemas(visitor, xsd.getIncludes());
 		}
 		if (jsonSchemas[uri] === undefined) {
-			var traversal = new BreadthFirstTraversal();
+			var traversal = new DepthFirstTraversal();
 			var parms={};
 			parms.xsd = xsd;
 			parms.resolveURI = options.resolveURI;

@@ -2,7 +2,7 @@
     "name": "Xsd2JsonSchema",
     "version": "0.0.1",
     "description": "A tool to convert XML Schema to JSON Schema.",
-    "license": "UNLICENSED",
+    "license": "Apache-2.0",
     "author": "Andrew Bober",
     "main": "sample.js",
     "repository": {
@@ -13,7 +13,7 @@
         "node": ">=5.0.0"
     },
     "dependencies": {
-        "libxmljs": "^0.17.1"
+        "libxmljs": "^0.18.0"
     },
     "scripts": {}
 }

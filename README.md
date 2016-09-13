@@ -15,7 +15,11 @@ d88P   Y88b 88888P'  "Y88888 888888888    888  88888P'  "Y88P"  888  888  "Y8888
 
 #Xsd2JsonSchema
 
-A tool to convert XML Schema to JSON Schema.
+A library to convert XML Schema to JSON Schema.  Written in JavaScript for NodeJS.
+
+## XML Schema Support
+[Xsd2JsonSchmea XML Schema Support Status](https://drive.google.com/open?id=1AMeTHNNvwuI06mjkAQi7mt8KmU7qUSFI7x-o_kF1Ko8)
+
 
 ## Why
 

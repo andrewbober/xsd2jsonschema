@@ -4,7 +4,7 @@
 
 "use strict";
 
-function BreadthFirstTraversal() {
+function DepthFirstTraversal() {
 
 	var walk = function (visitor, node, jsonSchema, xsd) {
 		// walk the tree
@@ -35,4 +35,4 @@ function BreadthFirstTraversal() {
 
 }
 
-module.exports = BreadthFirstTraversal;
+module.exports = DepthFirstTraversal;
