@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.xsd2jsonschema.org/example" targetNamespace="http://www.xsd2jsonschema.org/example" elementFormDefault="qualified" attributeFormDefault="unqualified" version="1.0.0">
-	<xs:include schemaLocation="BaseTypes.xsd"/>
+	<xs:include schemaLocation="BaseTypes_2016-01-01.xsd"/>
 
 	<xs:complexType name="PersonInfoType">
 		<xs:sequence>
