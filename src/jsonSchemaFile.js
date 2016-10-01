@@ -32,7 +32,7 @@ function JsonSchemaFile(parms) {
 	// JSON Schema Validation specification sections referenced unless otherwise noted
 	// 6.1 Metadata keywords "title" and "description"
 	var title;
-	var description;  // Might nned to initialize to "" for concatDescription()
+	var description;  // Might need to initialize to "" for concatDescription()
 	
 	// 6.2 Default
 	var _default
@@ -168,7 +168,7 @@ function JsonSchemaFile(parms) {
 		return getSubschema(subschemaName);
 	};
 
-	// Read-only propertys
+	// Read-only properties
 	this.getTargetSchema = function () {
 		if (isEmpty(targetSchema)) {
 			targetSchema = this;
