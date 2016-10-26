@@ -55,7 +55,7 @@ function RestrictionConverter() {
 	this.duration = function (node, jsonSchema, xsd) {
 		jsonSchema.setType(jsonTypes.STRING);
 		jsonSchema.setPattern("^[-]?P(?!$)(?:\\d+Y)?(?:\\d+M)?(?:\\d+D)?(?:T(?!$)(?:\\d+H)?(?:\\d+M)?(?:\\d+(?:\\.\\d+)?S)?)?$");
-		// jsonSchema.setDescription("Matches the XSD schema duration built in type as defined by http://www.w3.org/TR/xmlschema-2/#duration.  Source: http://www.regxlib.com/REDetails.aspx?regexp_id=1219");
+		// jsonSchema.setDescription("Matches the XSD schema duration built in type as defined by http://www.w3.org/TR/xmlschema-2/#duration.  Source: http://www.regexlib.com/REDetails.aspx?regexp_id=1219");
 		return true;
 	};
 
@@ -70,7 +70,7 @@ function RestrictionConverter() {
 	this.time = function (node, jsonSchema, xsd) {
 		jsonSchema.setType(jsonTypes.STRING);
 		jsonSchema.setPattern("^(24:00(:00(\\.[0]+)?)?|(([0-1][0-9]|2[0-3])(:)[0-5][0-9])((:)[0-5][0-9](\\.[\\d]+)?)?)((\\+|-)(14:00|(0[0-9]|1[0-3])(:)[0-5][0-9])|Z)$");
-		// jsonSchema.setDescription("This is a regular expression to check for a properly formatted time according to the international date and time notation ISO 8601.  Time portion taken from the source sited.  Source: http://www.regxlib.com/REDetails.aspx?regexp_id=2219");
+		// jsonSchema.setDescription("This is a regular expression to check for a properly formatted time according to the international date and time notation ISO 8601.  Time portion taken from the source sited.  Source: http://www.regexlib.com/REDetails.aspx?regexp_id=2219");
 		return true;
 	};
 
@@ -126,7 +126,7 @@ function RestrictionConverter() {
 	this.hexBinary = function (node, jsonSchema, xsd) {
 		jsonSchema.setType(jsonTypes.STRING);
 		jsonSchema.setPattern("^([0-9a-fA-F])*$");
-		// jsonSchema.setDescription("Hex string of any length; source: http://www.regxlib.com/REDetails.aspx?regexp_id=886 also see http://www.datypic.com/sc/xsd/t-xsd_hexBinary.html");
+		// jsonSchema.setDescription("Hex string of any length; source: http://www.regexlib.com/REDetails.aspx?regexp_id=886 also see http://www.datypic.com/sc/xsd/t-xsd_hexBinary.html");
 		return true;
 	};
 
@@ -363,7 +363,7 @@ function RestrictionConverter() {
 	this.yearMonthDuration = function (node, jsonSchema, xsd) {
 		jsonSchema.setType(jsonTypes.STRING);
 		// jsonSchema.setPattern("^[-]?P(?!$)(?:\d+Y)?(?:\d+M)?(?:\d+D)?(?:T(?!$)(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?$");
-		// jsonSchema.setDescription("TODO: (modify) The pattern above: Matches the XSD schema duration built in type as defined by http://www.w3.org/TR/xmlschema-2/#duration.  Source: http://www.regxlib.com/REDetails.aspx?regexp_id=1219");
+		// jsonSchema.setDescription("TODO: (modify) The pattern above: Matches the XSD schema duration built in type as defined by http://www.w3.org/TR/xmlschema-2/#duration.  Source: http://www.regexlib.com/REDetails.aspx?regexp_id=1219");
 		return true;
 	};
 
@@ -371,7 +371,7 @@ function RestrictionConverter() {
 	this.dateTimeDuration = function (node, jsonSchema, xsd) {
 		jsonSchema.setType(jsonTypes.STRING);
 		//jsonSchema.setPattern("^[-]?P(?!$)(?:\d+Y)?(?:\d+M)?(?:\d+D)?(?:T(?!$)(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?$");
-		// jsonSchema.setDescription("TODO: (modify) The pattern above: Matches the XSD schema duration built in type as defined by http://www.w3.org/TR/xmlschema-2/#duration.  Source: http://www.regxlib.com/REDetails.aspx?regexp_id=1219");
+		// jsonSchema.setDescription("TODO: (modify) The pattern above: Matches the XSD schema duration built in type as defined by http://www.w3.org/TR/xmlschema-2/#duration.  Source: http://www.regexlib.com/REDetails.aspx?regexp_id=1219");
 		return true;
 	};
 

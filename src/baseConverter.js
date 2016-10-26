@@ -14,8 +14,7 @@ var attrConst = require('./xsdAttributes');
 var elConst = require('./xsdElements');
 var utils = require("./utils");
 
-function BaseConverter(_manager) {
-	var schemaManager = _manager;
+function BaseConverter() {
 	var workingJsonSchema;
 	var restrictionConverter = new RestrictionConverter();
 
@@ -27,6 +26,15 @@ function BaseConverter(_manager) {
 		Object.keys(jsonSchema).forEach(function (prop, index, array) {
 			console.log(prop + "=" + jsonSchema[prop]);
 		});
+	}
+
+	function getAttrValue(node, attrName) {
+		var attr = getAttr(node, attrName);
+		var retval;
+		if (attr != undefined) {
+			retval = attr.value();
+		}
+		return retval;
 	}
 
 	function getAttr(node, attrName) {
@@ -70,10 +78,11 @@ function BaseConverter(_manager) {
 			console.log("XML-Text= [" + text + "]");
 		}
 		var attrs = node.attrs();
+		console.log("XML-TAG-Attributes:");
 		attrs.forEach(function (attr, index, array) {
-			console.log(attr.name() + "=" + attr.value());
+			console.log("\t" + index + ") " + attr.name() + "=" + attr.value());
 		});
-		console.log("_________");
+		console.log("_______________________");
 	};
 	/*
 	
@@ -150,21 +159,90 @@ function BaseConverter(_manager) {
 		return true;
 	};
 
+	function addAttributeProperty(targetSchema, propertyName, customType, minOccursAttr) {
+		var name = "@" + propertyName;
+		if (minOccursAttr === "required") {
+			targetSchema.addRequired(name);
+		}
+		targetSchema.setProperty(name, customType);
+	}
+
+	/* 
+	 * A factory method to create JSON Schemas of one of the basic JSON Schema Types.
+	 *
+	 */
+	function createAttributeSchema(node, jsonSchema, xsd, qualifiedTypeName) {
+		var attributeJsonSchema = new JsonSchemaFile({});
+		restrictionConverter[qualifiedTypeName.local()](node, attributeJsonSchema)
+		return attributeJsonSchema;
+	}
+
 	function handleAttributeGlobal(node, jsonSchema, xsd) {
-		// TODO: id, name, type, default, fixed, inheritable (TBD)
+		var name = getAttrValue(node, attrConst.name);
+		var typeName = getAttrValue(node, attrConst.type);
+		// TODO: id, default, fixed, inheritable (TBD)
+		var attributeJsonSchema;
+
+		parsingState.pushSchema(workingJsonSchema);
+		if (typeName !== undefined) {
+			var qualifiedTypeName = new Qname(typeName);
+			attributeJsonSchema = customTypes.getGlobalAtrribute(name, jsonSchema);
+			jsonSchema.addSubSchema(name, attributeJsonSchema);
+			return restrictionConverter[qualifiedTypeName.local()](node, attributeJsonSchema);
+		} else {
+			// Setup the working schema and allow processing to continue for any contained simpleType or annotation nodes.
+			attributeJsonSchema = customTypes.getGlobalAtrribute(name, jsonSchema);
+			jsonSchema.addSubSchema(name, attributeJsonSchema);
+			workingJsonSchema = attributeJsonSchema;
+		}
+		return true;
 	}
 
 	function handleAttributeLocal(node, jsonSchema, xsd) {
-		// TODO: id, name, type, form, use, default, fixed, targetNamespace, inheritable (TBD)
+		var name = getAttrValue(node, attrConst.name);
+		var type = getAttrValue(node, attrConst.type);
+		var use = getAttrValue(node, attrConst.use);
+		// TODO: id, form, default, fixed, targetNamespace, inheritable (TBD)
+
+		parsingState.pushSchema(workingJsonSchema);
+		if (type !== undefined) {
+			var qualifiedTypeName = new Qname(type);
+			workingJsonSchema.addAttributeProperty(name, createAttributeSchema(node, jsonSchema, xsd, qualifiedTypeName), use);
+		} else {
+			// Setup the working schema and allow processing to continue for any contained simpleType or annotation nodes.
+			var attributeJsonSchema = new JsonSchemaFile({});
+			workingJsonSchema.addAttributeProperty(name, attributeJsonSchema, use);
+			workingJsonSchema = attributeJsonSchema;
+		}
+		return true;
 	}
 
 	function handleAttributeReference(node, jsonSchema, xsd) {
-		// TODO: id, ref, use, default, fixed, inheritable (TBD)
+		var name = getAttrValue(node, attrConst.name);
+		var ref = getAttrValue(node, attrConst.ref);
+		var use = getAttrValue(node, attrConst.use);
+		// TODO: id, default, fixed, inheritable (TBD)
+
+		if (ref !== undefined) {
+			var attrSchema = customTypes.getGlobalAtrribute(ref, jsonSchema);
+			addAttributeProperty(workingJsonSchema, name, attrSchema.get$RefToSchema(), use);
+		}
+
+		return true;
 	}
 
 	this.attribute = function (node, jsonSchema, xsd) {
 		// (TBD)
-		return true;
+		//this.dumpNode(node);	
+		var refAttr = getAttr(node, attrConst.ref);
+
+		if (refAttr !== undefined) {
+			return handleAttributeReference(node, jsonSchema, xsd);
+		} else if (parsingState.isTopLevelEntity()) {
+			return handleAttributeGlobal(node, jsonSchema, xsd);
+		} else {
+			return handleAttributeLocal(node, jsonSchema, xsd);
+		}
 	};
 
 	function handleAttributeGroupDefinition(node, jsonSchema, xsd) {
@@ -230,12 +308,12 @@ function BaseConverter(_manager) {
 				if (isOptional) {
 					var anyOfSchema = new JsonSchemaFile({});
 					workingJsonSchema.getAnyOf().push(anyOfSchema);
-					schemaManager.pushSchema(workingJsonSchema);
+					parsingState.pushSchema(workingJsonSchema)
 					workingJsonSchema = anyOfSchema;
 				} else if (isMulti) {
 					var allOfSchema = new JsonSchemaFile({});
 					workingJsonSchema.getAllOf().push(allOfSchema);
-					schemaManager.pushSchema(workingJsonSchema);
+					parsingState.pushSchema(workingJsonSchema);
 					workingJsonSchema = allOfSchema;
 				} else {
 					// Allow to fall through and continue processing.  
@@ -331,7 +409,7 @@ function BaseConverter(_manager) {
 	}
 
 	function addProperty(targetSchema, propertyName, customType, minOccursAttr) {
-		if (minOccursAttr === undefined || minOccursAttr.value() > 0) {
+		if (minOccursAttr === undefined || minOccursAttr === "required" || minOccursAttr.value() > 0) {
 			targetSchema.addRequired(propertyName);
 		}
 		targetSchema.setProperty(propertyName, customType);
@@ -653,7 +731,7 @@ function BaseConverter(_manager) {
 	this.maxExclusive = function (node, jsonSchema, xsd) {
 		var val = getValueAttr(node);
 		// TODO: id, fixed
-	
+
 		workingJsonSchema.setMaximum(val);
 		workingJsonSchema.setExlusiveMaximum(true);
 		return true;
@@ -662,7 +740,7 @@ function BaseConverter(_manager) {
 	this.maxInclusive = function (node, jsonSchema, xsd) {
 		var val = getValueAttr(node);
 		// TODO: id, fixed
-	
+
 		workingJsonSchema.setMaximum(val); // inclusive is the JSON Schema default
 		return true;
 	};
@@ -670,7 +748,7 @@ function BaseConverter(_manager) {
 	this.maxLength = function (node, jsonSchema, xsd) {
 		var len = getValueAttr(node);
 		// TODO: id, fixed
-	
+
 		workingJsonSchema.setMaxLength(len);
 		return true;
 	};
@@ -678,7 +756,7 @@ function BaseConverter(_manager) {
 	this.minExclusive = function (node, jsonSchema, xsd) {
 		var val = getValueAttr(node);
 		// TODO: id, fixed
-	
+
 		workingJsonSchema.setMinimum(val);
 		workingJsonSchema.setExclusiveMinimum(true);
 		return true;
@@ -687,7 +765,7 @@ function BaseConverter(_manager) {
 	this.minInclusive = function (node, jsonSchema, xsd) {
 		var val = getValueAttr(node);
 		// TODO: id, fixed
-	
+
 		workingJsonSchema.setMinimum(val); // inclusive is the JSON Schema default
 		return true;
 	};
@@ -695,7 +773,7 @@ function BaseConverter(_manager) {
 	this.minLength = function (node, jsonSchema, xsd) {
 		var len = getValueAttr(node);
 		// TODO: id, fixed
-	
+
 		workingJsonSchema.setMinLength(len);
 		return true;
 	};
@@ -721,7 +799,7 @@ function BaseConverter(_manager) {
 	this.pattern = function (node, jsonSchema, xsd) {
 		var pattern = getValueAttr(node);
 		// TODO: id
-	
+
 		workingJsonSchema.setPattern(pattern);
 		return true;
 	};
@@ -773,7 +851,7 @@ function BaseConverter(_manager) {
 		var minOccursAttr = getAttr(node, attrConst.minOccurs);
 		var maxOccursAttr = getAttr(node, attrConst.maxOccurs);
 		// TODO: id
-		
+
 		if (minOccursAttr !== undefined && minOccursAttr.value() == 0) {
 			throw new Error("optional sequences need to be implemented!");
 		}
@@ -800,7 +878,7 @@ function BaseConverter(_manager) {
 				var choiceSchema = new JsonSchemaFile({});
 				choiceSchema.setAdditionalProperties(false);
 				workingJsonSchema.getOneOf().push(choiceSchema);
-				schemaManager.pushSchema(workingJsonSchema);
+				parsingState.pushSchema(workingJsonSchema);
 				workingJsonSchema = choiceSchema;
 				break;
 			case elConst.complexType:
@@ -815,7 +893,7 @@ function BaseConverter(_manager) {
 				if (isOptional) {
 					var optionalSequenceSchema = new JsonSchemaFile({});
 					workingJsonSchema.getAnyOf().push(optionalSequenceSchema);
-					schemaManager.pushSchema(workingJsonSchema);
+					parsingState.pushSchema(workingJsonSchema);
 					workingJsonSchema = optionalSequenceSchema;
 				} else {
 					throw new Error("Required nested sequences need to be implemented!");
@@ -849,11 +927,16 @@ function BaseConverter(_manager) {
 	}
 
 	this.simpleType = function (node, jsonSchema, xsd) {
+		var continueParsing
 		if (isNamed(node)) {
-			return handleSimpleTypeNamedGlobal(node, jsonSchema, xsd);
+			continueParsing = handleSimpleTypeNamedGlobal(node, jsonSchema, xsd);
 		} else {
-			return handleSimpleTypeAnonymousLocal(node, jsonSchema, xsd);
+			continueParsing = handleSimpleTypeAnonymousLocal(node, jsonSchema, xsd);
 		}
+		if (parsingState.inAttribute()) {
+			// need to pop
+		}
+		return continueParsing;
 	};
 
 	this.text = function (node, jsonSchema, xsd) {

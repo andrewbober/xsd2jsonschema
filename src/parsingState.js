@@ -9,6 +9,7 @@
 
 var elConst = require('./xsdElements');
 
+// A stack of states
 var states = [];
 
 /* Example state
@@ -27,6 +28,9 @@ function iterateStateReverse(tagName) {
 	return false;
 }
 
+/*
+ * A local version of the exposed getCurrentState function.
+ */
 function getCurrentState() {
 	if (states.length > 1) {
 		return states[states.length-2];
@@ -38,17 +42,38 @@ function getCurrentState() {
 }
 
 module.exports = {
+	/*
+	 * Pushes a new state onto the stack.
+	 */
 	enterState: function (state) {
 		states.push(state);
 	},
+
+	/*
+	 * Pops the most recent state off the stack.
+	 */
 	exitState: function () {
 		return states.pop();
 	},
+
+	/*
+	 * Use pushSchema() to store a schema you would like to restore after processing a 
+	 * given element.  This schema will be restored as the "workingJsonSchema" upon exiting
+	 * a state.  See baseConversionVisitor.js.
+	 */
 	pushSchema: function(schema) {
 		states[states.length-1].workingJsonSchema = schema;
 	},
+
+	/*
+	 * Returns the most state most recently entered.
+	 */
 	getCurrentState: function() {
 		return getCurrentState();
+	},
+
+	inAttribute: function() {
+		return getCurrentState().name === elConst.attribute;
 	},
 	inElement: function () {
 		return getCurrentState().name === elConst.element;

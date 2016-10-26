@@ -9,7 +9,7 @@ var parsingState = require("./../parsingState");
 
 function DefaultConversionVisitor() {
 
-	var converter = new BaseConverter(this);
+	var converter = new BaseConverter();
 
 	this.visit = function visit(node, jsonSchema, xsd) {
 		try {
@@ -35,10 +35,6 @@ function DefaultConversionVisitor() {
 		if (state.workingJsonSchema !== undefined) {
 			converter.setWorkingJsonSchema(state.workingJsonSchema);
 		}
-	};
-
-	this.pushSchema = function pushSchema(schema) {
-		parsingState.pushSchema(schema);
 	};
 
 	this.onBegin = function onBegin(jsonSchema, xsd) {

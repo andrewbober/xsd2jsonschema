@@ -828,6 +828,15 @@ function JsonSchemaFile(parms) {
 		this.getAllOf().push(extentionSchema);
 		return extentionSchema;
 	}
+
+	this.addAttributeProperty = function (propertyName, customType, minOccursAttr) {
+		var name = "@" + propertyName;
+		if (minOccursAttr === "required") {
+			this.addRequired(name);
+		}
+		this.setProperty(name, customType);
+	}
+
 }
 
 module.exports = JsonSchemaFile;

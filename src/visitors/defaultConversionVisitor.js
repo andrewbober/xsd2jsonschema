@@ -37,10 +37,6 @@ function DefaultConversionVisitor() {
 		}
 	};
 
-	this.pushSchema = function pushSchema(schema) {
-		parsingState.pushSchema(schema);
-	};
-
 	this.onBegin = function onBegin(jsonSchema, xsd) {
 		/*
 				console.log("\n\n****************************************************************************************************");

@@ -1,5 +1,5 @@
 /**
- *  JSON Schema primitive types
+ *  XML Namespaces of custom types that have been converted to JSON Schema
  */
 
 "use strict";
@@ -7,7 +7,7 @@
 var JsonSchemaFile = require("./jsonSchemaFile");
 var utils = require("./utils");
 
-var namespaces = {};
+var namespaces = { globalAttributes:{ customTypes:{} } };
 
 module.exports = {
 	addNamespace: function (_namespace) {
@@ -16,6 +16,7 @@ module.exports = {
 			namespaces[namespace] = { customTypes: {} };
 		}
 	},
+
 	getNamespace: function (namespace) {
 		return namespaces[namespace];
 	},
@@ -23,20 +24,37 @@ module.exports = {
 	getNamespaces: function () {
 		return namespaces;
 	},
-	getCustomType: function (type, baseJsonSchema) {
-		if (type === undefined) {
-			throw new Error( "\"type\" parameter required");
+
+	getCustomType: function (typeName, baseJsonSchema) {
+		if (typeName === undefined) {
+			throw new Error( "\"typeName\" parameter required");
 		}
 		if (baseJsonSchema === undefined) {
 			throw new Error("\"baseJsonSchema\" parameter required");
 		}
 		var namespace = baseJsonSchema.getSubschemaStr();
-		if (namespaces[namespace].customTypes[type] === undefined) {
+		if (namespaces[namespace].customTypes[typeName] === undefined) {
 			//console.log("Unable to find custom type: " + type);
 			var parms={};
-			parms.ref = baseJsonSchema.getResolvedFilename() + "#" + baseJsonSchema.getSubschemaStr() + "/" + type;
-			namespaces[namespace].customTypes[type] = new JsonSchemaFile(parms);
+			parms.ref = baseJsonSchema.getResolvedFilename() + "#" + baseJsonSchema.getSubschemaStr() + "/" + typeName;
+			namespaces[namespace].customTypes[typeName] = new JsonSchemaFile(parms);
 		}
-		return namespaces[namespace].customTypes[type];
+		return namespaces[namespace].customTypes[typeName];
+	},
+
+	getGlobalAtrribute: function (name, baseJsonSchema) {
+		if (name === undefined) {
+			throw new Error( "\"name\" parameter required");
+		}
+		if (baseJsonSchema === undefined) {
+			throw new Error("\"baseJsonSchema\" parameter required");
+		}
+		var globalAttributesNamespace = namespaces["globalAttributes"];
+		if (globalAttributesNamespace.customTypes[name] === undefined) {
+			var parms={};
+			parms.ref = baseJsonSchema.getResolvedFilename() + "#" + baseJsonSchema.getSubschemaStr() + "/" + name;
+			globalAttributesNamespace.customTypes[name] = new JsonSchemaFile(parms);
+		}
+		return globalAttributesNamespace.customTypes[name];
 	}
 }
