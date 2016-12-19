@@ -8,113 +8,157 @@
 
 "use strict";
 
-var url = require("url");
 var path = require("path");
-var fs = require('fs');
+var fs = require("fs");
 var utils = require("./utils");
-var jsonTypes = require('./jsonTypes');
 
-function JsonSchemaFile(parms) {
-	var filename;
-	var resolvedFilename;
-	var targetSchema = {};
-	var targetNamespace;
-	var ref;  // used to hold a JSON Pointer reference to this named type (Not used for anonymous types)
-	var $ref; // used when this schema is an instance of a reference
+var filename_NAME = Symbol();
+var resolvedFilename_NAME = Symbol();
+var targetSchema_NAME = Symbol();
+var targetNamespace_NAME = Symbol();
+var ref_NAME = Symbol();
+var $ref_NAME = Symbol();
+var id_NAME = Symbol();
+var subSchemas_NAME = Symbol();
+var $schema_NAME = Symbol();
+var title_NAME = Symbol();
+var description_NAME = Symbol();
+var default_NAME = Symbol();
+var format_NAME = Symbol();
+var multipleOf_NAME = Symbol();
+var maximum_NAME = Symbol();
+var exclusiveMaximum_NAME = Symbol();
+var minimum_NAME = Symbol();
+var exclusiveMinimum_NAME = Symbol();
+var maxLength_NAME = Symbol();
+var minLength_NAME = Symbol();
+var pattern_NAME = Symbol();
+var additionalItems_NAME = Symbol();
+var items_NAME = Symbol();
+var maxItems_NAME = Symbol();
+var minItems_NAME = Symbol();
+var uniqueItems_NAME = Symbol();
+var maxProperties_NAME = Symbol();
+var minProperties_NAME = Symbol();
+var required_NAME = Symbol();
+var additionalProperties_NAME = Symbol();
+var properties_NAME = Symbol();
+var patternProperties_NAME = Symbol();
+var dependencies_NAME = Symbol();
+var enum_NAME = Symbol();
+var type_NAME = Symbol();
+var allOf_NAME = Symbol();
+var anyOf_NAME = Symbol();
+var oneOf_NAME = Symbol();
+var not_NAME = Symbol();
+var definitions_NAME = Symbol();
 
-	// JSON Schema draft v4 (core definitions and terminology referenced)
-	// 7.2 URI resolution scope alteration with the "id"
-	var id;  // uri
-	// 3.4 Root schema, subschema  (7.2.2 Usage)
-	var subSchemas = {};
-	var $schema;  // uri
 
-	// JSON Schema Validation specification sections referenced unless otherwise noted
-	// 6.1 Metadata keywords "title" and "description"
-	var title;
-	var description;  // Might need to initialize to "" for concatDescription()
-	
-	// 6.2 Default
-	var _default
+class JsonSchemaFile {
+	constructor(parms) {
+		this.filename = undefined;
+		this.resolvedFilename = undefined;
+		this.targetSchema = {};
+		this.targetNamespace = undefined;
+		this.ref = undefined;  // used to hold a JSON Pointer reference to this named type (Not used for anonymous types)
+		this.$ref = undefined; // used when this schema is an instance of a reference
 
-	// 7 Semantic validation with "format"
-	var format;
-	
-	// 5.1.  Validation keywords for numeric instances (number and integer)
-	var multipleOf;  // multiple of 2 is 2, 4, 8, etc. 
-	var maximum;
-	var exclusiveMaximum = false;  // 5.1.2.3
-	var minimum;
-	var exclusiveMinimum = false;  // 5.1. 3.3
+		// JSON Schema draft v4 (core definitions and terminology referenced)
+		// 7.2 URI resolution scope alteration with the "id"
+		this.id = undefined;  // uri
+		// 3.4 Root schema, subschema  (7.2.2 Usage)
+		this.subSchemas = {};
+		this.$schema = undefined;  // uri
 
-	// 5.2.  Validation keywords for strings
-	var maxLength;
-	var minLength = 0;  // 5.2.2.3
-	var pattern;  // 5.2.3.1 ECMA 262 regular expression dialect
+		// JSON Schema Validation specification sections referenced unless otherwise noted
+		// 6.1 Metadata keywords "title" and "description"
+		this.title = undefined;
+		this.description = undefined;  // Might need to initialize to "" for concatDescription()
 
-	// 5.3.  Validation keywords for arrays
-	var additionalItems = {};  // 5.3.1.1 boolean or a schema
-	var items = {};  // 5.3.1.4 schema or an array of schemas but the default value is an empty schema
-	var maxItems;
-	var minItems = 0;  // 5.3.3.3
-	var uniqueItems = false;  // 5.3.4.3
+		// 6.2 Default
+		this.default = undefined;
 
-	// 5.4.  Validation keywords for objects
-	var maxProperties;
-	var minProperties = 0;  // 5.4.2.3
-	var required = [];  // 5.4.3.1 string array - must have unique values and minimum length=1
-	var additionalProperties;  // boolean or a schema
-	var properties = {};  // 5.4.4.1 MUST be an object. Each property of this object MUST be a valid JSON Schema.
-	var patternProperties = {};  // 5.4.4.1 MUST be an object. Each property name of this object SHOULD be a valid regular expression, according to the ECMA 262 regular expression dialect. Each property value of this object MUST be a valid JSON Schema.
+		// 7 Semantic validation with "format"
+		this.format = undefined;
 
-	// 5.4.5.  Dependencies
-	// This keyword's value MUST be an object. Each value of this object MUST be either an object or an array.
-	// If the value is an object, it MUST be a valid JSON Schema. This is called a schema dependency.
-	// If the value is an array, it MUST have at least one element. Each element MUST be a string, and elements in the array MUST be unique. This is called a property dependency.
-	var dependencies = {};
+		// 5.1.  Validation keywords for numeric instances (number and integer)
+		this.multipleOf = undefined;  // multiple of 2 is 2, 4, 8, etc. 
+		this.maximum = undefined;
+		this.exclusiveMaximum = false;  // 5.1.2.3
+		this.minimum = undefined;
+		this.exclusiveMinimum = false;  // 5.1. 3.3
 
-	// 5.5.  Validation keywords for any instance type
-	var _enum = [];  // 5.5.1.1 Elements in the array MUST be unique.
-	var type;  // string or string array limited to the seven primitive types (simpleTypes)
+		// 5.2.  Validation keywords for strings
+		this.maxLength = undefined;
+		this.minLength = 0;  // 5.2.2.3
+		this.pattern = undefined;  // 5.2.3.1 ECMA 262 regular expression dialect
 
-	var allOf = [];  // 5.5.3.1 Elements of the array MUST be objects. Each object MUST be a valid JSON Schema.
-	var anyOf = [];  // 5.5.4.1 Elements of the array MUST be objects. Each object MUST be a valid JSON Schema.
-	var oneOf = [];  // 5.5.5.1 Elements of the array MUST be objects. Each object MUST be a valid JSON Schema.
-	var not = {};  // 5.5.6.1 This object MUST be a valid JSON Schema.
+		// 5.3.  Validation keywords for arrays
+		this.additionalItems = {};  // 5.3.1.1 boolean or a schema
+		this.items = {};  // 5.3.1.4 schema or an array of schemas but the default value is an empty schema
+		this.maxItems = undefined;
+		this.minItems = 0;  // 5.3.3.3
+		this.uniqueItems = false;  // 5.3.4.3
 
-	var definitions = {};  // 5.5.7.1 MUST be an object. Each member value of this object MUST be a valid JSON Schema.
+		// 5.4.  Validation keywords for objects
+		this.maxProperties = undefined;
+		this.minProperties = 0;  // 5.4.2.3
+		this.required = [];  // 5.4.3.1 string array - must have unique values and minimum length=1
+		this.additionalProperties = undefined;  // boolean or a schema
+		this.properties = {};  // 5.4.4.1 MUST be an object. Each property of this object MUST be a valid JSON Schema.
+		this.patternProperties = {};  // 5.4.4.1 MUST be an object. Each property name of this object SHOULD be a valid regular expression, according to the ECMA 262 regular expression dialect. Each property value of this object MUST be a valid JSON Schema.
 
-	if (parms === undefined) {
-		throw new Error("Parameter 'parms' is required");
+		// 5.4.5.  Dependencies
+		// This keyword's value MUST be an object. Each value of this object MUST be either an object or an array.
+		// If the value is an object, it MUST be a valid JSON Schema. This is called a schema dependency.
+		// If the value is an array, it MUST have at least one element. Each element MUST be a string, and elements in the array MUST be unique. This is called a property dependency.
+		this.dependencies = {};
+
+		// 5.5.  Validation keywords for any instance type
+		this.enum = [];  // 5.5.1.1 Elements in the array MUST be unique.
+		this.type = undefined;  // string or string array limited to the seven primitive types (simpleTypes)
+
+		this.allOf = [];  // 5.5.3.1 Elements of the array MUST be objects. Each object MUST be a valid JSON Schema.
+		this.anyOf = [];  // 5.5.4.1 Elements of the array MUST be objects. Each object MUST be a valid JSON Schema.
+		this.oneOf = [];  // 5.5.5.1 Elements of the array MUST be objects. Each object MUST be a valid JSON Schema.
+		this.not = {};  // 5.5.6.1 This object MUST be a valid JSON Schema.
+
+		this.definitions = {};  // 5.5.7.1 MUST be an object. Each member value of this object MUST be a valid JSON Schema.
+
+		if (parms === undefined) {
+			throw new Error("Parameter 'parms' is required");
+		}
+		if (parms.xsd != undefined) {
+			var baseFilename = path.parse(parms.xsd.baseFilename).name;
+			this.id = (parms.mask === undefined) ? baseFilename : baseFilename.replace(parms.mask, "");
+			this.$schema = "http://json-schema.org/draft-04/schema#";
+			this.filename = this.id + ".json";
+			this.resolvedFilename = path.join(parms.resolveURI, this.filename);
+			this.targetNamespace = parms.xsd.targetNamespace;
+			this.title = "This JSON Schema file was generated from " + parms.xsd.baseFilename + " on " + new Date() + ".  For more information please see http://www.xsd2jsonschema.org";
+		}
+		// This needs to be documented
+		if (parms.ref !== undefined) {
+			this.ref = parms.ref;
+		}
+		// This needs to be documented
+		if (parms.$ref !== undefined) {
+			this.$ref = parms.$ref;
+		}
+
+		this.initializeSubschemas();
 	}
-	if (parms.xsd != undefined) {
-		var baseFilename = path.parse(parms.xsd.getBaseFilename()).name;
-		id = (parms.mask === undefined) ? baseFilename : baseFilename.replace(parms.mask, "");
-		$schema = "http://json-schema.org/draft-04/schema#";
-		filename = id + ".json";
-		resolvedFilename = path.join(parms.resolveURI, filename);
-		targetNamespace = parms.xsd.getTargetNamespace();
-		title = "This JSON Schema file was generated from " + parms.xsd.getBaseFilename() + " on " + new Date() + ".  For more information please see http://www.xsd2jsonschema.org";
-	}
-	// This needs to be documented
-	if (parms.ref !== undefined) {
-		ref = parms.ref;
-	}
-	// This needs to be documented
-	if (parms.$ref !== undefined) {
-		$ref = parms.$ref;
-	}
 
-	function createNestedSubschema(_subschemas, namespaces) {
+	createNestedSubschema(_subschemas, namespaces) {
 		var subschemaName = namespaces.shift();
 		_subschemas[subschemaName] = new JsonSchemaFile({});
-		targetSchema = _subschemas[subschemaName];  // Track the innermost schema as the target
+		this.targetSchema = _subschemas[subschemaName];  // Track the innermost schema as the target
 		if (namespaces.length > 0) {
-			createNestedSubschema(_subschemas[subschemaName].getSubSchemas(), namespaces);
+			this.createNestedSubschema(_subschemas[subschemaName].subSchemas, namespaces);
 		}
 	}
 
-	var isEmpty = function (val) {
+	isEmpty(val) {
 		if (typeof val == "undefined" || val == "undefined" || val == null) {
 			return true;
 		}
@@ -125,691 +169,770 @@ function JsonSchemaFile(parms) {
 			if (Array.isArray(val)) {
 				return (val.length === 0)
 			} else {
-				return (Object.keys(val).length === 0)
+				const symbols = Object.getOwnPropertySymbols(val);
+				const keys = Object.keys(val);
+				if ((symbols.length === 0) && (keys.length === 0)) {
+					return true;
+				}
 			}
 		}
 		return false;
-	};
+	}
 
-	function initializeSubschemas() {
-		if (targetNamespace === undefined) {
+	initializeSubschemas() {
+		if (this.targetNamespace === undefined) {
 			return;
 		}
-		var subschemaStr = utils.getSafeNamespace(targetNamespace);
-		if (!isEmpty(subschemaStr)) {
+		var subschemaStr = utils.getSafeNamespace(this.targetNamespace);
+		if (!this.isEmpty(subschemaStr)) {
 			var namespaces = subschemaStr.split("/");
 			if (namespaces.length > 1) {
 				namespaces.shift();
 			}
-			createNestedSubschema(subSchemas, namespaces);
+			this.createNestedSubschema(this.subSchemas, namespaces);
 		}
 	}
 
-	initializeSubschemas();
-
-	this.addSubSchema = function (schemaName, jsonSchema) {
-		this.getTargetSchema().getSubSchemas()[schemaName] = jsonSchema;
-	};
+	addSubSchema(schemaName, jsonSchema) {
+		this.getTargetSchema().subSchemas[schemaName] = jsonSchema;
+	}
 
 	// Search through all schemas for a given schema name
-	function getSubschema(searchName) {
+	getSubschema(searchName) {
 		var retval;
-		if (subSchemas[searchName] != undefined) {
-			retval = subSchemas[searchName];
+		if (this.subSchemas[searchName] != undefined) {
+			retval = this.subSchemas[searchName];
 		}
-		Object.keys(subSchemas).forEach(function (subschemaName, index, array) {
-			retval = subSchemas[subschemaName].getSubschema(searchName);
-		});
+		Object.keys(this.subSchemas).forEach(function (subschemaName, index, array) {
+			retval = this.subSchemas[subschemaName].getSubschema(searchName);
+		}, this);
 		return retval;
 	}
 
+/*
 	// Search through all schemas for a given schema name
-	this.getSubschema = function (subschemaName) {
-		return getSubschema(subschemaName);
-	};
+	getSubschema(subschemaName) {
+		return this.getSubschema(subschemaName);
+	}
+*/
 
 	// Read-only properties
-	this.getTargetSchema = function () {
-		if (isEmpty(targetSchema)) {
-			targetSchema = this;
+	getTargetSchema() {
+		if (this.isEmpty(this.targetSchema)) {
+			this.targetSchema = this;
 		}
-		return targetSchema;
-	};
-
-	this.getTargetNamespace = function () {
-		return targetNamespace;
-	};
-
-	this.getFilename = function () {
-		return filename;
+		return this.targetSchema;
 	}
 
-	this.getResolvedFilename = function () {
-		return resolvedFilename;
+	getTargetNamespace() {
+		return this.targetNamespace;
 	}
 
-	this.get$RefToSchema = function () {
-		return new JsonSchemaFile({ $ref: ref });
+	getFilename() {
+		return this.filename;
 	}
 
-	this.getSubschemaStr = function () {
-		return utils.getSafeNamespace(targetNamespace);
+	getResolvedFilename() {
+		return this.resolvedFilename;
 	}
 
-	function copy(obj) {
+	get$RefToSchema() {
+		return new JsonSchemaFile({ $ref: this.ref });
+	}
+
+	getSubschemaStr() {
+		return utils.getSafeNamespace(this.targetNamespace);
+	}
+
+	copy(obj) {
 		return JSON.parse(JSON.stringify(obj));
 	}
 
 	// Return a POJO of this jsonschema
-	this.getJsonSchema = function () {
+	getJsonSchema() {
 		var propKeys;
 		var jsonSchema = {};
 
-		if (!isEmpty($ref)) {
-			jsonSchema.$ref = $ref;
+		if (!this.isEmpty(this.$ref)) {
+			jsonSchema.$ref = this.$ref;
 		}
 
-		if (!isEmpty(id)) {
-			jsonSchema.id = id;
+		if (!this.isEmpty(this.id)) {
+			jsonSchema.id = this.id;
 		}
-		if (!isEmpty($schema)) {
-			jsonSchema.$schema = $schema;
+		if (!this.isEmpty(this.$schema)) {
+			jsonSchema.$schema = this.$schema;
 		}
 
 		// 6.1 Metadata keywords "title" and "description"
-		if (!isEmpty(title)) {
-			jsonSchema.title = title;
+		if (!this.isEmpty(this.title)) {
+			jsonSchema.title = this.title;
 		}
-		if (!isEmpty(description)) {
-			jsonSchema.description = description;
+		if (!this.isEmpty(this.description)) {
+			jsonSchema.description = this.description;
 		}
 
 		// 5.5.  Validation keywords for any instance type (Type moved up here from the rest of 5.5 below for output formatting)
-		if (!isEmpty(type)) {
-			jsonSchema.type = type;
+		if (!this.isEmpty(this.type)) {
+			jsonSchema.type = this.type;
 		}
 
 		// 5.1.  Validation keywords for numeric instances (number and integer)
-		if (!isEmpty(multipleOf)) {
-			jsonSchema.multipleOf = multipleOf;
+		if (!this.isEmpty(this.multipleOf)) {
+			jsonSchema.multipleOf = this.multipleOf;
 		}
-		if (!isEmpty(minimum)) {
-			jsonSchema.minimum = minimum;
+		if (!this.isEmpty(this.minimum)) {
+			jsonSchema.minimum = this.minimum;
 		}
-		if (!isEmpty(exclusiveMinimum) && exclusiveMinimum !== false) {
-			jsonSchema.exclusiveMinimum = exclusiveMinimum;
+		if (!this.isEmpty(this.exclusiveMinimum) && this.exclusiveMinimum !== false) {
+			jsonSchema.exclusiveMinimum = this.exclusiveMinimum;
 		}
-		if (!isEmpty(maximum)) {
-			jsonSchema.maximum = maximum;
+		if (!this.isEmpty(this.maximum)) {
+			jsonSchema.maximum = this.maximum;
 		}
-		if (!isEmpty(exclusiveMaximum) && exclusiveMaximum !== false) {
-			jsonSchema.exclusiveMaximum = exclusiveMaximum;
+		if (!this.isEmpty(this.exclusiveMaximum) && this.exclusiveMaximum !== false) {
+			jsonSchema.exclusiveMaximum = this.exclusiveMaximum;
 		}
 
 		// 5.2.  Validation keywords for strings
-		if (!isEmpty(minLength) && minLength !== 0) {
-			jsonSchema.minLength = minLength;
+		if (!this.isEmpty(this.minLength) && this.minLength !== 0) {
+			jsonSchema.minLength = this.minLength;
 		}
-		if (!isEmpty(maxLength)) {
-			jsonSchema.maxLength = maxLength;
+		if (!this.isEmpty(this.maxLength)) {
+			jsonSchema.maxLength = this.maxLength;
 		}
-		if (!isEmpty(pattern)) {
-			jsonSchema.pattern = pattern;
+		if (!this.isEmpty(this.pattern)) {
+			jsonSchema.pattern = this.pattern;
 		}
 
 		// 5.5.  Validation keywords for any instance type
-		if (!isEmpty(_enum)) {
-			jsonSchema.enum = _enum;
+		if (!this.isEmpty(this.enum)) {
+			jsonSchema.enum = this.enum;
 		}
-		if (!isEmpty(allOf)) {
+		if (!this.isEmpty(this.allOf)) {
 			jsonSchema.allOf = [];
-			for (let i = 0; i < allOf.length; i++) {
-				jsonSchema.allOf[i] = allOf[i].getJsonSchema();
+			for (let i = 0; i < this.allOf.length; i++) {
+				jsonSchema.allOf[i] = this.allOf[i].getJsonSchema();
 			}
 		}
-		if (!isEmpty(anyOf)) {
+		if (!this.isEmpty(this.anyOf)) {
 			jsonSchema.anyOf = [];
-			for (let i = 0; i < anyOf.length; i++) {
-				jsonSchema.anyOf[i] = anyOf[i].getJsonSchema();
+			for (let i = 0; i < this.anyOf.length; i++) {
+				jsonSchema.anyOf[i] = this.anyOf[i].getJsonSchema();
 			}
 		}
-		if (!isEmpty(oneOf)) {
+		if (!this.isEmpty(this.oneOf)) {
 			jsonSchema.oneOf = [];
-			for (let i = 0; i < oneOf.length; i++) {
-				jsonSchema.oneOf[i] = oneOf[i].getJsonSchema();
+			for (let i = 0; i < this.oneOf.length; i++) {
+				jsonSchema.oneOf[i] = this.oneOf[i].getJsonSchema();
 			}
 		}
-		if (!isEmpty(not)) {
-			jsonSchema.not = not;
+		if (!this.isEmpty(this.not)) {
+			jsonSchema.not = this.not;
 		}
 
 		// 6.2 Default
-		if (!isEmpty(_default)) {
-			jsonSchema.default = _default;
+		if (!this.isEmpty(this.default)) {
+			jsonSchema.default = this.default;
 		}
 
 		// 7 Semantic validation with "format"
-		if (!isEmpty(format)) {
-			jsonSchema.format = format;
+		if (!this.isEmpty(this.format)) {
+			jsonSchema.format = this.format;
 		}
 
 		// 5.4.5.  Dependencies
-		if (!isEmpty(dependencies)) {
+		if (!this.isEmpty(this.dependencies)) {
 			jsonSchema.dependencies = {}
-			propKeys = Object.keys(dependencies);
+			propKeys = Object.keys(this.dependencies);
 			propKeys.forEach(function (key, index, array) {
-				if (Array.isArray(dependencies[key])) {
-					jsonSchema.dependencies[key] = dependencies[key];  // property dependency
+				if (Array.isArray(this.dependencies[key])) {
+					jsonSchema.dependencies[key] = this.dependencies[key];  // property dependency
 				} else {
-					if (dependencies[key] !== undefined) {
-						jsonSchema.dependencies[key] = dependencies[key].getJsonSchema();  // schema dependency
+					if (this.dependencies[key] !== undefined) {
+						jsonSchema.dependencies[key] = this.dependencies[key].getJsonSchema();  // schema dependency
 					}
 				}
-			});
+			}, this);
 		}
 
 		// 5.3.  Validation keywords for arrays
-		if (!isEmpty(additionalItems)) {
-			jsonSchema.additionalItems = additionalItems;
+		if (!this.isEmpty(this.additionalItems)) {
+			jsonSchema.additionalItems = this.additionalItems;
 		}
-		if (!isEmpty(maxItems)) {
-			jsonSchema.maxItems = maxItems;
+		if (!this.isEmpty(this.maxItems)) {
+			jsonSchema.maxItems = this.maxItems;
 		}
-		if (!isEmpty(minItems) && minItems != 0) {
-			jsonSchema.minItems = minItems;
+		if (!this.isEmpty(this.minItems) && this.minItems != 0) {
+			jsonSchema.minItems = this.minItems;
 		}
-		if (!isEmpty(uniqueItems) && uniqueItems !== false) {
-			jsonSchema.uniqueItems = uniqueItems;
+		if (!this.isEmpty(this.uniqueItems) && this.uniqueItems !== false) {
+			jsonSchema.uniqueItems = this.uniqueItems;
 		}
-		if (!isEmpty(items)) {
-			if (Array.isArray(items)) {
+		if (!this.isEmpty(this.items)) {
+			if (Array.isArray(this.items)) {
 				jsonSchema.items = [];
-				items.forEach(function (item, index, array) {
+				this.items.forEach(function (item, index, array) {
 					jsonSchema.items[index] = item.getJsonSchema();
-				});
+				}, this);
 			} else {
-				jsonSchema.items = items.getJsonSchema();
+				jsonSchema.items = this.items.getJsonSchema();
 			}
 		}
 
 		// 5.4.  Validation keywords for objects
-		if (!isEmpty(maxProperties)) {
-			jsonSchema.maxProperties = maxProperties;
+		if (!this.isEmpty(this.maxProperties)) {
+			jsonSchema.maxProperties = this.maxProperties;
 		}
-		if (!isEmpty(minProperties) && minProperties !== 0) {
-			jsonSchema.minProperties = minProperties;
+		if (!this.isEmpty(this.minProperties) && this.minProperties !== 0) {
+			jsonSchema.minProperties = this.minProperties;
 		}
-		if (!isEmpty(additionalProperties)) {
-			jsonSchema.additionalProperties = additionalProperties;
+		if (!this.isEmpty(this.additionalProperties)) {
+			jsonSchema.additionalProperties = this.additionalProperties;
 		}
-		if (!isEmpty(properties)) {
+		if (!this.isEmpty(this.properties)) {
 			jsonSchema.properties = {};
-			propKeys = Object.keys(properties);
+			propKeys = Object.keys(this.properties);
 			propKeys.forEach(function (key, index, array) {
-				if (properties[key] !== undefined) {
-					jsonSchema.properties[key] = properties[key].getJsonSchema();
+				if (this.properties[key] !== undefined) {
+					jsonSchema.properties[key] = this.properties[key].getJsonSchema();
 				}
-			});
+			}, this);
 		}
-		if (!isEmpty(patternProperties)) {
+		if (!this.isEmpty(this.patternProperties)) {
 			jsonSchema.patternProperties = {};
-			propKeys = Object.keys(patternProperties);
+			propKeys = Object.keys(this.patternProperties);
 			propKeys.forEach(function (key, index, array) {
-				if (patternProperties[key] !== undefined) {
-					jsonSchema.patternProperties[key] = patternProperties[key].getJsonSchema();
+				if (this.patternProperties[key] !== undefined) {
+					jsonSchema.patternProperties[key] = this.patternProperties[key].getJsonSchema();
 				}
-			});
+			}, this);
 		}
-		if (!isEmpty(required)) {
-			jsonSchema.required = required;
+		if (!this.isEmpty(this.required)) {
+			jsonSchema.required = this.required;
 		}
 
-		if (!isEmpty(definitions)) {
+		if (!this.isEmpty(this.definitions)) {
 			jsonSchema.definitions = {};
-			propKeys = Object.keys(definitions);
+			propKeys = Object.keys(this.definitions);
 			propKeys.forEach(function (key, index, array) {
-				if (definitions[key] !== undefined) {
-					jsonSchema.definitions[key] = definitions[key].getJsonSchema();
+				if (this.definitions[key] !== undefined) {
+					jsonSchema.definitions[key] = this.definitions[key].getJsonSchema();
 				}
-			});
+			},this);
 		}
 
-		if (!isEmpty(subSchemas)) {
-			var subschemaNames = Object.keys(subSchemas);
+		if (!this.isEmpty(this.subSchemas)) {
+			var subschemaNames = Object.keys(this.subSchemas);
 			subschemaNames.forEach(function (subschemaName, index, array) {
-				jsonSchema[subschemaName] = subSchemas[subschemaName].getJsonSchema();
-			});
+				try { 
+					jsonSchema[subschemaName] = this.subSchemas[subschemaName].getJsonSchema();
+				} catch (err) {
+					console.log(err);
+					console.log(this.subSchemas);
+				}
+			},this);
 		}
 		return jsonSchema;
-	};
-	
+	}
+
 	// Getters/Setters
-	this.get$Ref = function () {
-		return $ref
-	};
 
-	this.set$Ref = function (_$ref) {
-		$ref = _$ref;
-	};
-
-	this.getId = function () {
-		return id;
-	};
-
-	this.setId = function (_id) {
-		id = _id;
-	};
-
-	this.getSubSchemas = function () {
-		return subSchemas;
-	};
-
-	this.setSubSchemas = function (_subSchemas) {
-		subSchemas = _subSchemas;
-	};
-
-	this.get$schema = function () {
-		return $schema;
-	};
-
-	this.set$schema = function (_$schema) {
-		$schema = _$schema;
-	};
-
-	this.getTitle = function () {
-		return title;
-	};
-
-	this.setTitle = function (_title) {
-		title = _title;
-	};
-
-	this.getDescription = function () {
-		return description;
-	};
-
-	this.setDescription = function (_description) {
-		description = _description;
-	};
-
-	this.concatDescription = function (_description) {
-		description += _description;
-	};
-
-	// 6.2 Default
-	this.getDefault = function () {
-		return _default;
+	// filename
+	get filename() {
+		return this[filename_NAME];
+	}
+	set filename(newFilename) {
+		this[filename_NAME] = newFilename;
 	}
 
-	this.setDefault = function (__default) {
-		_default = __default;
+	// resolvedFilename
+	get resolvedFilename() {
+		return this[resolvedFilename_NAME];
+	}
+	set resolvedFilename(newResolvedFilename) {
+		this[resolvedFilename_NAME] = newResolvedFilename;
 	}
 
-	// 7 Semantic validation with "format"
-	this.getFormat = function () {
-		return format;
+	// targetSchema
+	get targetSchema() {
+		return this[targetSchema_NAME];
+	}
+	set targetSchema(newTargetSchema) {
+		this[targetSchema_NAME] = newTargetSchema
 	}
 
-	this.setFormat = function (_format) {
-		format = _format;
+	// targetNamespace
+	get targetNamespace() {
+		return this[targetNamespace_NAME];
+	}
+	set targetNamespace(newTargetNamespace) {
+		this[targetNamespace_NAME] = newTargetNamespace;
 	}
 
-	this.getMultipleOf = function () {
-		return multipleOf;
-	};
-
-	this.setMultipleOf = function (_multipleOf) {
-		multipleOf = _multipleOf;
-	};
-
-	this.getMaximum = function () {
-		return maximum;
-	};
-
-	this.setMaximum = function (_maximum) {
-		maximum = _maximum;
-	};
-
-	this.getExclusiveMaximum = function () {
-		return exclusiveMaximum;
-	};
-
-	this.setExclusiveMaximum = function (_exclusiveMaximum) {
-		exclusiveMaximum = _exclusiveMaximum;
-	};
-
-	this.getMinimum = function () {
-		return minimum;
-	};
-
-	this.setMinimum = function (_minimum) {
-		minimum = _minimum;
-	};
-
-	this.getExclusiveMinimum = function () {
-		return exclusiveMinimum;
-	};
-
-	this.setExclusiveManimum = function (_exclusiveMinimum) {
-		exclusiveMinimum = _exclusiveMinimum;
-	};
-
-	this.getMaxLenth = function () {
-		return maxLength;
-	};
-
-	this.setMaxLength = function (_maxLength) {
-		maxLength = _maxLength;
-	};
-
-	this.getMinLength = function () {
-		return minLength;
-	};
-
-	this.setMinLength = function (_minLength) {
-		minLength = _minLength;
-	};
-
-	this.getPattern = function () {
-		return pattern;
-	};
-
-	this.setPattern = function (_pattern) {
-		pattern = _pattern;
-	};
-
-	this.getAdditionalItems = function () {
-		return additionalItems;
-	};
-
-	this.setAdditionalItems = function (_additionalItems) {
-		additionalItems = _additionalItems;
-	};
-
-	this.getItems = function () {
-		return items;
-	};
-
-	this.setItems = function (_items) {
-		items = _items;
-	};
-
-	this.getMaxItems = function () {
-		return maxItems;
-	};
-
-	this.setMaxItems = function (_maxItems) {
-		maxItems = _maxItems;
-	};
-
-	this.getMinItems = function () {
-		return minItems;
-	};
-
-	this.setMinItems = function (_minItems) {
-		minItems = _minItems;
-	};
-
-	this.getUniqueItems = function () {
-		return uniqueItems;
-	};
-
-	this.setUniqueItems = function (_uniqueItems) {
-		uniqueItems = _uniqueItems;
-	};
-
-	this.getMaxProperties = function () {
-		return maxProperties;
-	};
-
-	this.setMaxProperties = function (_maxProperies) {
-		maxProperties = _maxProperies;
-	};
-
-	this.getMinProperties = function () {
-		return minProperties;
-	};
-
-	this.setMinProperties = function (_minProperties) {
-		minProperties = _minProperties;
-	};
-
-	this.getRequired = function () {
-		return required;
-	};
-
-	this.setRequired = function (_required) {
-		required = _required;
-	};
-
-	this.addRequired = function (_required) {
-		required.push(_required);
+	// ref
+	// used to hold a JSON Pointer reference to this named type (Not used for anonymous types)
+	get ref() {
+		return this[ref_NAME];
+	}
+	set ref(newRef) {
+		this[ref_NAME] = newRef;  
 	}
 
-	this.getAdditionalProperites = function () {
-		return additionalProperties;
-	};
-
-	this.setAdditionalProperties = function (_additionalProperties) {
-		additionalProperties = _additionalProperties;
-	};
-
-	this.getProperties = function () {
-		return properties;
-	};
-
-	this.setProperties = function (_properties) {
-		properties = _properties;
-	};
-
-	this.setProperty = function (_property, _type) {
-		properties[_property] = _type;
+	// $ref
+	// used when this schema is an instance of a reference
+	get $ref() {
+		return this[$ref_NAME];
+	}
+	set $ref(new$ref) {
+		this[$ref_NAME] = new$ref;
 	}
 
-	this.getPatternProperties = function () {
-		return patternProperties;
-	};
+	// id
+	// JSON Schema draft v4 (core definitions and terminology referenced)
+	// 7.2 URI resolution scope alteration with the "id"
+	get id() {
+		return this[id_NAME];  // uri
+	}
+	set id(newId) {
+		this[id_NAME] = newId;  // uri
+	}
 
-	this.setPatterProperties = function (_patterProperties) {
-		patternProperties = _patterProperties;
-	};
+	// subSchemas
+	// 3.4 Root schema, subschema  (7.2.2 Usage)
+	get subSchemas() {
+		return this[subSchemas_NAME];
+	}
+	set subSchemas(newSubSchemas) {
+		this[subSchemas_NAME] = newSubSchemas;
+	}
+	
+	// $schema
+	get $schema() {
+		return this[$schema_NAME];  // uri
+	}
+	set $schema(new$schema) {
+		this[$schema_NAME] = new$schema;  // uri
+	}
 
-	this.getDependencies = function () {
-		return dependencies;
-	};
+	// title
+	// JSON Schema Validation specification sections referenced unless otherwise noted
+	// 6.1 Metadata keywords "title" and "description"
+	get title() {
+		return 	this[title_NAME];
+	}
+	set title(newTitle) {
+		this[title_NAME] = newTitle;
+	}
 
-	this.setDependencies = function (_dependencies) {
-		dependencies = _dependencies;
-	};
+	// description
+	get description() {
+		return this[description_NAME];
+	}
+	set description(newDescription) {
+		this[description_NAME] = newDescription;
+	}
 
-	this.getEnum = function () {
-		return _enum;
-	};
+	// default
+	get default() {
+		return this[default_NAME];
+	}
+	set default(newDefault) {
+		this[default_NAME] = newDefault;
+	}
 
-	this.setEnum = function (__enum) {
-		_enum = __enum;
-	};
+	// format
+	get format() {
+		return this[format_NAME];
+	}
+	set format(newFormat) {
+		this[format_NAME] = newFormat;
+	}
 
-	this.addEnum = function (val) {
-		_enum.push(val);
-	};
+	// 5.1.  Validation keywords for numeric instances (number and integer)
 
-	this.getType = function () {
-		return type;
-	};
+	// multiple
+	// multiple of 2 is 2, 4, 8, etc.
+	get multipleOf() {
+		return this[multipleOf_NAME];
+	}
+	set multipleOf(newMultipleOf) {
+		this[multipleOf_NAME] = newMultipleOf;
+	}
 
-	this.setType = function (_type) {
-		type = _type;
-	};
+	// maximum
+	get maximum() {
+		return this[maximum_NAME];
+	}
+	set maximum(newMaximum) {
+		this[maximum_NAME] = newMaximum;
+	}
 
-	this.getAllOf = function () {
-		return allOf;
-	};
+	// exclusiveMaximum
+	get exclusiveMaximum() {
+		return this[exclusiveMaximum_NAME];  // 5.1.2.3
+	}
+	set exclusiveMaximum(newExclusiveMaximum) {
+		this[exclusiveMaximum_NAME] = newExclusiveMaximum;  // 5.1.2.3
+	}
 
-	this.setAllOf = function (_allOf) {
-		allOf = _allOf;
-	};
+	// minimum
+	get minimum() {
+		return this[minimum_NAME];
+	}
+	set minimum(newMinimum) {
+		this[minimum_NAME] = newMinimum;
+	}
 
-	this.getAnyOf = function () {
-		return anyOf;
-	};
+	// exclusiveMinimum
+	get exclusiveMinimum() {
+		return this[exclusiveMinimum_NAME];  // 5.1. 3.3
+	}
+	set exclusiveMinimum(newExclusivMinimum) {
+		this[exclusiveMinimum_NAME] = newExclusivMinimum;  // 5.1. 3.3
+	}
 
-	this.setAnyOf = function (_anyOf) {
-		anyOf = _anyOf;
-	};
+	// 5.2.  Validation keywords for strings
 
-	this.getOneOf = function () {
-		return oneOf;
-	};
+	// maxLength
+	get maxLength() {
+		return this[maxLength_NAME];
+	}
+	set maxLength(newMaxLength) {
+		this[maxLength_NAME] = newMaxLength;
+	}
 
-	this.setOneOf = function (_oneOf) {
-		oneOf = _oneOf;
-	};
+	// minLength
+	get minLength() {
+		return this[minLength_NAME];  // 5.2.2.3
+	}
+	set minLength(newMinLength) {
+		this[minLength_NAME] = newMinLength;  // 5.2.2.3
+	}
 
-	this.getNot = function () {
-		return not;
-	};
+	// pattern
+	// 5.2.3.1 ECMA 262 regular expression dialect
+	get pattern() {
+		return this[pattern_NAME];
+	}
+	set pattern(newPattern) {
+		this[pattern_NAME] = newPattern;
+	}
 
-	this.setNot = function (_not) {
-		not = _not;
-	};
+	// 5.3.  Validation keywords for arrays
 
-	this.getDefinitions = function () {
-		return definitions;
-	};
+	// additionalItems
+	// 5.3.1.1 boolean or a schema
+	get additionalItems() {
+		return this[additionalItems_NAME];
+	}
+	set additionalItems(newAdditionalItems) {
+		this[additionalItems_NAME] = {};
+	}
 
-	this.setDefinitions = function (_definitions) {
-		definitions = _definitions;
-	};
+	// items
+	// 5.3.1.4 schema or an array of schemas but the default value is an empty schema
+	get items() {
+		return this[items_NAME];
+	}
+	set items(newItems) {
+		this[items_NAME] = newItems;
+	}
 
-	this.clone = function (target) {
-		if (!isEmpty(id)) {
-			target.setId(copy(id));
+	// maxItems
+	get maxItems() {
+		return this[maxItems_NAME];
+	}
+	set maxItems(newMaxItems) {
+		this[maxItems_NAME] = newMaxItems;
+	}
+
+	// minItems
+	get minItems() {
+		return this[minItems_NAME];  // 5.3.3.3
+	}
+	set minItems(newMinItems) {
+		this[minItems_NAME] = newMinItems;  // 5.3.3.3
+	}
+
+	// uniqueItems
+	get uniqueItems() {
+		return this[uniqueItems_NAME];  // 5.3.4.3
+	}
+	set uniqueItems(newUniqueItems) {
+		this[uniqueItems_NAME] = newUniqueItems;  // 5.3.4.3
+	}
+
+	// 5.4.  Validation keywords for objects
+
+	// maxProperties
+	get maxProperties() {
+		return this[maxProperties_NAME];
+	}
+	set maxProperties(newMaxProperties) {
+		this[maxProperties_NAME] = newMaxProperties;
+	}
+
+	// minProperties
+	get minProperties() {
+		return this[minProperties_NAME];  // 5.4.2.3
+	}
+	set minProperties(newMinProperties) {
+		this[minProperties_NAME] = newMinProperties;  // 5.4.2.3
+	}
+
+	// required
+	// 5.4.3.1 string array - must have unique values and minimum length=1
+	get required() {
+		return this[required_NAME];
+	}
+	set required(newRequired) {
+		this[required_NAME] = newRequired;
+	}
+
+	// additionalProperties
+	get additionalProperties() {
+		return this[additionalProperties_NAME];  // boolean or a schema
+	}
+	set additionalProperties(newAdditionalProperties) {
+		this[additionalProperties_NAME] = newAdditionalProperties;  // boolean or a schema
+	}
+
+	// properties
+	// 5.4.4.1 MUST be an object. Each property of this object MUST be a valid JSON Schema.
+	get properties() {
+		return this[properties_NAME];
+	}
+	set properties(newProperties) {
+		this[properties_NAME] = newProperties;
+	}
+
+	// patternProperties
+	// 5.4.4.1 MUST be an object. Each property name of this object SHOULD be a valid regular expression, according to the ECMA 262 regular expression dialect. Each property value of this object MUST be a valid JSON Schema.
+	get patternProperties() {
+		return this[patternProperties_NAME]; 
+	}	
+	set patternProperties(newPatternProperties) {
+		this[patternProperties_NAME] = newPatternProperties;
+	}
+
+	// dependencies
+	// This keyword's value MUST be an object. Each value of this object MUST be either an object or an array.
+	// If the value is an object, it MUST be a valid JSON Schema. This is called a schema dependency.
+	// If the value is an array, it MUST have at least one element. Each element MUST be a string, and elements in the array MUST be unique. This is called a property dependency.
+	get dependencies() {
+		return this[dependencies_NAME];
+	}
+	set dependencies(newDependancies) {
+		this[dependencies_NAME] = newDependancies;
+	}
+
+	// 5.5.  Validation keywords for any instance type
+
+	// enum
+	// 5.5.1.1 Elements in the array MUST be unique.
+	get enum() {
+		return this[enum_NAME];
+	}
+	set enum(newEnum) {
+		this[enum_NAME] = newEnum;
+	}
+
+	// type
+	// string or string array limited to the seven primitive types (simpleTypes)
+	get type() {
+		return this[type_NAME];
+	}
+	set type(newType) {
+		this[type_NAME] = newType;
+	}
+
+	// allOf
+	// 5.5.3.1 Elements of the array MUST be objects. Each object MUST be a valid JSON Schema.
+	get allOf() {
+		return this[allOf_NAME];
+	}
+	set allOf(newAllOf) {
+		this[allOf_NAME] = newAllOf;
+	}
+
+	// anyOf
+	// 5.5.4.1 Elements of the array MUST be objects. Each object MUST be a valid JSON Schema.
+	get anyOf() {
+		return this[anyOf_NAME];
+	}
+	set anyOf(newAnyOf) {
+		this[anyOf_NAME] = newAnyOf;
+	}
+
+	// oneOf
+	// 5.5.5.1 Elements of the array MUST be objects. Each object MUST be a valid JSON Schema.
+	get oneOf() {
+		return this[oneOf_NAME];
+	}
+	set oneOf(newOneOf) {
+		this[oneOf_NAME] = newOneOf;
+	}
+
+	// not
+	// 5.5.6.1 This object MUST be a valid JSON Schema.
+	get not() {
+		return this[not_NAME];  
+	}
+	set not(newNot) {
+		this[not_NAME] = newNot;
+	}
+
+	// definitions
+	// 5.5.7.1 MUST be an object. Each member value of this object MUST be a valid JSON Schema.
+	get definitions() {
+		return this[definitions_NAME];  
+	}
+	set definitions(newDefinitions) {
+		this[definitions_NAME] = newDefinitions;
+	}
+
+
+	clone(target) {
+		if (!this.isEmpty(this.id)) {
+			target.id = this.copy(this.id);
 		}
-		if (!isEmpty(subSchemas)) {
-			target.setSubSchemas(copy(subSchemas));
+		if (!this.isEmpty(this.subSchemas)) {
+			target.subSchemas = this.copy(this.subSchemas);
 		}
-		if (!isEmpty($schema)) {
-			target.set$schema(copy($schema));
+		if (!this.isEmpty(this.$schema)) {
+			target.$schema = this.copy(this.$schema);
 		}
 
 		// 6.1 Metadata keywords "title" and "description"
-		if (!isEmpty(title)) {
-			target.setTitle(copy(title));
+		if (!this.isEmpty(this.title)) {
+			target.title = this.copy(this.title);
 		}
-		if (!isEmpty(description)) {
-			target.setDescription(copy(description));
+		if (!this.isEmpty(this.description)) {
+			target.description = this.copy(this.description);
 		}
 
 		// 6.2 Default
-		if (!isEmpty(_default)) {
-			target.setDefault(copy(_default));
+		if (!this.isEmpty(this.default)) {
+			target.default = this.copy(this.default);
 		}
 
 		// 7 Semantic validation with "format"
-		if (!isEmpty(format)) {
-			target.setFormat(copy(format));
+		if (!this.isEmpty(this.format)) {
+			target.format = this.copy(this.format);
 		}
 
 		// 5.1.  Validation keywords for numeric instances (number and integer)
-		if (!isEmpty(multipleOf)) {
-			target.setMultipleOf(copy(multipleOf));
+		if (!this.isEmpty(this.multipleOf)) {
+			target.multipleOf = this.copy(this.multipleOf);
 		}
-		if (!isEmpty(maximum)) {
-			target.setMaximum(copy(maximum));
+		if (!this.isEmpty(this.maximum)) {
+			target.maximum = this.copy(this.maximum);
 		}
-		if (!isEmpty(exclusiveMaximum) && exclusiveMaximum !== false) {
-			target.setExclusiveMaximum(copy(exclusiveMaximum));
+		if (!this.isEmpty(this.exclusiveMaximum) && this.exclusiveMaximum !== false) {
+			target.exclusiveMaximum = this.copy(this.exclusiveMaximum);
 		}
-		if (!isEmpty(minimum)) {
-			target.setMinimum(copy(minimum));
+		if (!this.isEmpty(this.minimum)) {
+			target.minimum = this.copy(this.minimum);
 		}
-		if (!isEmpty(exclusiveMinimum) && exclusiveMinimum !== false) {
-			target.setExclusiveMinimum(copy(exclusiveMinimum));
+		if (!this.isEmpty(this.exclusiveMinimum) && this.exclusiveMinimum !== false) {
+			target.exclusiveMinimum = this.copy(this.exclusiveMinimum);
 		}
 
 		// 5.2.  Validation keywords for strings
-		if (!isEmpty(maxLength)) {
-			target.setMaxLength(copy(maxLength));
+		if (!this.isEmpty(this.maxLength)) {
+			target.setMaxLength(this.copy(this.maxLength));
 		}
-		if (!isEmpty(minLength) && minLength !== 0) {
-			target.setMinLength(copy(minLength));
+		if (!this.isEmpty(this.minLength) && this.minLength !== 0) {
+			target.setMinLength(this.copy(this.minLength));
 		}
-		if (!isEmpty(pattern)) {
-			target.setPattern(copy(pattern));
+		if (!this.isEmpty(this.pattern)) {
+			target.setPattern(this.copy(this.pattern));
 		}
 
 		// 5.3.  Validation keywords for arrays
-		if (!isEmpty(additionalItems)) {
-			target.setAdditionalItems(copy(additionalItems));
+		if (!this.isEmpty(this.additionalItems)) {
+			target.additionalItems = this.copy(this.additionalItems);
 		}
-		if (!isEmpty(items)) {
-			target.setItems(copy(items));
+		if (!this.isEmpty(this.items)) {
+			target.items = this.copy(this.items);
 		}
-		if (!isEmpty(maxItems)) {
-			target.setMaxItems(copy(maxItems));
+		if (!this.isEmpty(this.maxItems)) {
+			target.maxItems = this.copy(this.maxItems);
 		}
-		if (!isEmpty(minItems) && minItems !== 0) {
-			target.setMinItems(copy(minItems));
+		if (!this.isEmpty(this.minItems) && this.minItems !== 0) {
+			target.minItems = this.copy(this.minItems);
 		}
-		if (!isEmpty(uniqueItems) && uniqueItems !== false) {
-			target.setUniqueItems(copy(uniqueItems));
+		if (!this.isEmpty(this.uniqueItems) && this.uniqueItems !== false) {
+			target.uniqueItems = this.copy(this.uniqueItems);
 		}
 
 		// 5.4.  Validation keywords for objects
-		if (!isEmpty(maxProperties)) {
-			target.setMaxProperties(copy(maxProperties));
+		if (!this.isEmpty(this.maxProperties)) {
+			target.maxProperties = this.copy(this.maxProperties);
 		}
-		if (!isEmpty(minProperties) && minProperties !== 0) {
-			target.setMinProperties(copy(minProperties));
+		if (!this.isEmpty(this.minProperties) && this.minProperties !== 0) {
+			target.minProperties = this.copy(this.minProperties);
 		}
-		if (!isEmpty(required)) {
-			target.setRequired(copy(required));
+		if (!this.isEmpty(this.required)) {
+			target.required = this.copy(this.required);
 		}
-		if (!isEmpty(additionalProperties)) {
-			target.setAdditionalProperties(copy(additionalProperties));
+		if (!this.isEmpty(this.additionalProperties)) {
+			target.additionalProperties = this.copy(this.additionalProperties);
 		}
-		if (!isEmpty(properties)) {
-			target.setProperties(copy(properties));
+		if (!this.isEmpty(this.properties)) {
+			target.properties = this.copy(this.properties);
 		}
-		if (!isEmpty(patternProperties)) {
-			target.setPatternProperties(copy(patternProperties));
+		if (!this.isEmpty(this.patternProperties)) {
+			target.patternProperties = this.copy(this.patternProperties);
 		}
 
 		// 5.4.5.  Dependencies
-		if (!isEmpty(dependencies)) {
-			target.setDependencies(copy(dependencies));
+		if (!this.isEmpty(this.dependencies)) {
+			target.dependencies = this.copy(this.dependencies);
 		}
 
 		// 5.5.  Validation keywords for any instance type
-		if (!isEmpty(_enum)) {
-			target.setEnum(copy(_enum));
+		if (!this.isEmpty(this.enum)) {
+			target.enum = this.copy(this.enum);
 		}
-		if (!isEmpty(type)) {
-			target.setType(copy(type));
-		}
-
-		if (!isEmpty(allOf)) {
-			target.setAllOf(copy(allOf));
-		}
-		if (!isEmpty(anyOf)) {
-			target.setAnyOf(copy(anyOf));
-		}
-		if (!isEmpty(oneOf)) {
-			target.setOneOf(copy(oneOf));
-		}
-		if (!isEmpty(not)) {
-			target.setNot(copy(not));
+		if (!this.isEmpty(this.type)) {
+			target.type = this.copy(this.type);
 		}
 
-		if (!isEmpty(definitions)) {
-			target.setDefinitions(copy(definitions));
+		if (!this.isEmpty(this.allOf)) {
+			target.allOf = this.copy(this.allOf);
+		}
+		if (!this.isEmpty(this.anyOf)) {
+			target.anyOf = this.copy(this.anyOf);
+		}
+		if (!this.isEmpty(this.oneOf)) {
+			target.oneOf = this.copy(this.oneOf);
+		}
+		if (!this.isEmpty(this.not)) {
+			target.not = this.copy(this.not);
+		}
+
+		if (!this.isEmpty(this.definitions)) {
+			target.definitions = this.copy(this.definitions);
 		}
 	}
+
+	addEnum(val) {
+		this.enum.push(val);
+	}
 	
-	this.writeFile = function(dir) {
+	addRequired(_required) {
+		this.required.push(_required);
+	}
+	
+	setProperty(_property, _type) {
+		this.properties[_property] = _type;
+	}
+
+	writeFile(dir) {
 		var data = JSON.stringify(this.getJsonSchema(), null, '\t');
-		fs.writeFileSync(path.join(dir,this.getFilename()), data);
+		fs.writeFileSync(path.join(dir, this.filename), data);
 	}
 
 	/*
@@ -819,17 +942,17 @@ function JsonSchemaFile(parms) {
 	 * 
 	 *  Parameters:
 	 *  baseType - (jsonSchemaFile) JSON Schema of the base type.
-	 *  extentionType - (jsonTypes) one of the seven core JSON Schema types.
+	 *  extentionType - (jsonSchemaTypes) one of the seven core JSON Schema types.
 	 */
-	this.extend = function (baseType, extentionType) {
-		this.getAllOf().push(baseType.get$RefToSchema());
+	extend(baseType, extentionType) {
+		this.allOf.push(baseType.get$RefToSchema());
 		var extentionSchema = new JsonSchemaFile({});
-		extentionSchema.setType(extentionType);
-		this.getAllOf().push(extentionSchema);
+		extentionSchema.type = extentionType;
+		this.allOf.push(extentionSchema);
 		return extentionSchema;
 	}
 
-	this.addAttributeProperty = function (propertyName, customType, minOccursAttr) {
+	addAttributeProperty(propertyName, customType, minOccursAttr) {
 		var name = "@" + propertyName;
 		if (minOccursAttr === "required") {
 			this.addRequired(name);

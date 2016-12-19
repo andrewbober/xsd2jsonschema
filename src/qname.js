@@ -4,17 +4,30 @@
 
 "use strict";
 
-function Qname (qname) {
+var qualName_NAME = Symbol();
 
-	var i = qname.indexOf(':');
-	var qualName = i < 0 ? [ '', qname ] : qname.split(':');
+class Qname {
+	
+	constructor(qname) {
+		var i = qname.indexOf(':');
+		this.qualName = i < 0 ? [ '', qname ] : qname.split(':');
+	}
 
-	this.prefix = function () {
-		return qualName[0];
-	};
+	get qualName() {
+		return this[qualName_NAME];
+	}
 
-	this.local = function () {
-		return qualName[1];
+	set qualName(newQualName) {
+		this[qualName_NAME] = newQualName;
+	}
+
+
+	getPrefix() {
+		return this.qualName[0];
+	}
+
+	getLocal() {
+		return this.qualName[1];
 	}
 }
 

@@ -1,9 +1,14 @@
 {
+    "plugins": [
+    ],
     "env": {
         "es6": true,
-        "node": true
+        "node": true,
+        "jasmine": true
     },
-    "extends": "eslint:recommended",
+    "extends": [
+        "eslint:recommended"
+    ],
     "rules": {
         "no-unused-vars": [
             "error",

@@ -4,59 +4,63 @@
 
 "use strict";
 
-function XmlUsageVisitor() {
-    var uris = {};
+var BaseConvertionVisitor = require("./baseConversionVisitor");
 
-	function addSchema(uri) {
-		if (uris[uri] === undefined) {
-			uris[uri] = { tagCounts: {} }
+var uris_NAME = Symbol();
+
+class XmlUsageVisitor extends BaseConvertionVisitor {
+	constructor() {
+		super(undefined);
+		this.uris = {};
+	}
+
+	get uris() {
+		return this[uris_NAME];
+	}
+
+	set uris(newUris) {
+		this[uris_NAME] = newUris;
+	}
+
+	addSchema(uri) {
+		if (this.uris[uri] === undefined) {
+			this.uris[uri] = { tagCounts: {} }
 		}
 	}
 
-	function addTag(uri, xmlTag) {
-        if (uris[uri].tagCounts[xmlTag] === undefined) {
-			uris[uri].tagCounts[xmlTag] = 1;
-        } else {
-			uris[uri].tagCounts[xmlTag] += 1;
-        }
+	addTag(uri, xmlTag) {
+		if (this.uris[uri].tagCounts[xmlTag] === undefined) {
+			this.uris[uri].tagCounts[xmlTag] = 1;
+		} else {
+			this.uris[uri].tagCounts[xmlTag] += 1;
+		}
 	}
 
-    this.visit = function (node, jsonSchema, xsd) {
-		var uri = xsd.getUri();
-		addSchema(uri);
-		addTag(uri, node.name());
-        return true;
-    };
+	visit(node, jsonSchema, xsd) {
+		var uri = xsd.uri;
+		this.addSchema(uri);
+		this.addTag(uri, node.name());
+		return true;
+	}
 
-	this.onBegin = function (jsonSchema, xsd) {
-		if (uris[xsd.getUri()] === undefined) {
+	onBegin(jsonSchema, xsd) {
+		if (this.uris[xsd.uri] === undefined) {
 			return true;
 		} else {
 			return false;
 		}
-	};
+	}
 
-	this.onEnd = function (jsonSchema, xsd) {
-	};
-
-	// Default implementaion should be in a base class
-	this.enterState = function enterState(node, jsonSchema, xsd) {
-	};
-
-	// Default implementaion should be in a base class
-	this.exitState = function exitState() {
-	};
-
-	this.log = function () {
-		Object.keys(uris).sort().forEach(function (uri, index, array) {
+	dump() {
+		Object.keys(this.uris).sort().forEach(function (uri, index, array) {
 			console.log(uri);
 			console.log("-----------------");
-			Object.keys(uris[uri].tagCounts).sort().forEach(function (xmlTag, index, array) {
-				console.log(xmlTag + " = " + uris[uri].tagCounts[xmlTag]);
-			})
+			Object.keys(this.uris[uri].tagCounts).sort().forEach(function (xmlTag, index, array) {
+				console.log(xmlTag + " = " + this.uris[uri].tagCounts[xmlTag]);
+			}, this)
 			console.log();
-        });
-    }
+		}, this);
+	}
 
 }
 

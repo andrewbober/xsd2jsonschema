@@ -1,19 +1,54 @@
 {
-    "name": "Xsd2JsonSchema",
-    "version": "0.0.1",
-    "description": "A tool to convert XML Schema to JSON Schema.",
-    "license": "Apache-2.0",
-    "author": "Andrew Bober",
-    "main": "sample.js",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/andrewbober/xsd2jsonschema.git"
-    },
-    "engines": {
-        "node": ">=5.0.0"
-    },
-    "dependencies": {
-        "libxmljs": "^0.18.0"
-    },
-    "scripts": {}
+  "name": "Xsd2JsonSchema",
+  "description": "A tool to convert XML Schema to JSON Schema.",
+  "version": "0.0.2",
+  "homepage": "http://www.xsd2jsonschema.org",
+  "license": "Apache-2.0",
+  "author": {
+    "name": "Andrew Bober",
+    "email": "andy@andrewbober.com",
+    "url": "http://www.andrewbober.com"
+  },
+  "contributors": [],
+  "keywords": [
+    "XML",
+    "xml",
+    "Schema",
+    "XML Schema",
+    "xml schema",
+    "XSD",
+    "xsd",
+    "JSON",
+    "json",
+    "JSON Schema",
+    "json schema",
+    "draft-v4",
+    "conversion",
+    "convert",
+    "transform"
+  ],
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/andrewbober/xsd2jsonschema.git"
+  },
+  "engines": {
+    "node": ">=6.9.2"
+  },
+  "dependencies": {
+    "xmldom": "^0.1.27"
+  },
+  "scripts": {
+    "postinstall": "require-self && npm run cover && npm run update-coveralls",
+    "test": "jasmine",
+    "cover": "istanbul cover jasmine",
+    "update-coveralls": "cat coverage/lcov.info | coveralls",
+    "example": "node example/example.js convert example/ ExampleTypes_2016-01-01.xsd"
+  },
+  "devDependencies": {
+    "coveralls": "^2.11.15",
+    "istanbul": "^0.4.5",
+    "jasmine": "^2.5.2",
+    "require-self": "^0.1.0"
+  }
 }

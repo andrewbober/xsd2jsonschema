@@ -5,115 +5,82 @@
 "use strict";
 
 var Qname = require("./qname");
-var jsonTypes = require('./jsonTypes');
-var customTypes = require('./customTypes');
+var jsonSchemaTypes = require("./jsonSchemaTypes");
+var customTypes = require("./customTypes");
 var JsonSchemaFile = require("./jsonSchemaFile");
 var RestrictionConverter = require("./restrictionConverter");
 var parsingState = require("./parsingState");
-var attrConst = require('./xsdAttributes');
-var elConst = require('./xsdElements');
+var attrConst = require("./xsdAttributes");
+var elConst = require("./xsdElements");
 var utils = require("./utils");
 
-function BaseConverter() {
-	var workingJsonSchema;
-	var restrictionConverter = new RestrictionConverter();
+var workingJsonSchema_NAME = Symbol();
+var restrictionConverter_NAME = Symbol();
 
-	this.setWorkingJsonSchema = function (_workingJsonSchema) {
-		workingJsonSchema = _workingJsonSchema;
+class BaseConverter {
+	constructor() {
+		this.restrictionConverter = new RestrictionConverter();
 	}
 
-	function dumpJsonSchema(jsonSchema) {
+	get workingJsonSchema() {
+		return this[workingJsonSchema_NAME];
+	}
+	set workingJsonSchema(newWorkingSchema) {
+		this[workingJsonSchema_NAME] = newWorkingSchema;
+	}
+
+	get restrictionConverter() {
+		return this[restrictionConverter_NAME];
+	}
+	set restrictionConverter(newRestrictionConverter) {
+		this[restrictionConverter_NAME] = newRestrictionConverter;
+	}
+
+	dumpJsonSchema(jsonSchema) {
 		Object.keys(jsonSchema).forEach(function (prop, index, array) {
 			console.log(prop + "=" + jsonSchema[prop]);
 		});
 	}
 
-	function getAttrValue(node, attrName) {
-		var attr = getAttr(node, attrName);
-		var retval;
-		if (attr != undefined) {
-			retval = attr.value();
+	convert(node, jsonSchema, xsd) {
+		var id = xsd.getAttrValue(node, attrConst.id);
+		if (id !== undefined) {
+			var qualifiedTypeName = new Qname(id);
+			this.workingJsonSchema.addAttributeProperty(qualifiedTypeName.getLocal(), this.createAttributeSchema(node, jsonSchema, xsd, qualifiedTypeName));
 		}
-		return retval;
+		return this[xsd.getNodeName(node)](node, jsonSchema, xsd);
 	}
 
-	function getAttr(node, attrName) {
-		var retval;
-		node.attrs().forEach(function (attr, index, array) {
-			if (attr.name() === attrName) {
-				retval = attr;
-			}
-		});
-		return retval;
-	}
-
-	function hasAttribute(node, attrName) {
-		var attr = getAttr(node, attrName);
-		if (attr === undefined) {
-			return false;
-		} else {
-			return true;
-		}
-	}
-
-	function isNamed(node) {
-		return hasAttribute(node, attrConst.name);
-	}
-
-	function isReference(node) {
-		return hasAttribute(node, attrConst.ref);
-	}
-
-	function getValueAttr(node) {
-		return getAttr(node, attrConst.value).value();
-	}
-
-	this.dumpNode = function (node) {
-		console.log("__________________________________________");
-		console.log("XML-Type= " + node.type());
-		console.log("XML-TAG-Name= " + node.name());
-		console.log("XML-TAG-NameSpace= " + node.namespace().prefix() + "=" + node.namespace().href());
-		var text = node.text();
-		if (text !== undefined && text.length != 0) {
-			console.log("XML-Text= [" + text + "]");
-		}
-		var attrs = node.attrs();
-		console.log("XML-TAG-Attributes:");
-		attrs.forEach(function (attr, index, array) {
-			console.log("\t" + index + ") " + attr.name() + "=" + attr.value());
-		});
-		console.log("_______________________");
-	};
 	/*
 	
 	Need to figure out what to do with this CIECA specific stuff.
 	
-		this.BMSVersion = function (node, jsonSchema, xsd) {
+		BMSVersion(node, jsonSchema, xsd) {
 			return true;
 		};
 	
-		this.SchemaBuildNumber = function (node, jsonSchema, xsd) {
+		SchemaBuildNumber(node, jsonSchema, xsd) {
 			return true;
 		};
 	*/
-	this.all = function (node, jsonSchema, xsd) {
+	all(node, jsonSchema, xsd) {
 		// TODO: id, minOccurs, maxOccurs
 		// (TBD)
-	};
+	}
 
-	this.alternative = function (node, jsonSchema, xsd) {
+	alternative(node, jsonSchema, xsd) {
 		// TODO: id, test, type, xpathDefaultNamespace
 		// (TBD)
 		return true;
-	};
+	}
 
-	this.annotation = function (node, jsonSchema, xsd) {
+	annotation(node, jsonSchema, xsd) {
 		// TODO: id
 		// Ignore this grouping and continue processing children
 		return true;
-	};
+	}
 
-	this.any = function (node, jsonSchema, xsd) {
+	any(node, jsonSchema, xsd) {
 		// TODO: id, minOccurs, maxOccurs, namespace, processContents, notNamespace, not QName
 		// (TBD)
 		var state = parsingState.getCurrentState();
@@ -132,34 +99,35 @@ function BaseConverter() {
 				throw new Error("any() called from within unexpected parsing state!");
 		}
 		return true;
-	};
+	}
 
-	this.anyAttribute = function (node, jsonSchema, xsd) {
+	anyAttribute(node, jsonSchema, xsd) {
 		// TODO: id, namespace, processContents, notNamespace, not QName
 		// (TBD)
 		return true;
-	};
+	}
 
-	this.appinfo = function (node, jsonSchema, xsd) {
+	appinfo(node, jsonSchema, xsd) {
 		// TODO: source
 		// (TBD)
-		workingJsonSchema.setDescription(node.toString());
+		this.workingJsonSchema.description = node.toString();
 		return false;
-	};
+	}
 
-	this.assert = function (node, jsonSchema, xsd) {
+	assert(node, jsonSchema, xsd) {
 		// TODO: id, test, xpathDefaultNamespace
 		// (TBD)
 		return true;
-	};
+	}
 
-	this.assertion = function (node, jsonSchema, xsd) {
+	assertion(node, jsonSchema, xsd) {
 		// TODO: id, test, xpathDefaultNamespace
 		// (TBD)
 		return true;
-	};
+	}
 
-	function addAttributeProperty(targetSchema, propertyName, customType, minOccursAttr) {
+	// TODO: this function has been moved to jsonSchemaFile
+	addAttributeProperty(targetSchema, propertyName, customType, minOccursAttr) {
 		var name = "@" + propertyName;
 		if (minOccursAttr === "required") {
 			targetSchema.addRequired(name);
@@ -171,123 +139,113 @@ function BaseConverter() {
 	 * A factory method to create JSON Schemas of one of the basic JSON Schema Types.
 	 *
 	 */
-	function createAttributeSchema(node, jsonSchema, xsd, qualifiedTypeName) {
+	createAttributeSchema(node, jsonSchema, xsd, qualifiedTypeName) {
 		var attributeJsonSchema = new JsonSchemaFile({});
-		restrictionConverter[qualifiedTypeName.local()](node, attributeJsonSchema)
+		this.restrictionConverter[qualifiedTypeName.getLocal()](node, attributeJsonSchema)
 		return attributeJsonSchema;
 	}
 
-	function handleAttributeGlobal(node, jsonSchema, xsd) {
-		var name = getAttrValue(node, attrConst.name);
-		var typeName = getAttrValue(node, attrConst.type);
+	handleAttributeGlobal(node, jsonSchema, xsd) {
+		var name = xsd.getAttrValue(node, attrConst.name);
+		var typeName = xsd.getAttrValue(node, attrConst.type);
 		// TODO: id, default, fixed, inheritable (TBD)
 		var attributeJsonSchema;
 
-		parsingState.pushSchema(workingJsonSchema);
+		parsingState.pushSchema(this.workingJsonSchema);
 		if (typeName !== undefined) {
 			var qualifiedTypeName = new Qname(typeName);
 			attributeJsonSchema = customTypes.getGlobalAtrribute(name, jsonSchema);
 			jsonSchema.addSubSchema(name, attributeJsonSchema);
-			return restrictionConverter[qualifiedTypeName.local()](node, attributeJsonSchema);
+			return this.restrictionConverter[qualifiedTypeName.getLocal()](node, attributeJsonSchema);
 		} else {
 			// Setup the working schema and allow processing to continue for any contained simpleType or annotation nodes.
 			attributeJsonSchema = customTypes.getGlobalAtrribute(name, jsonSchema);
 			jsonSchema.addSubSchema(name, attributeJsonSchema);
-			workingJsonSchema = attributeJsonSchema;
+			this.workingJsonSchema = attributeJsonSchema;
 		}
 		return true;
 	}
 
-	function handleAttributeLocal(node, jsonSchema, xsd) {
-		var name = getAttrValue(node, attrConst.name);
-		var type = getAttrValue(node, attrConst.type);
-		var use = getAttrValue(node, attrConst.use);
+	handleAttributeLocal(node, jsonSchema, xsd) {
+		var name = xsd.getAttrValue(node, attrConst.name);
+		var type = xsd.getAttrValue(node, attrConst.type);
+		var use = xsd.getAttrValue(node, attrConst.use);
 		// TODO: id, form, default, fixed, targetNamespace, inheritable (TBD)
 
-		parsingState.pushSchema(workingJsonSchema);
+		parsingState.pushSchema(this.workingJsonSchema);
 		if (type !== undefined) {
 			var qualifiedTypeName = new Qname(type);
-			workingJsonSchema.addAttributeProperty(name, createAttributeSchema(node, jsonSchema, xsd, qualifiedTypeName), use);
+			this.workingJsonSchema.addAttributeProperty(name, this.createAttributeSchema(node, jsonSchema, xsd, qualifiedTypeName), use);
 		} else {
 			// Setup the working schema and allow processing to continue for any contained simpleType or annotation nodes.
 			var attributeJsonSchema = new JsonSchemaFile({});
-			workingJsonSchema.addAttributeProperty(name, attributeJsonSchema, use);
-			workingJsonSchema = attributeJsonSchema;
+			this.workingJsonSchema.addAttributeProperty(name, attributeJsonSchema, use);
+			this.workingJsonSchema = attributeJsonSchema;
 		}
 		return true;
 	}
 
-	function handleAttributeReference(node, jsonSchema, xsd) {
-		var name = getAttrValue(node, attrConst.name);
-		var ref = getAttrValue(node, attrConst.ref);
-		var use = getAttrValue(node, attrConst.use);
+	handleAttributeReference(node, jsonSchema, xsd) {
+		var name = xsd.getAttrValue(node, attrConst.name);
+		var ref = xsd.getAttrValue(node, attrConst.ref);
+		var use = xsd.getAttrValue(node, attrConst.use);
 		// TODO: id, default, fixed, inheritable (TBD)
 
 		if (ref !== undefined) {
 			var attrSchema = customTypes.getGlobalAtrribute(ref, jsonSchema);
-			addAttributeProperty(workingJsonSchema, name, attrSchema.get$RefToSchema(), use);
+			this.addAttributeProperty(this.workingJsonSchema, name, attrSchema.get$RefToSchema(), use);
+			this.workingJsonSchema.addAttributeProperty(name, attrSchema.get$RefToSchema(), use);
 		}
 
 		return true;
 	}
 
-	this.attribute = function (node, jsonSchema, xsd) {
+	attribute(node, jsonSchema, xsd) {
 		// (TBD)
-		//this.dumpNode(node);	
-		var refAttr = getAttr(node, attrConst.ref);
-
-		if (refAttr !== undefined) {
-			return handleAttributeReference(node, jsonSchema, xsd);
+		//dumpNode(node);	
+		if (xsd.isReference(node)) {
+			return this.handleAttributeReference(node, jsonSchema, xsd);
 		} else if (parsingState.isTopLevelEntity()) {
-			return handleAttributeGlobal(node, jsonSchema, xsd);
+			return this.handleAttributeGlobal(node, jsonSchema, xsd);
 		} else {
-			return handleAttributeLocal(node, jsonSchema, xsd);
+			return this.handleAttributeLocal(node, jsonSchema, xsd);
 		}
-	};
+	}
 
-	function handleAttributeGroupDefinition(node, jsonSchema, xsd) {
+	handleAttributeGroupDefinition(node, jsonSchema, xsd) {
 		// TODO id, name 
 		// (TBD)
 	}
 
-	function handleAttributeGroupReference(node, jsonSchema, xsd) {
+	handleAttributeGroupReference(node, jsonSchema, xsd) {
 		// TODO id, ref (TBD)
 	}
 
-	this.attributeGroup = function (node, jsonSchema, xsd) {
+	attributeGroup(node, jsonSchema, xsd) {
 		// (TBD)
 		return true;
 	}
 
-	function handleChoiceArray(node, jsonSchema, xsd) {
-		var minOccursAttr = getAttr(node, attrConst.minOccurs);
-		var maxOccursAttr = getAttr(node, attrConst.maxOccurs);
+	handleChoiceArray(node, jsonSchema, xsd) {
+		var minOccursAttr = xsd.getAttrValue(node, attrConst.minOccurs);
+		var maxOccursAttr = xsd.getAttrValue(node, attrConst.maxOccurs);
 		// TODO: id
 		// (TBD)
 		throw new Error("choice array needs to be implemented!!");
 		return true;
 	}
 
-	function countChildren(node, tagName) {
-		var xpath = node.namespace().prefix() + ":" + tagName;
-		var ns = {};
-		ns[node.namespace().prefix()] = node.namespace().href();
-		var elements = node.parent().find(xpath, ns);
-		console.log("Found [" + elements.length + "] '" + tagName + "' elements within '" + node.parent().parent().attr("name") + "'");
-		return elements.length;
-	}
-
-	this.choice = function (node, jsonSchema, xsd) {
+	choice(node, jsonSchema, xsd) {
 		// TODO: id
-		var minOccursAttr = getAttr(node, attrConst.minOccurs);
-		var maxOccursAttr = getAttr(node, attrConst.maxOccurs);
+		var minOccursAttr = xsd.getAttrValue(node, attrConst.minOccurs);
+		var maxOccursAttr = xsd.getAttrValue(node, attrConst.maxOccurs);
 
-		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr.value() > 1 || maxOccursAttr.value() === "unbounded"));
+		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === "unbounded"));
 		if (isArray) {
-			return handleChoiceArray(node, jsonSchema, xsd);
+			return this.handleChoiceArray(node, jsonSchema, xsd);
 		}
-		var isOptional = (minOccursAttr !== undefined && minOccursAttr.value() == 0);
-		var isMulti = countChildren(node, elConst.choice) > 1;
+		var isOptional = (minOccursAttr !== undefined && minOccursAttr == 0);
+		var isMulti = xsd.countChildren(node, elConst.choice) > 1;
 		var state = parsingState.getCurrentState();
 		switch (state.name) {
 			case elConst.choice:
@@ -307,14 +265,14 @@ function BaseConverter() {
 			case elConst.sequence:
 				if (isOptional) {
 					var anyOfSchema = new JsonSchemaFile({});
-					workingJsonSchema.getAnyOf().push(anyOfSchema);
-					parsingState.pushSchema(workingJsonSchema)
-					workingJsonSchema = anyOfSchema;
+					this.workingJsonSchema.anyOf.push(anyOfSchema);
+					parsingState.pushSchema(this.workingJsonSchema)
+					this.workingJsonSchema = anyOfSchema;
 				} else if (isMulti) {
 					var allOfSchema = new JsonSchemaFile({});
-					workingJsonSchema.getAllOf().push(allOfSchema);
-					parsingState.pushSchema(workingJsonSchema);
-					workingJsonSchema = allOfSchema;
+					this.workingJsonSchema.allOf.push(allOfSchema);
+					parsingState.pushSchema(this.workingJsonSchema);
+					this.workingJsonSchema = allOfSchema;
 				} else {
 					// Allow to fall through and continue processing.  
 					// The schema should be estabished by the parent of the sequence.
@@ -326,81 +284,81 @@ function BaseConverter() {
 				throw new Error("choice() called from within unexpected parsing state!");
 		}
 		return true;
-	};
+	}
 
-	this.comment = function (node, jsonSchema, xsd) {
+	comment(node, jsonSchema, xsd) {
 		// do nothing - This is an XML comment (e.g. <!-- text -->) 
 		return true;
-	};
+	}
 
-	this.complexContent = function (node, jsonSchema, xsd) {
+	complexContent(node, jsonSchema, xsd) {
 		// TODO: id, mixed 
 		// Ignore this grouping and continue processing children
 		return true;
-	};
+	}
 
-	function handleNamedComplexType(node, jsonSchema, xsd) {
-		var nameAttr = getAttr(node, attrConst.name);
+	handleNamedComplexType(node, jsonSchema, xsd) {
+		var nameAttr = xsd.getAttrValue(node, attrConst.name);
 		// TODO: id, mixed, abstract, block, final, defaultAttributesApply
 
 		var state = parsingState.getCurrentState();
 		switch (state.name) {
 			case elConst.schema:
-				workingJsonSchema = customTypes.getCustomType(nameAttr.value(), jsonSchema);
-				jsonSchema.addSubSchema(nameAttr.value(), workingJsonSchema);
-				workingJsonSchema.setType(jsonTypes.OBJECT);
+				this.workingJsonSchema = customTypes.getCustomType(nameAttr, jsonSchema);
+				jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
+				this.workingJsonSchema.type = jsonSchemaTypes.OBJECT;
 				break;
 			case elConst.redefine:
 				throw new Error("complexType() needs to be impemented within redefine");
 			case elConst.override:
 				throw new Error("complexType() needs to be impemented within override");
 			default:
-				throw new Error("complexType() called from within unexpected parsing state!");
+				throw new Error("complexType() called from within unexpected parsing state! state=" + state.name);
 		}
 		return true;
 	}
 
-	function handleAnonymousComplexType(node, jsonSchema, xsd) {
+	handleAnonymousComplexType(node, jsonSchema, xsd) {
 		// TODO: id, mixed, defaultAttributesApply
 		// Ignore this grouping and continue processing children
 		return true;
 	}
 
-	this.complexType = function (node, jsonSchema, xsd) {
-		if (isNamed(node)) {
-			return handleNamedComplexType(node, jsonSchema, xsd);
+	complexType(node, jsonSchema, xsd) {
+		if (xsd.isNamed(node)) {
+			return this.handleNamedComplexType(node, jsonSchema, xsd);
 		} else {
-			return handleAnonymousComplexType(node, jsonSchema, xsd);
+			return this.handleAnonymousComplexType(node, jsonSchema, xsd);
 		}
-	};
+	}
 
-	this.defaultOpenContent = function (node, jsonSchema, xsd) {
+	defaultOpenContent(node, jsonSchema, xsd) {
 		// TODO: schema
 		// (TBD)
 		return true;
-	};
+	}
 
-	this.documentation = function (node, jsonSchema, xsd) {
+	documentation(node, jsonSchema, xsd) {
 		// TODO: source, xml:lang
 		// Ignore this grouping and continue processing children.  The actual text will come through the text() method.
 		return true;
-	};
+	}
 
-	function handleElementGlobal(node, jsonSchema, xsd) {
-		var nameAttr = getAttr(node, attrConst.name);
-		var typeAttr = getAttr(node, attrConst.type);
+	handleElementGlobal(node, jsonSchema, xsd) {
+		var nameAttr = xsd.getAttrValue(node, attrConst.name);
+		var typeAttr = xsd.getAttrValue(node, attrConst.type);
 		// TODO: id, defaut, fixed, nillable, abstract, substitutionGroup, block, final
 
 		if (typeAttr !== undefined) {
-			var typeName = typeAttr.value();
+			var typeName = typeAttr;
 			var customTypeType = customTypes.getCustomType(typeName, jsonSchema);
-			workingJsonSchema = customTypeType.get$RefToSchema();
-			jsonSchema.addSubSchema(nameAttr.value(), workingJsonSchema);
-			//workingJsonSchema.setType(jsonTypes.OBJECT);
+			this.workingJsonSchema = customTypeType.get$RefToSchema();
+			jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
+			//workingJsonSchema.type = jsonSchemaTypes.OBJECT;
 		} else {
-			workingJsonSchema = customTypes.getCustomType(nameAttr.value(), jsonSchema);
-			jsonSchema.addSubSchema(nameAttr.value(), workingJsonSchema);
-			workingJsonSchema.setType(jsonTypes.OBJECT);
+			this.workingJsonSchema = customTypes.getCustomType(nameAttr, jsonSchema);
+			jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
+			this.workingJsonSchema.type = jsonSchemaTypes.OBJECT;
 		}
 		if (parsingState.inChoice()) {
 			throw new Error("choice needs to be implemented in handleElementGlobal()!");
@@ -408,72 +366,72 @@ function BaseConverter() {
 		return true;
 	}
 
-	function addProperty(targetSchema, propertyName, customType, minOccursAttr) {
-		if (minOccursAttr === undefined || minOccursAttr === "required" || minOccursAttr.value() > 0) {
+	addProperty(targetSchema, propertyName, customType, minOccursAttr) {
+		if (minOccursAttr === undefined || minOccursAttr === "required" || minOccursAttr > 0) {
 			targetSchema.addRequired(propertyName);
 		}
 		targetSchema.setProperty(propertyName, customType);
 	}
 
-	function addChoiceProperty(targetSchema, propertyName, customType, minOccursAttr) {
+	addChoiceProperty(targetSchema, propertyName, customType, minOccursAttr) {
 		var choiceSchema = new JsonSchemaFile({});
-		//choiceSchema.setAdditionalProperties(false);
-		addProperty(choiceSchema, propertyName, customType, minOccursAttr);
-		targetSchema.getOneOf().push(choiceSchema);
+		//choiceSchema.additionalProperties = false;
+		this.addProperty(choiceSchema, propertyName, customType, minOccursAttr);
+		targetSchema.oneOf.push(choiceSchema);
 	}
 
-	function addPropertyAsArray(targetSchema, propertyName, customType, minOccursAttr, maxOccursAttr) {
+	addPropertyAsArray(targetSchema, propertyName, customType, minOccursAttr, maxOccursAttr) {
 		var arraySchema = new JsonSchemaFile({});
-		arraySchema.setType(jsonTypes.ARRAY);
-		var min = minOccursAttr === undefined ? undefined : minOccursAttr.value();
-		var max = maxOccursAttr === undefined ? undefined : maxOccursAttr.value();
-		arraySchema.setMinItems(min);
-		arraySchema.setMaxItems(max === "unbounded" ? undefined : max);
-		arraySchema.setItems(customType);
-		addProperty(targetSchema, propertyName, arraySchema, minOccursAttr);
+		arraySchema.type = jsonSchemaTypes.ARRAY;
+		var min = minOccursAttr === undefined ? undefined : minOccursAttr;
+		var max = maxOccursAttr === undefined ? undefined : maxOccursAttr;
+		arraySchema.minItems = min;
+		arraySchema.maxItems = max === "unbounded" ? undefined : max;
+		arraySchema.items = customType;
+		this.addProperty(targetSchema, propertyName, arraySchema, minOccursAttr);
 	}
 
-	function addChoicePropertyAsArray(targetSchema, propertyName, customType, minOccursAttr, maxOccursAttr) {
+	addChoicePropertyAsArray(targetSchema, propertyName, customType, minOccursAttr, maxOccursAttr) {
 		var choiceSchema = new JsonSchemaFile({});
-		//choiceSchema.setAdditionalProperties(false);
-		addPropertyAsArray(choiceSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
-		targetSchema.getOneOf().push(choiceSchema);
+		//choiceSchema.additionalProperties = false;
+		this.addPropertyAsArray(choiceSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
+		targetSchema.oneOf.push(choiceSchema);
 	}
 
-	function handleElementLocal(node, jsonSchema, xsd) {
-		var nameAttr = getAttr(node, attrConst.name);
-		var typeAttr = getAttr(node, attrConst.type);
-		var minOccursAttr = getAttr(node, attrConst.minOccurs);
-		var maxOccursAttr = getAttr(node, attrConst.maxOccurs);
+	handleElementLocal(node, jsonSchema, xsd) {
+		var nameAttr = xsd.getAttrValue(node, attrConst.name);
+		var typeAttr = xsd.getAttrValue(node, attrConst.type);
+		var minOccursAttr = xsd.getAttrValue(node, attrConst.minOccurs);
+		var maxOccursAttr = xsd.getAttrValue(node, attrConst.maxOccurs);
 		// TODO: id, form, defaut, fixed, nillable, block, targetNamespace
 
 		var lookupName;
 		if (typeAttr !== undefined) {
-			lookupName = typeAttr.value();
+			lookupName = typeAttr;
 		}
-		var propertyName = nameAttr.value();  // name attribute is required for local element
+		var propertyName = nameAttr;  // name attribute is required for local element
 		var customType;
 		if (lookupName !== undefined) {
 			customType = customTypes.getCustomType(lookupName, jsonSchema).get$RefToSchema();
 		} else {
 			customType = customTypes.getCustomType(propertyName, jsonSchema);
 		}
-		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr.value() > 1 || maxOccursAttr.value() === "unbounded"));
+		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === "unbounded"));
 		var state = parsingState.getCurrentState();
 		switch (state.name) {
 			case elConst.choice:
 				if (isArray) {
-					addChoicePropertyAsArray(workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
+					this.addChoicePropertyAsArray(this.workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
 				} else {
-					addChoiceProperty(workingJsonSchema, propertyName, customType, minOccursAttr);
+					this.addChoiceProperty(this.workingJsonSchema, propertyName, customType, minOccursAttr);
 				}
 				break;
 			case elConst.sequence:
 			case elConst.all:
 				if (isArray) {
-					addPropertyAsArray(workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
+					this.addPropertyAsArray(this.workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
 				} else {
-					addProperty(workingJsonSchema, propertyName, customType, minOccursAttr);
+					this.addProperty(this.workingJsonSchema, propertyName, customType, minOccursAttr);
 				}
 				break;
 			default:
@@ -482,33 +440,33 @@ function BaseConverter() {
 		return true;
 	}
 
-	function handleElementReference(node, jsonSchema, xsd) {
-		var minOccursAttr = getAttr(node, attrConst.minOccurs);
-		var maxOccursAttr = getAttr(node, attrConst.maxOccurs);
-		var refAttr = getAttr(node, attrConst.ref);
+	handleElementReference(node, jsonSchema, xsd) {
+		var minOccursAttr = xsd.getAttrValue(node, attrConst.minOccurs);
+		var maxOccursAttr = xsd.getAttrValue(node, attrConst.maxOccurs);
+		var refAttr = xsd.getAttrValue(node, attrConst.ref);
 		// TODO: id
 
 		// An element within a model group (such as "group") may be a reference.  References have neither
 		// a name nor a type attribute - just a ref attribute.  This is awkward when the reference elmenent
 		// is a property of an object in JSON.  With no other options to name the property ref is used.
-		var propertyName = refAttr.value();  // ref attribute is required for an element reference
+		var propertyName = refAttr;  // ref attribute is required for an element reference
 		var customType = customTypes.getCustomType(propertyName, jsonSchema).get$RefToSchema();
-		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr.value() > 1 || maxOccursAttr.value() === "unbounded"));
+		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === "unbounded"));
 		var state = parsingState.getCurrentState();
 		switch (state.name) {
 			case elConst.choice:
 				if (isArray) {
-					addChoicePropertyAsArray(workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
+					this.addChoicePropertyAsArray(this.workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
 				} else {
-					addChoiceProperty(workingJsonSchema, propertyName, customType, minOccursAttr);
+					this.addChoiceProperty(this.workingJsonSchema, propertyName, customType, minOccursAttr);
 				}
 				break;
 			case elConst.sequence:
 			case elConst.all:
 				if (isArray) {
-					addPropertyAsArray(workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
+					this.addPropertyAsArray(this.workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
 				} else {
-					addProperty(workingJsonSchema, propertyName, customType, minOccursAttr);
+					this.addProperty(this.workingJsonSchema, propertyName, customType, minOccursAttr);
 				}
 				break;
 			default:
@@ -517,41 +475,41 @@ function BaseConverter() {
 		return true;
 	}
 
-	this.element = function (node, jsonSchema, xsd) {
-		var refAttr = getAttr(node, attrConst.ref);
+	element(node, jsonSchema, xsd) {
+		var refAttr = xsd.getAttrValue(node, attrConst.ref);
 
 		if (refAttr !== undefined) {
-			return handleElementReference(node, jsonSchema, xsd);
+			return this.handleElementReference(node, jsonSchema, xsd);
 		} else if (parsingState.isTopLevelEntity()) {
-			return handleElementGlobal(node, jsonSchema, xsd);
+			return this.handleElementGlobal(node, jsonSchema, xsd);
 		} else {
-			return handleElementLocal(node, jsonSchema, xsd);
+			return this.handleElementLocal(node, jsonSchema, xsd);
 		}
-	};
+	}
 
-	this.enumeration = function (node, jsonSchema, xsd) {
-		var val = getValueAttr(node);
+	enumeration(node, jsonSchema, xsd) {
+		var val = xsd.getValueAttr(node);
 		// TODO: id, fixed
 
-		workingJsonSchema.addEnum(val)
+		this.workingJsonSchema.addEnum(val)
 		return true;
-	};
+	}
 
-	this.explicitTimezone = function (node, jsonSchema, xsd) {
+	explicitTimezone(node, jsonSchema, xsd) {
 		// TODO: id, fixed, value
 		// (TBD)
 		return true;
-	};
+	}
 
-	this.extension = function (node, jsonSchema, xsd) {
-		var baseAttr = getAttr(node, attrConst.base);
+	extension(node, jsonSchema, xsd) {
+		var baseAttr = xsd.getAttrValue(node, attrConst.base);
 		// TODO: id
-		var baseType = new Qname(baseAttr.value());
-		var baseTypeName = baseType.local();
+		var baseType = new Qname(baseAttr);
+		var baseTypeName = baseType.getLocal();
 		var state = parsingState.getCurrentState();
 		switch (state.name) {
 			case elConst.complexContent:
-				workingJsonSchema = workingJsonSchema.extend(customTypes.getCustomType(baseTypeName, jsonSchema), jsonTypes.OBJECT);
+				this.workingJsonSchema = this.workingJsonSchema.extend(customTypes.getCustomType(baseTypeName, jsonSchema)) //, jsonSchemaTypes.OBJECT);
 				break;
 			case elConst.simpleType:
 				throw new Error("extension() needs to be impemented within simpleType!");
@@ -559,30 +517,30 @@ function BaseConverter() {
 				throw new Error("extension() called from within unexpected parsing state!");
 		}
 		return true;
-	};
+	}
 
-	this.field = function (node, jsonSchema, xsd) {
+	field(node, jsonSchema, xsd) {
 		// TODO: id, xpath, xpathDefaultNamespace
 		// (TBD)
 		return true;
-	};
+	}
 
-	this.fractionDigits = function (node, jsonSchema, xsd) {
+	fractionDigits(node, jsonSchema, xsd) {
 		// TODO: id, value, fixed
 		// do nothing - there is no coresponding functionality in JSON Schema
 		return true;
-	};
+	}
 
-	function handleGroupDefinition(node, jsonSchema, xsd) {
-		var nameAttr = getAttr(node, attrConst.name);
+	handleGroupDefinition(node, jsonSchema, xsd) {
+		var nameAttr = xsd.getAttrValue(node, attrConst.name);
 		// TODO: id
 
 		var state = parsingState.getCurrentState();
 		switch (state.name) {
 			case elConst.schema:
-				workingJsonSchema = customTypes.getCustomType(nameAttr.value(), jsonSchema);
-				jsonSchema.addSubSchema(nameAttr.value(), workingJsonSchema);
-				workingJsonSchema.setType(jsonTypes.OBJECT);
+				this.workingJsonSchema = customTypes.getCustomType(nameAttr, jsonSchema);
+				jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
+				this.workingJsonSchema.type = jsonSchemaTypes.OBJECT;
 				break;
 			case elConst.redefine:
 				throw new Error("group() [definition] needs to be impemented within restriction!");
@@ -594,9 +552,9 @@ function BaseConverter() {
 		return true;
 	}
 
-	function handleGroupReferenceOld(node, jsonSchema, xsd) {
-		var minOccursAttr = getAttr(node, attrConst.minOccurs);
-		var refName = getAttr(node, attrConst.ref).value();
+	handleGroupReferenceOld(node, jsonSchema, xsd) {
+		var minOccursAttr = xsd.getAttrValue(node, attrConst.minOccurs);
+		var refName = xsd.getAttrValue(node, attrConst.ref);
 		// TODO: id, maxOccurs
 
 		var state = parsingState.getCurrentState();
@@ -610,11 +568,11 @@ function BaseConverter() {
 			case elConst.complexType:
 			case elConst.sequence:
 			case elConst.all:
-				if (minOccursAttr === undefined || minOccursAttr.value() > 0) {
-					workingJsonSchema.addRequired(refName);
+				if (minOccursAttr === undefined || minOccursAttr > 0) {
+					this.workingJsonSchema.addRequired(refName);
 				}
 				var customType = customTypes.getCustomType(refName, jsonSchema);
-				workingJsonSchema.setProperty(refName, customType.get$RefToSchema());
+				this.workingJsonSchema.setProperty(refName, customType.get$RefToSchema());
 				break;
 			default:
 				throw new Error("group() [reference] called from within unexpected parsing state!");
@@ -622,15 +580,15 @@ function BaseConverter() {
 		return true;
 	}
 
-	function handleGroupReference(node, jsonSchema, xsd) {
-		var minOccursAttr = getAttr(node, attrConst.minOccurs);
-		var maxOccursAttr = getAttr(node, attrConst.maxOccurs);
-		var refAttr = getAttr(node, attrConst.ref);
+	handleGroupReference(node, jsonSchema, xsd) {
+		var minOccursAttr = xsd.getAttrValue(node, attrConst.minOccurs);
+		var maxOccursAttr = xsd.getAttrValue(node, attrConst.maxOccurs);
+		var refAttr = xsd.getAttrValue(node, attrConst.ref);
 		// TODO: id
 
-		var propertyName = refAttr.value();  // ref attribute is required for group reference
+		var propertyName = refAttr;  // ref attribute is required for group reference
 		var customType = customTypes.getCustomType(propertyName, jsonSchema).get$RefToSchema();
-		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr.value() > 1 || maxOccursAttr.value() === "unbounded"));
+		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === "unbounded"));
 		var state = parsingState.getCurrentState();
 		switch (state.name) {
 			case elConst.extension:
@@ -639,18 +597,18 @@ function BaseConverter() {
 				throw new Error("group() [reference] needs to be impemented within restriction!");
 			case elConst.choice:
 				if (isArray) {
-					addChoicePropertyAsArray(workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
+					this.addChoicePropertyAsArray(this.workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
 				} else {
-					addChoiceProperty(workingJsonSchema, propertyName, customType, minOccursAttr);
+					this.addChoiceProperty(this.workingJsonSchema, propertyName, customType, minOccursAttr);
 				}
 				break;
 			case elConst.complexType:
 			case elConst.sequence:
 			case elConst.all:
 				if (isArray) {
-					addPropertyAsArray(workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
+					this.addPropertyAsArray(this.workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
 				} else {
-					addProperty(workingJsonSchema, propertyName, customType, minOccursAttr);
+					this.addProperty(this.workingJsonSchema, propertyName, customType, minOccursAttr);
 				}
 				break;
 			default:
@@ -659,227 +617,201 @@ function BaseConverter() {
 		return true;
 	}
 
-	this.group = function (node, jsonSchema, xsd) {
-		if (isReference(node)) {
-			return handleGroupReference(node, jsonSchema, xsd);
+	group(node, jsonSchema, xsd) {
+		if (xsd.isReference(node)) {
+			return this.handleGroupReference(node, jsonSchema, xsd);
 		} else {
-			return handleGroupDefinition(node, jsonSchema, xsd);
+			return this.handleGroupDefinition(node, jsonSchema, xsd);
 		}
-	};
+	}
 
-	this.import = function (node, jsonSchema, xsd) {
+	import(node, jsonSchema, xsd) {
 		// TODO: id, namespace, schemaLocation
 		// do nothing
 		return true;
-	};
+	}
 
-	this.include = function (node, jsonSchema, xsd) {
+	include(node, jsonSchema, xsd) {
 		// TODO: id, schemaLocation
 		// do nothing
 		return true;
-	};
+	}
 
-	function handleKeyConstraint() {
+	handleKeyConstraint() {
 		// TODO: id, name
 		// (TBD)
 		return true;
 	}
 
-	function handleKeyReferenceToKeyConstraint() {
+	handleKeyReferenceToKeyConstraint() {
 		// TODO: id, ref
 		// (TBD)
 		return true;
 	}
 
-	this.key = function (node, jsonSchema, xsd) {
+	key(node, jsonSchema, xsd) {
 		// (TBD)
 		return true;
-	};
+	}
 
-	function handleKeyReference(node, jsonSchema, xsd) {
+	handleKeyReference(node, jsonSchema, xsd) {
 		// TODO: id, name, refer
 		// (TBD)
 		return true;
 	}
 
-	function handleKeyReferenceToKeyReference(node, jsonSchema, xsd) {
+	handleKeyReferenceToKeyReference(node, jsonSchema, xsd) {
 		// TODO: id, ref
 		// (TBD)
 		return true;
 	}
 
-	this.keyref = function (node, jsonSchema, xsd) {
+	keyref(node, jsonSchema, xsd) {
 		// (TBD)
 		return true;
-	};
+	}
 
-	this.length = function (node, jsonSchema, xsd) {
+	length(node, jsonSchema, xsd) {
 		// TODO: id, fixed
-		var len = getValueAttr(node);
+		var len = xsd.getValueAttr(node);
 
-		workingJsonSchema.setMaxLength(len);
-		workingJsonSchema.setMinLength(len);
+		this.workingJsonSchema.maxLength = len;
+		this.workingJsonSchema.minLength = len;
 		return true;
-	};
+	}
 
-	this.list = function (node, jsonSchema, xsd) {
+	list(node, jsonSchema, xsd) {
 		// TODO: id, itemType
 		// (TBD)
 		return true;
-	};
+	}
 
-	this.maxExclusive = function (node, jsonSchema, xsd) {
-		var val = getValueAttr(node);
+	maxExclusive(node, jsonSchema, xsd) {
+		var val = xsd.getValueAttr(node);
 		// TODO: id, fixed
 
-		workingJsonSchema.setMaximum(val);
-		workingJsonSchema.setExlusiveMaximum(true);
+		this.workingJsonSchema.maximum = val;
+		this.workingJsonSchema.exlusiveMaximum = true;
 		return true;
-	};
+	}
 
-	this.maxInclusive = function (node, jsonSchema, xsd) {
-		var val = getValueAttr(node);
+	maxInclusive(node, jsonSchema, xsd) {
+		var val = xsd.getValueAttr(node);
 		// TODO: id, fixed
 
-		workingJsonSchema.setMaximum(val); // inclusive is the JSON Schema default
+		this.workingJsonSchema.maximum = val; // inclusive is the JSON Schema default
 		return true;
-	};
+	}
 
-	this.maxLength = function (node, jsonSchema, xsd) {
-		var len = getValueAttr(node);
+	maxLength(node, jsonSchema, xsd) {
+		var len = xsd.getValueAttr(node);
 		// TODO: id, fixed
 
-		workingJsonSchema.setMaxLength(len);
+		this.workingJsonSchema.maxLength = len;
 		return true;
-	};
+	}
 
-	this.minExclusive = function (node, jsonSchema, xsd) {
-		var val = getValueAttr(node);
+	minExclusive(node, jsonSchema, xsd) {
+		var val = xsd.getValueAttr(node);
 		// TODO: id, fixed
 
-		workingJsonSchema.setMinimum(val);
-		workingJsonSchema.setExclusiveMinimum(true);
+		this.workingJsonSchema.minimum = val;
+		this.workingJsonSchema.exclusiveMinimum = true;
 		return true;
-	};
+	}
 
-	this.minInclusive = function (node, jsonSchema, xsd) {
-		var val = getValueAttr(node);
+	minInclusive(node, jsonSchema, xsd) {
+		var val = xsd.getValueAttr(node);
 		// TODO: id, fixed
 
-		workingJsonSchema.setMinimum(val); // inclusive is the JSON Schema default
+		this.workingJsonSchema.minimum = val; // inclusive is the JSON Schema default
 		return true;
-	};
+	}
 
-	this.minLength = function (node, jsonSchema, xsd) {
-		var len = getValueAttr(node);
+	minLength(node, jsonSchema, xsd) {
+		var len = xsd.getValueAttr(node);
 		// TODO: id, fixed
 
-		workingJsonSchema.setMinLength(len);
+		this.workingJsonSchema.minLength = len;
 		return true;
-	};
+	}
 
-	this.notation = function (node, jsonSchema, xsd) {
+	notation(node, jsonSchema, xsd) {
 		// TODO: id, name, public, system
 		// (TBD)
 		return true;
-	};
+	}
 
-	this.openContent = function (node, jsonSchema, xsd) {
+	openContent(node, jsonSchema, xsd) {
 		// TODO: id, mode
 		// (TBD)
 		return true;
-	};
-
-	this.override = function (node, jsonSchema, xsd) {
-		// TODO: id, schemaLocation
-		// (TBD)
-		return true;
-	};
-
-	this.pattern = function (node, jsonSchema, xsd) {
-		var pattern = getValueAttr(node);
-		// TODO: id
-
-		workingJsonSchema.setPattern(pattern);
-		return true;
-	};
-
-	this.redefine = function (node, jsonSchema, xsd) {
-		// TODO: id, schemaLocation
-		// (TBD)
-		return true;
-	};
-
-	this.restriction = function (node, jsonSchema, xsd) {
-		var baseAttr = getAttr(node, attrConst.base);
-		var baseType = new Qname(baseAttr.value());
-		var baseTypeName = baseType.local();
-		// TODO: id, (base inheritance via allOf)
-
-		if (restrictionConverter[baseTypeName] === undefined) {
-			// customTypes.getCustomType(baseTypeName, jsonSchema).clone(workingJsonSchema);
-			workingJsonSchema = workingJsonSchema.extend(customTypes.getCustomType(baseTypeName, jsonSchema));
-			return true;
-		} else {
-			return restrictionConverter[baseTypeName](node, workingJsonSchema);
-		}
-	};
-
-	function buildAttributeMap(node) {
-		var map = {};
-		var attrs = node.attrs();
-		attrs.forEach(function (attr, index, array) {
-			map[attr.name()] = attr.value();
-		});
-		return map;
 	}
 
-	this.schema = function (node, jsonSchema, xsd) {
+	override(node, jsonSchema, xsd) {
+		// TODO: id, schemaLocation
+		// (TBD)
+		return true;
+	}
+
+	pattern(node, jsonSchema, xsd) {
+		var pattern = xsd.getValueAttr(node);
+		// TODO: id
+
+		this.workingJsonSchema.pattern = pattern;
+		return true;
+	}
+
+	redefine(node, jsonSchema, xsd) {
+		// TODO: id, schemaLocation
+		// (TBD)
+		return true;
+	}
+
+	restriction(node, jsonSchema, xsd) {
+		var baseAttr = xsd.getAttrValue(node, attrConst.base);
+		var baseType = new Qname(baseAttr);
+		var baseTypeName = baseType.getLocal();
+		// TODO: id, (base inheritance via allOf)
+
+		if (this.restrictionConverter[baseTypeName] === undefined) {
+			// customTypes.getCustomType(baseTypeName, jsonSchema).clone(workingJsonSchema);
+			this.workingJsonSchema = this.workingJsonSchema.extend(customTypes.getCustomType(baseTypeName, jsonSchema));
+			return true;
+		} else {
+			return this.restrictionConverter[baseTypeName](node, this.workingJsonSchema);
+		}
+	}
+
+	schema(node, jsonSchema, xsd) {
 		// TODO: id, version, targetNamespace, attributeFormDefualt, elementFormDefualt, blockDefault, finalDefault, xml:lang, defaultAttributes, xpathDefaultNamespace
 		// (TBD)
-		jsonSchema.setDescription("Schema tag attributes: " + utils.objectToString(buildAttributeMap(node)));
+		jsonSchema.description = "Schema tag attributes: " + utils.objectToString(xsd.buildAttributeMap(node));
 		return true;
-	};
+	}
 
-	this.selector = function (node, jsonSchema, xsd) {
+	selector(node, jsonSchema, xsd) {
 		// TODO: key, keyref, unique
 		// (TBD)
 		return true;
-	};
+	}
 
-	this.sequenceOld = function (node, jsonSchema, xsd) {
-		var minOccursAttr = getAttr(node, attrConst.minOccurs);
-		var maxOccursAttr = getAttr(node, attrConst.maxOccurs);
-		// TODO: id
-
-		if (minOccursAttr !== undefined && minOccursAttr.value() == 0) {
-			throw new Error("optional sequences need to be implemented!");
-		}
-		if (maxOccursAttr !== undefined && minOccursAttr.value() != 0) {
-			throw new Error("sequence arrays need to be implemented!");
-		}
-		if (parsingState.inChoice()) {
-			throw new Error("sequence() needs to be implemented in choice!");
-		}
-		return true;
-	};
-
-	this.sequence = function (node, jsonSchema, xsd) {
-		var minOccursAttr = getAttr(node, attrConst.minOccurs);
-		var maxOccursAttr = getAttr(node, attrConst.maxOccurs);
-		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr.value() > 1 || maxOccursAttr.value() === "unbounded"));
+	sequence(node, jsonSchema, xsd) {
+		var minOccursAttr = xsd.getAttrValue(node, attrConst.minOccurs);
+		var maxOccursAttr = xsd.getAttrValue(node, attrConst.maxOccurs);
+		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === "unbounded"));
 		if (isArray) {
 			throw new Error("sequence arrays need to be implemented!");
 		}
-		var isOptional = (minOccursAttr !== undefined && minOccursAttr.value() == 0);
+		var isOptional = (minOccursAttr !== undefined && minOccursAttr == 0);
 		var state = parsingState.getCurrentState();
 		switch (state.name) {
 			case elConst.choice:
 				var choiceSchema = new JsonSchemaFile({});
-				choiceSchema.setAdditionalProperties(false);
-				workingJsonSchema.getOneOf().push(choiceSchema);
-				parsingState.pushSchema(workingJsonSchema);
-				workingJsonSchema = choiceSchema;
+				choiceSchema.additionalProperties = false;
+				this.workingJsonSchema.oneOf.push(choiceSchema);
+				parsingState.pushSchema(this.workingJsonSchema);
+				this.workingJsonSchema = choiceSchema;
 				break;
 			case elConst.complexType:
 				break;
@@ -892,9 +824,9 @@ function BaseConverter() {
 			case elConst.sequence:
 				if (isOptional) {
 					var optionalSequenceSchema = new JsonSchemaFile({});
-					workingJsonSchema.getAnyOf().push(optionalSequenceSchema);
-					parsingState.pushSchema(workingJsonSchema);
-					workingJsonSchema = optionalSequenceSchema;
+					this.workingJsonSchema.anyOf.push(optionalSequenceSchema);
+					parsingState.pushSchema(this.workingJsonSchema);
+					this.workingJsonSchema = optionalSequenceSchema;
 				} else {
 					throw new Error("Required nested sequences need to be implemented!");
 				}
@@ -905,85 +837,85 @@ function BaseConverter() {
 		return true;
 	}
 
-	this.simpleContent = function (node, jsonSchema, xsd) {
+	simpleContent(node, jsonSchema, xsd) {
 		// TODO: id
 		// Ignore this grouping and continue processing children
 		return true;
-	};
+	}
 
-	function handleSimpleTypeNamedGlobal(node, jsonSchema, xsd) {
-		var nameAttr = getAttr(node, attrConst.name);
+	handleSimpleTypeNamedGlobal(node, jsonSchema, xsd) {
+		var nameAttr = xsd.getAttrValue(node, attrConst.name);
 		// TODO: id, final
 
-		workingJsonSchema = customTypes.getCustomType(nameAttr.value(), jsonSchema);
-		jsonSchema.addSubSchema(nameAttr.value(), workingJsonSchema);
+		this.workingJsonSchema = customTypes.getCustomType(nameAttr, jsonSchema);
+		jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
 		return true;
 	}
 
-	function handleSimpleTypeAnonymousLocal(node, jsonSchema, xsd) {
+	handleSimpleTypeAnonymousLocal(node, jsonSchema, xsd) {
 		// TODO: id
 		// Ignore this grouping and continue processing children
 		return true;
 	}
 
-	this.simpleType = function (node, jsonSchema, xsd) {
+	simpleType(node, jsonSchema, xsd) {
 		var continueParsing
-		if (isNamed(node)) {
-			continueParsing = handleSimpleTypeNamedGlobal(node, jsonSchema, xsd);
+		if (xsd.isNamed(node)) {
+			continueParsing = this.handleSimpleTypeNamedGlobal(node, jsonSchema, xsd);
 		} else {
-			continueParsing = handleSimpleTypeAnonymousLocal(node, jsonSchema, xsd);
+			continueParsing = this.handleSimpleTypeAnonymousLocal(node, jsonSchema, xsd);
 		}
 		if (parsingState.inAttribute()) {
 			// need to pop
 		}
 		return continueParsing;
-	};
+	}
 
-	this.text = function (node, jsonSchema, xsd) {
+	text(node, jsonSchema, xsd) {
 		if (parsingState.inDocumentation()) {
 			return true;
 			// TODO: This should be a configurable option
-			// workingJsonSchema.setDescription(node.text());
+			// workingJsonSchema.description = node.text();
 		} else if (parsingState.inAppInfo()) {
-			workingJsonSchema.concatDescription(node.parent().name() + "=" + node.text() + " ");
+			this.workingJsonSchema.concatDescription(node.parent().name() + "=" + node.text() + " ");
 		}
 		return true;
-	};
+	}
 
-	this.totalDigits = function (node, jsonSchema, xsd) {
+	totalDigits(node, jsonSchema, xsd) {
 		// TODO: id, value, fixed
 		// do nothing - there is no coresponding functionality in JSON Schema
 		return true;
-	};
+	}
 
-	this.union = function (node, jsonSchema, xsd) {
+	union(node, jsonSchema, xsd) {
 		// TODO: id, memberTypes
 		// (TBD)
 		return true;
-	};
+	}
 
-	function handleUniqueConstraint(node, jsonSchema, xsd) {
+	handleUniqueConstraint(node, jsonSchema, xsd) {
 		// TODO: id, name
 		// (TBD)
 		return true;
 	}
 
-	function handleUniqueReferenceToUniqueConstraint(node, jsonSchema, xsd) {
+	handleUniqueReferenceToUniqueConstraint(node, jsonSchema, xsd) {
 		// TODO: id, ref
 		// (TBD)
 		return true;
 	}
 
-	this.unique = function (node, jsonSchema, xsd) {
+	unique(node, jsonSchema, xsd) {
 		// (TBD)
 		return true;
-	};
+	}
 
-	this.whitespace = function (node, jsonSchema, xsd) {
+	whitespace(node, jsonSchema, xsd) {
 		// TODO: id, value, fixed
 		// (TBD)
 		return true;
-	};
+	}
 }
 
 module.exports = BaseConverter;

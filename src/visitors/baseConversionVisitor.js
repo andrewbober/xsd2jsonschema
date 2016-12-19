@@ -4,51 +4,63 @@
 
 "use strict";
 
-var BaseConverter = require('./../baseConverter');
 var parsingState = require("./../parsingState");
 
-function DefaultConversionVisitor() {
 
-	var converter = new BaseConverter();
 
-	this.visit = function visit(node, jsonSchema, xsd) {
+var converter_NAME = Symbol();
+
+class BaseConversionVisitor {
+	constructor(converter) {
+		this.converter = converter;
+	}
+
+	get converter() {
+		return this[converter_NAME];
+	}
+
+	set converter(newConverter) {
+		this[converter_NAME] = newConverter;
+	}
+
+	visit(node, jsonSchema, xsd) {
 		try {
-			return converter[node.name()](node, jsonSchema, xsd);
+			return this.converter.convert(node, jsonSchema, xsd);
 		} catch (err) {
-			parsingState.dumpStates(xsd.getBaseFilename());
-			converter.dumpNode(node);
 			console.log(err.stack);
+			parsingState.dumpStates(xsd.baseFilename);
+			xsd.dumpNode(node);
 			return false; //throw err;
 		}
-	};
+	}
 
-	this.enterState = function enterState(node, jsonSchema, xsd) {
+	enterState(node, jsonSchema, xsd) {
 		var state = {
-			name : node.name(),
-			workingJsonSchema : undefined
+			name: xsd.getNodeName(node),
+			workingJsonSchema: undefined
 		}
 		parsingState.enterState(state);
-	};
+	}
 
-	this.exitState = function exitState() {
+	exitState() {
 		var state = parsingState.exitState();
 		if (state.workingJsonSchema !== undefined) {
-			converter.setWorkingJsonSchema(state.workingJsonSchema);
+			this.converter.workingJsonSchema = state.workingJsonSchema;
 		}
-	};
+	}
 
-	this.onBegin = function onBegin(jsonSchema, xsd) {
+	onBegin(jsonSchema, xsd) {
 		/*
 				console.log("\n\n****************************************************************************************************");
 				console.log("Converting " + xsd.getBaseFilename());
 				console.log("****************************************************************************************************\n");
 		*/
 		return true;
-	};
+	}
 
-	this.onEnd = function onEnd(jsonSchema, xsd) {
-	};
+	onEnd(jsonSchema, xsd) {
+	}
 
 }
 
-module.exports = DefaultConversionVisitor;
+module.exports = BaseConversionVisitor;

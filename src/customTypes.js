@@ -49,7 +49,7 @@ module.exports = {
 		if (baseJsonSchema === undefined) {
 			throw new Error("\"baseJsonSchema\" parameter required");
 		}
-		var globalAttributesNamespace = namespaces["globalAttributes"];
+		var globalAttributesNamespace = namespaces.globalAttributes;
 		if (globalAttributesNamespace.customTypes[name] === undefined) {
 			var parms={};
 			parms.ref = baseJsonSchema.getResolvedFilename() + "#" + baseJsonSchema.getSubschemaStr() + "/" + name;

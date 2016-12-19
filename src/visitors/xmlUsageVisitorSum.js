@@ -4,61 +4,75 @@
 
 "use strict";
 
-function XmlUsageVisitorSum() {
-    var uris = {};
-	var tagCounts = {};
+var BaseConvertionVisitor = require("./baseConversionVisitor");
 
-	function addSchema(uri) {
-		if (uris[uri] === undefined) {
-			uris[uri] = { tagCounts: {} }
+var uris_NAME = Symbol();
+var tagCounts_NAME = Symbol();
+
+class XmlUsageVisitorSum extends BaseConvertionVisitor {
+	constructor() {
+		super(undefined);
+		this.uris = {};
+		this.tagCounts = {};
+	}
+
+	get uris() {
+		return this[uris_NAME];
+	}
+
+	set uris(newUris) {
+		this[uris_NAME] = newUris;
+	}
+
+	get tagCounts() {
+		return this[tagCounts_NAME];
+	}
+
+	set tagCounts(newTagCounts) {
+		this[tagCounts_NAME] = newTagCounts;
+	}
+
+
+	addSchema(uri) {
+		if (this.uris[uri] === undefined) {
+			this.uris[uri] = { tagCounts: {} }
 		}
 	}
 
-	function addTag(xmlTag) {
-        if (tagCounts[xmlTag] === undefined) {
-			tagCounts[xmlTag] = 1;
-        } else {
-			tagCounts[xmlTag] += 1;
-        }
+	addTag(xmlTag) {
+		if (this.tagCounts[xmlTag] === undefined) {
+			this.tagCounts[xmlTag] = 1;
+		} else {
+			this.tagCounts[xmlTag] += 1;
+		}
 	}
 
-    this.visit = function (node, jsonSchema, xsd) {
-		var uri = xsd.getUri();
-		addSchema(uri);
-		addTag(node.name());
-        return true;
-    };
+	visit(node, jsonSchema, xsd) {
+		var uri = xsd.uri;
+		this.addSchema(uri);
+		this.addTag(node.name());
+		return true;
+	}
 
-	this.onBegin = function (jsonSchema, xsd) {
-		if (uris[xsd.getUri()] === undefined) {
+	onBegin(jsonSchema, xsd) {
+		if (this.uris[xsd.uri] === undefined) {
 			return true;
 		} else {
 			return false;
 		}
-	};
+	}
 
-	this.onEnd = function (jsonSchema, xsd) {
-	};
-
-	// Default implementaion should be in a base class
-	this.enterState = function enterState(node, jsonSchema, xsd) {
-	};
-
-	// Default implementaion should be in a base class
-	this.exitState = function exitState() {
-	};
-
-	this.log = function () {
+	dump() {
 		console.log("----------------------------");
 		console.log("Overall XML Schema Tag Usage");
 		console.log("----------------------------");
-		console.log(Object.keys(uris));
+		console.log(Object.keys(this.uris));
 		console.log("----------------------------");
-		Object.keys(tagCounts).sort().forEach(function (xmlTag, index, array) {
-			console.log(xmlTag + " = " + tagCounts[xmlTag]);
-		})
+		Object.keys(this.tagCounts).sort().forEach(function (xmlTag, index, array) {
+			console.log(xmlTag + " = " + this.tagCounts[xmlTag]);
+		}, this)
 		console.log();
-    }
+	}
 }
 
 module.exports = XmlUsageVisitorSum;

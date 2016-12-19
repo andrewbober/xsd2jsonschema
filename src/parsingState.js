@@ -7,7 +7,7 @@
 
 "use strict";
 
-var elConst = require('./xsdElements');
+var elConst = require("./xsdElements");
 
 // A stack of states
 var states = [];
@@ -96,7 +96,7 @@ module.exports = {
 	},
 	dumpStates: function (filename) {
 		console.log("________________________________________________________________________________________");
-		console.log("\nCurrent parsing states: " + filename);
+		console.log("\nCurrent parsing state within [" + filename + "]:");
 		for (let i = 0; i < states.length; i++) {
 			var schema = states[i].workingJsonSchema == undefined ? "": " [" + states[i].workingJsonSchema + "]"
 			console.log(i + ") " + states[i].name + schema);

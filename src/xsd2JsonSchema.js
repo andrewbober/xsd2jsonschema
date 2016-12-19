@@ -4,121 +4,146 @@
 
 "use strict";
 
-var customTypes = require('./customTypes');
-var XsdFile = require('./xsdFile');
-var JsonSchemaFile = require('./jsonSchemaFile');
-var DepthFirstTraversal = require('./depthFirstTraversal');
-var path = require('path');
-var fs = require('fs');
-var util = require('util');
+var customTypes = require("./customTypes");
+// var XsdFile = require("./xsdFile");
+var XsdFile = require("./xsdFileXmlDom");
+var JsonSchemaFile = require("./jsonSchemaFile");
+var DepthFirstTraversal = require("./depthFirstTraversal");
+var path = require("path");
+var fs = require("fs");
 
 /*
  * 
  *
  */
-function Xsd2JsonSchema(customConverter, xsdBaseDirectory, xsdFilenames, _options) {
-	var options = _options
-	var baseDirectory = xsdBaseDirectory;
-	var xmlSchemas = {};
-	var jsonSchemas = {};
+var options_NAME = Symbol();
+var baseDirectory_NAME = Symbol();
+var xmlSchemas_NAME = Symbol();
+var jsonSchema_NAME = Symbol();
 
-	var loadSchema = function (uri) {
-		if (xmlSchemas[uri] !== undefined) {
+class Xsd2JsonSchema {
+	constructor(xsdBaseDirectory, xsdFilenames, _options) {
+		this.options = _options;
+		this.baseDirectory = xsdBaseDirectory;
+		this.xmlSchemas = {};
+		this.jsonSchema = {};
+		this.loadAllSchemas(xsdFilenames);
+		this.initializeNamespaces();
+	}
+
+	get options() {
+		return this[options_NAME];
+	}
+	set options(newOptions) {
+		this[options_NAME] = newOptions;
+	}
+
+	get baseDirectory() {
+		return this[baseDirectory_NAME]
+	}
+	set baseDirectory(newbaseDirectory) {
+		this[baseDirectory_NAME] = newbaseDirectory;
+	}
+
+	get xmlSchemas() {
+		return this[xmlSchemas_NAME];
+	}
+	set xmlSchemas(newXmlSchemas) {
+		this[xmlSchemas_NAME] = newXmlSchemas;
+	}
+
+	get jsonSchema() {
+		return this[jsonSchema_NAME];
+	}
+	set jsonSchema(newJsonSchema) {
+		this[jsonSchema_NAME] = newJsonSchema;
+	}
+
+	loadSchema(uri) {
+		if (this.xmlSchemas[uri] !== undefined) {
 			return;
 		}
 		var xsd = new XsdFile(uri);
-		xmlSchemas[xsd.getBaseFilename()] = xsd;
+		this.xmlSchemas[xsd.baseFilename] = xsd;
 		if (xsd.hasIncludes()) {
-			loadAllSchemas(xsd.getIncludes());
+			this.loadAllSchemas(xsd.getIncludes());
 		}
-	};
+	}
 
-	var loadAllSchemas = function (uris) {
+	loadAllSchemas(uris) {
 		uris.forEach(function (uri, index, array) {
-			loadSchema(path.join(baseDirectory, uri));
-		});
-		return xmlSchemas;
-	};
+			this.loadSchema(path.join(this.baseDirectory, uri));
+		}, this);
+		return this.xmlSchemas;
+	}
 
-	loadAllSchemas(xsdFilenames);
 
-	var initializeNamespaces = function () {
-		Object.keys(xmlSchemas).forEach(function (uri, index, array) {
-			var targetNamespace = xmlSchemas[uri].getTargetNamespace();
+	initializeNamespaces() {
+		Object.keys(this.xmlSchemas).forEach(function (uri, index, array) {
+			var targetNamespace = this.xmlSchemas[uri].targetNamespace;
 			customTypes.addNamespace(targetNamespace);
-		});
-	};
+		}, this);
+	}
 
-	initializeNamespaces();
-
-	var processSchema = function (visitor, uri) {
-		var xsd = xmlSchemas[uri];
+	processSchema(visitor, uri) {
+		var xsd = this.xmlSchemas[uri];
 		if (xsd.hasIncludes()) {
-			processSchemas(visitor, xsd.getIncludes());
+			this.processSchemas(visitor, xsd.getIncludes());
 		}
-		if (jsonSchemas[uri] === undefined) {
+		if (this.jsonSchemas[uri] === undefined) {
 			var traversal = new DepthFirstTraversal();
-			var parms={};
+			var parms = {};
 			parms.xsd = xsd;
-			parms.resolveURI = options.resolveURI;
-			parms.mask = options.mask;
-			jsonSchemas[uri] = new JsonSchemaFile(parms);
-			traversal.traverse(visitor, jsonSchemas[uri], xsd);
+			parms.resolveURI = this.options.resolveURI;
+			parms.mask = this.options.mask;
+			this.jsonSchemas[uri] = new JsonSchemaFile(parms);
+			traversal.traverse(visitor, this.jsonSchemas[uri], xsd);
 		}
-	};
+	}
 
-	var processSchemas = function (visitor, uris) {
+	processSchemas(visitor, uris) {
 		uris.forEach(function (uri, index, array) {
-			processSchema(visitor, uri);
-		});
-	};
+			this.processSchema(visitor, uri);
+		}, this);
+	}
 
-	this.processAllSchemas = function (visitor) {
-		jsonSchemas = {};
-		processSchemas(visitor, Object.keys(xmlSchemas));
-		this.writeFiles();
-	};
+	processAllSchemas(visitor) {
+		this.jsonSchemas = {};
+		this.processSchemas(visitor, Object.keys(this.xmlSchemas));
+	}
 
-	this.writeFiles = function () {
+	writeFiles() {
 		try {
-			fs.mkdirSync(options.outputDir);
+			fs.mkdirSync(this.options.outputDir);
 		} catch (err) {
 			// log something here
 		}
-		Object.keys(jsonSchemas).forEach(function (uri, index, array) {
-			jsonSchemas[uri].writeFile(options.outputDir);
-		});
+		Object.keys(this.jsonSchemas).forEach(function (uri, index, array) {
+			this.jsonSchemas[uri].writeFile(this.options.outputDir);
+		}, this);
 	}
 
-	this.dump = function () {
+	dump() {
 		console.log("\n*** XML Schemas ***")
-		Object.keys(xmlSchemas).forEach(function (uri, index, array) {
+		Object.keys(this.xmlSchemas).forEach(function (uri, index, array) {
 			console.log(index + ") " + uri);
-			console.log(xmlSchemas[uri].getIncludes());
-		});
+			console.log(this.xmlSchemas[uri].getIncludes());
+		}, this);
 
 		console.log("\n*** Namespaces and Types ***")
 		console.log(JSON.stringify(customTypes.getNamespaces(), null, '\t'));
-	};
-
-	this.dumpSchemas = function () {
-		console.log("\n*** JSON Schemas ***")
-		Object.keys(jsonSchemas).forEach(function (uri, index, array) {
-			console.log(index + ") " + uri);
-			var log = JSON.stringify(jsonSchemas[uri].getJsonSchema(), null, 2);
-			console.log(log);
-		});
 	}
 
-	this.getXmlSchemas = function () {
-		return xmlSchemas;
-	};
+	dumpSchemas() {
+		console.log("\n*** JSON Schemas ***")
+		Object.keys(this.jsonSchemas).forEach(function (uri, index, array) {
+			console.log(index + ") " + uri);
+			var log = JSON.stringify(this.jsonSchemas[uri].getJsonSchema(), null, 2);
+			console.log(log);
+		}, this);
+	}
 
-	this.getJsonSchemas = function () {
-		return jsonSchemas;
-	};
-
-	this.getCustomTypes = function () {
+	getCustomTypes() {
 		return customTypes;
 	}
 }
