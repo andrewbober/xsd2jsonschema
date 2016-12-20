@@ -39,7 +39,7 @@
     "xmldom": "^0.1.27"
   },
   "scripts": {
-    "postinstall": "require-self && npm run cover && npm run update-coveralls",
+    "postinstall": "require-self",
     "test": "jasmine",
     "cover": "istanbul cover jasmine",
     "update-coveralls": "cat coverage/lcov.info | coveralls",
