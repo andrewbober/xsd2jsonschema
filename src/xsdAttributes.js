@@ -1,9 +1,10 @@
-/**
- *  XML Schema Attribute Keywords
- * 
- */
-
 "use strict";
+
+/**
+ * Defines constants for XML Schema Attribute Keywords
+ * 
+ * @module XsdAttributes
+ */
 
 module.exports = {
 	abstract: "abstract",

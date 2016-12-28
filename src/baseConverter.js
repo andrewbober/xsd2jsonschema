@@ -17,6 +17,9 @@ var utils = require("./utils");
 var workingJsonSchema_NAME = Symbol();
 var restrictionConverter_NAME = Symbol();
 
+/**
+ * TBD
+ */
 class BaseConverter {
 	constructor() {
 		this.restrictionConverter = new RestrictionConverter();

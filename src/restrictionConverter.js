@@ -1,29 +1,30 @@
-/**
- *  Converts XML Schema built-in simple types to JSON Schema types.
- * 
- *  Please see: W3C XML Schema Definition Language (XSD) 1.1 Part 2: Datatypes
- *  http://www.w3.org/TR/xmlschema11-2/
- * 
- *  Section 3 Built-in Datatypes and Their Definitions: A nice diagram showing the built-in 
- *  type hhierarchy s available at: http://www.w3.org/TR/xmlschema11-2/#built-in-datatypes
- * 
- * 	XML Schema Part 0: Primer Second Edition has a reference table summerizing the 
- *  built-in types: http://www.w3.org/TR/xmlschema-0/#simpleTypesTable
- */
-
-// "use strict";
+"use strict";
 
 var jsonSchemaTypes = require("./jsonSchemaTypes");
 var jsonSchemaFormats = require("./jsonSchemaFormats");
 var JsonSchemaFile = require("./jsonSchemaFile");
 
-
-class RestrictionConverterClass {
+/**
+ *  Class representing a converter of XML Schema built-in simple types to JSON Schema types.
+ * 
+ *  Please see: {@link http://www.w3.org/TR/xmlschema11-2/|W3C XML Schema Definition Language (XSD) 1.1 Part 2: Datatypes}.  Section 3 {@link http://www.w3.org/TR/xmlschema11-2/#built-in-datatypes|Built-in Datatypes and Their Definitions} has a nice diagram showing the built-in type hierarchy.  Also, {@link http://www.w3.org/TR/xmlschema-0/|XML Schema Part 0: Primer Second Edition} has a {@link http://www.w3.org/TR/xmlschema-0/#simpleTypesTable|reference table} summarizing the built-in types.
+ */
+class RestrictionConverter {
 
 	// 3.3 Primitive Datatypes: http://www.w3.org/TR/xmlschema11-2/#built-in-primitive-datatypes
 	// *****************************************************************************************
 
 	// 3.3.1 string: http://www.w3.org/TR/xmlschema11-2/#string
+
+	/**
+	 * Converts an {@link http://www.w3.org/TR/xmlschema11-2/#string|XML String} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2|JSON Schema String}.
+	 * 
+	 * @param {Node} node - the current element in xsd being converted.
+	 * @param {JsonSchemaFile} jsonSchema - the JSON Schema representing the current restriction from the XML schema file {@link XsdFile|xsd}.
+	 * @param {XsdFile} xsd - the XML schema file currently being converted.
+	 * 
+	 * @returns {Boolean} - true.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
+	 */
 	string(node, jsonSchema, xsd) {
 		jsonSchema.type = jsonSchemaTypes.STRING;
 		return true;
@@ -386,4 +387,4 @@ class RestrictionConverterClass {
 	}
 }
 
-module.exports = RestrictionConverterClass;
+module.exports = RestrictionConverter;

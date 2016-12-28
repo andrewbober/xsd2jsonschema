@@ -1,11 +1,3 @@
-/**
- *  XML Schema file operations.  This is based on the JSON Schema meta-schema
- *  located at http://json-schema.org/draft-04/schema#.  
- * 
- * 
- *  Please see http://json-schema.org for more details.
- */
-
 "use strict";
 
 var path = require("path");
@@ -53,6 +45,12 @@ var oneOf_NAME = Symbol();
 var not_NAME = Symbol();
 var definitions_NAME = Symbol();
 
+/**
+ * XML Schema file operations.  This is based on the JSON Schema meta-schema located at http://json-schema.org/draft-04/schema#.  
+ * 
+ * 
+ * Please see http://json-schema.org for more details.
+ */
 
 class JsonSchemaFile {
 	constructor(parms) {

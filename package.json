@@ -43,12 +43,15 @@
     "test": "jasmine",
     "cover": "istanbul cover jasmine",
     "update-coveralls": "cat coverage/lcov.info | coveralls",
-    "example": "node example/example.js convert example/ ExampleTypes_2016-01-01.xsd"
+    "example": "node example/example.js convert example/ ExampleTypes_2016-01-01.xsd",
+    "jsdoc": "jsdoc -c jsdoc-conf.json -t ./node_modules/ink-docstrap/template -R README.md -r ./src/"
   },
   "devDependencies": {
     "coveralls": "^2.11.15",
+    "ink-docstrap": "^1.3.0",
     "istanbul": "^0.4.5",
     "jasmine": "^2.5.2",
+    "jsdoc": "^3.4.3",
     "require-self": "^0.1.0"
   }
 }

@@ -1,7 +1,3 @@
-/**
- *  XML Schema file operations
- */
-
 "use strict";
 
 var DOMParser = require('xmldom').DOMParser;
@@ -21,6 +17,10 @@ var schemaNamespace_NAME = Symbol();
 var namespaces_NAME = Symbol();
 var targetNamespace_NAME = Symbol();
 
+/**
+ * XML Schema file operations
+ * TBD (xmldom)
+ */
 class XsdFile {
     constructor(uriParm) {
         this.baseFilename = path.basename(uriParm);

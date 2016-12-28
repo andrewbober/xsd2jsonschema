@@ -1,13 +1,15 @@
-/**
- *  XML Namespaces of custom types that have been converted to JSON Schema
- */
-
 "use strict";
 
 var JsonSchemaFile = require("./jsonSchemaFile");
 var utils = require("./utils");
 
 var namespaces = { globalAttributes:{ customTypes:{} } };
+
+/**
+ * XML Namespaces of custom types that have been converted to JSON Schema
+ * 
+ * @module CustomTypes
+ */
 
 module.exports = {
 	addNamespace: function (_namespace) {

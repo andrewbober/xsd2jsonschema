@@ -1,9 +1,10 @@
-/**
- *  XML Schema Element Keywords
- * 
- */
-
 "use strict";
+
+/**
+ * Defines constants for XML Schema Element Keywords
+ * 
+ * @module XsdElements
+ */
 
 module.exports = {
 	all: "all",
