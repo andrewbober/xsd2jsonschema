@@ -1,5 +1,5 @@
 {
-  "name": "Xsd2JsonSchema",
+  "name": "xsd2JsonSchema",
   "description": "A tool to convert XML Schema to JSON Schema.",
   "version": "0.0.2",
   "homepage": "http://www.xsd2jsonschema.org",
