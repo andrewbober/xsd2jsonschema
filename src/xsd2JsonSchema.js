@@ -1,55 +1,59 @@
-/**
- * Xsd2JsonSchema - Guided conversion from XML Schema to JSON Schema.
- */
-
 "use strict";
 
-var customTypes = require("./customTypes");
-// var XsdFile = require("./xsdFile");
-var XsdFile = require("./xsdFileXmlDom");
-var JsonSchemaFile = require("./jsonSchemaFile");
-var DepthFirstTraversal = require("./depthFirstTraversal");
-var path = require("path");
-var fs = require("fs");
+const customTypes = require("./customTypes");
+// var XsdFile = require("./xmlschema/xsdFile");
+const XsdFile = require("./xmlschema/xsdFileXmlDom");
+const JsonSchemaFile = require("./jsonschema/jsonSchemaFile");
+const DepthFirstTraversal = require("./depthFirstTraversal");
+const DefaultConversionVisitor = require('./visitors/defaultConversionVisitor');
+const path = require("path");
+const fs = require("fs");
 
-/*
+const xsdBaseDir_NAME = Symbol();
+const baseId_NAME = Symbol();
+const jsonSchema_NAME = Symbol();
+const mask_NAME = Symbol();
+const outputDir_NAME = Symbol();
+const visitor_NAME = Symbol();
+const xmlSchemas_NAME = Symbol();
+
+
+/**
+ * Class prepresenting an instance of the Xsd2JsonSchema library.  This needs to be refactored to
+ * remove the filesystem focus and work off URI's or possibly just strings represending the contents
+ * of the XML Schema files being converted to JSON Schema.
  * 
- *
+ * I would like the library to be encapsulated from IO if possible.
+ * 
+ * In the current implementation is is really only usable as a cli.
  */
-var options_NAME = Symbol();
-var baseDirectory_NAME = Symbol();
-var xmlSchemas_NAME = Symbol();
-var jsonSchema_NAME = Symbol();
-
 class Xsd2JsonSchema {
-	constructor(xsdBaseDirectory, xsdFilenames, _options) {
-		this.options = _options;
-		this.baseDirectory = xsdBaseDirectory;
+	constructor(options) {
+		this.xsdBaseDir = options.xsdBaseDir;
+		this.baseId = options.baseId;
+		this.mask = options.mask;
+		this.outputDir = options.outputDir;
+		if (options.visitor == undefined) {
+			this.visitor = new DefaultConversionVisitor();
+		} else {
+			this.visitor = options.visitor;
+		}
 		this.xmlSchemas = {};
 		this.jsonSchema = {};
-		this.loadAllSchemas(xsdFilenames);
-		this.initializeNamespaces();
 	}
 
-	get options() {
-		return this[options_NAME];
+	get xsdBaseDir() {
+		return this[xsdBaseDir_NAME]
 	}
-	set options(newOptions) {
-		this[options_NAME] = newOptions;
-	}
-
-	get baseDirectory() {
-		return this[baseDirectory_NAME]
-	}
-	set baseDirectory(newbaseDirectory) {
-		this[baseDirectory_NAME] = newbaseDirectory;
+	set xsdBaseDir(newXsdBaseDirectory) {
+		this[xsdBaseDir_NAME] = newXsdBaseDirectory;
 	}
 
-	get xmlSchemas() {
-		return this[xmlSchemas_NAME];
+	get baseId() {
+		return this[baseId_NAME]
 	}
-	set xmlSchemas(newXmlSchemas) {
-		this[xmlSchemas_NAME] = newXmlSchemas;
+	set baseId(newBaseId) {
+		this[baseId_NAME] = newBaseId;
 	}
 
 	get jsonSchema() {
@@ -57,6 +61,34 @@ class Xsd2JsonSchema {
 	}
 	set jsonSchema(newJsonSchema) {
 		this[jsonSchema_NAME] = newJsonSchema;
+	}
+
+	get mask() {
+		return this[mask_NAME]
+	}
+	set mask(newMask) {
+		this[mask_NAME] = newMask;
+	}
+
+	get outputDir() {
+		return this[outputDir_NAME]
+	}
+	set outputDir(newOutputDir) {
+		this[outputDir_NAME] = newOutputDir;
+	}
+
+	get visitor() {
+		return this[visitor_NAME]
+	}
+	set visitor(newVisitor) {
+		this[visitor_NAME] = newVisitor;
+	}
+
+	get xmlSchemas() {
+		return this[xmlSchemas_NAME];
+	}
+	set xmlSchemas(newXmlSchemas) {
+		this[xmlSchemas_NAME] = newXmlSchemas;
 	}
 
 	loadSchema(uri) {
@@ -72,12 +104,19 @@ class Xsd2JsonSchema {
 
 	loadAllSchemas(uris) {
 		uris.forEach(function (uri, index, array) {
-			this.loadSchema(path.join(this.baseDirectory, uri));
+			this.loadSchema(path.join(this.xsdBaseDir, uri));
+			//			this.loadSchema(uri);
 		}, this);
 		return this.xmlSchemas;
 	}
 
-
+	/**
+	 * Runs through the list of XML Schema files and creates namespaces for all targetNamespaces
+	 * discovered.
+	 * 
+	 * NOTE: This needs to be reviewed because it only supports targetNamespaces.  Technically,
+	 * any element could have a namespace associated with it.
+	 */
 	initializeNamespaces() {
 		Object.keys(this.xmlSchemas).forEach(function (uri, index, array) {
 			var targetNamespace = this.xmlSchemas[uri].targetNamespace;
@@ -85,41 +124,49 @@ class Xsd2JsonSchema {
 		}, this);
 	}
 
-	processSchema(visitor, uri) {
+	processSchema(uri) {
 		var xsd = this.xmlSchemas[uri];
 		if (xsd.hasIncludes()) {
-			this.processSchemas(visitor, xsd.getIncludes());
+			this.processSchemas(xsd.getIncludes());
 		}
 		if (this.jsonSchemas[uri] === undefined) {
 			var traversal = new DepthFirstTraversal();
 			var parms = {};
 			parms.xsd = xsd;
-			parms.resolveURI = this.options.resolveURI;
-			parms.mask = this.options.mask;
+			parms.baseId = this.baseId;
+			parms.mask = this.mask;
 			this.jsonSchemas[uri] = new JsonSchemaFile(parms);
-			traversal.traverse(visitor, this.jsonSchemas[uri], xsd);
+			traversal.traverse(this.visitor, this.jsonSchemas[uri], xsd);
 		}
 	}
 
-	processSchemas(visitor, uris) {
+	processSchemas(uris) {
 		uris.forEach(function (uri, index, array) {
-			this.processSchema(visitor, uri);
+			this.processSchema(uri);
 		}, this);
 	}
 
-	processAllSchemas(visitor) {
+	processAllSchemas(parms) {
+		if (parms.xsdBaseDir != undefined) {
+			this.xsdBaseDir = parms.xsdBaseDir;
+		}
+		if (parms.visitor != undefined) {
+			this.visitor = parms.visitor;
+		}
+		this.loadAllSchemas(parms.xsdFilenames);
+		this.initializeNamespaces();
 		this.jsonSchemas = {};
-		this.processSchemas(visitor, Object.keys(this.xmlSchemas));
+		this.processSchemas(Object.keys(this.xmlSchemas));
 	}
 
 	writeFiles() {
 		try {
-			fs.mkdirSync(this.options.outputDir);
+			fs.mkdirSync(this.outputDir);
 		} catch (err) {
 			// log something here
 		}
 		Object.keys(this.jsonSchemas).forEach(function (uri, index, array) {
-			this.jsonSchemas[uri].writeFile(this.options.outputDir);
+			this.jsonSchemas[uri].writeFile(this.outputDir);
 		}, this);
 	}
 

@@ -1,0 +1,33 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "properties": {
+        "ObjectTest": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "FirstName": {
+                        "type": "string"
+                    },
+                    "LastName": {
+                        "type": "string"
+                    },
+                    "Age": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "FirstName",
+                    "LastName",
+                    "Age"
+                ],
+                "additionalProperties": false
+            }
+        }
+    },
+    "required": [
+        "ObjectTest"
+    ],
+    "additionalProperties": false
+}

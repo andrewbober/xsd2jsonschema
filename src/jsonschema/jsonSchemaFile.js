@@ -1,49 +1,51 @@
 "use strict";
 
-var path = require("path");
-var fs = require("fs");
-var utils = require("./utils");
+const path = require("path");
+const fs = require("fs");
+const URI = require("urijs");
+const utils = require("../utils");
+const jsonSchemaTypes = require("./jsonSchemaTypes");
 
-var filename_NAME = Symbol();
-var resolvedFilename_NAME = Symbol();
-var targetSchema_NAME = Symbol();
-var targetNamespace_NAME = Symbol();
-var ref_NAME = Symbol();
-var $ref_NAME = Symbol();
-var id_NAME = Symbol();
-var subSchemas_NAME = Symbol();
-var $schema_NAME = Symbol();
-var title_NAME = Symbol();
-var description_NAME = Symbol();
-var default_NAME = Symbol();
-var format_NAME = Symbol();
-var multipleOf_NAME = Symbol();
-var maximum_NAME = Symbol();
-var exclusiveMaximum_NAME = Symbol();
-var minimum_NAME = Symbol();
-var exclusiveMinimum_NAME = Symbol();
-var maxLength_NAME = Symbol();
-var minLength_NAME = Symbol();
-var pattern_NAME = Symbol();
-var additionalItems_NAME = Symbol();
-var items_NAME = Symbol();
-var maxItems_NAME = Symbol();
-var minItems_NAME = Symbol();
-var uniqueItems_NAME = Symbol();
-var maxProperties_NAME = Symbol();
-var minProperties_NAME = Symbol();
-var required_NAME = Symbol();
-var additionalProperties_NAME = Symbol();
-var properties_NAME = Symbol();
-var patternProperties_NAME = Symbol();
-var dependencies_NAME = Symbol();
-var enum_NAME = Symbol();
-var type_NAME = Symbol();
-var allOf_NAME = Symbol();
-var anyOf_NAME = Symbol();
-var oneOf_NAME = Symbol();
-var not_NAME = Symbol();
-var definitions_NAME = Symbol();
+const filename_NAME = Symbol();
+// const resolvedFilename_NAME = Symbol();
+const targetSchema_NAME = Symbol();
+const targetNamespace_NAME = Symbol();
+const ref_NAME = Symbol();
+const $ref_NAME = Symbol();
+const id_NAME = Symbol();
+const subSchemas_NAME = Symbol();
+const $schema_NAME = Symbol();
+const title_NAME = Symbol();
+const description_NAME = Symbol();
+const default_NAME = Symbol();
+const format_NAME = Symbol();
+const multipleOf_NAME = Symbol();
+const maximum_NAME = Symbol();
+const exclusiveMaximum_NAME = Symbol();
+const minimum_NAME = Symbol();
+const exclusiveMinimum_NAME = Symbol();
+const maxLength_NAME = Symbol();
+const minLength_NAME = Symbol();
+const pattern_NAME = Symbol();
+const additionalItems_NAME = Symbol();
+const items_NAME = Symbol();
+const maxItems_NAME = Symbol();
+const minItems_NAME = Symbol();
+const uniqueItems_NAME = Symbol();
+const maxProperties_NAME = Symbol();
+const minProperties_NAME = Symbol();
+const required_NAME = Symbol();
+const additionalProperties_NAME = Symbol();
+const properties_NAME = Symbol();
+const patternProperties_NAME = Symbol();
+const dependencies_NAME = Symbol();
+const enum_NAME = Symbol();
+const type_NAME = Symbol();
+const allOf_NAME = Symbol();
+const anyOf_NAME = Symbol();
+const oneOf_NAME = Symbol();
+const not_NAME = Symbol();
+const definitions_NAME = Symbol();
 
 /**
  * XML Schema file operations.  This is based on the JSON Schema meta-schema located at http://json-schema.org/draft-04/schema#.  
@@ -55,7 +57,7 @@ var definitions_NAME = Symbol();
 class JsonSchemaFile {
 	constructor(parms) {
 		this.filename = undefined;
-		this.resolvedFilename = undefined;
+//		this.resolvedFilename = undefined;
 		this.targetSchema = {};
 		this.targetNamespace = undefined;
 		this.ref = undefined;  // used to hold a JSON Pointer reference to this named type (Not used for anonymous types)
@@ -127,13 +129,15 @@ class JsonSchemaFile {
 			throw new Error("Parameter 'parms' is required");
 		}
 		if (parms.xsd != undefined) {
-			var baseFilename = path.parse(parms.xsd.baseFilename).name;
-			this.id = (parms.mask === undefined) ? baseFilename : baseFilename.replace(parms.mask, "");
+			const baseFilename = path.parse(parms.xsd.baseFilename).name;
+			const maskedFilename = (parms.mask === undefined) ? baseFilename : baseFilename.replace(parms.mask, "");
+			this.filename = maskedFilename + ".json";
+			this.id = new URI(parms.baseId).filename(this.filename).toString();
 			this.$schema = "http://json-schema.org/draft-04/schema#";
-			this.filename = this.id + ".json";
-			this.resolvedFilename = path.join(parms.resolveURI, this.filename);
+//			this.resolvedFilename = path.join(parms.resolveURI, this.filename);
 			this.targetNamespace = parms.xsd.targetNamespace;
 			this.title = "This JSON Schema file was generated from " + parms.xsd.baseFilename + " on " + new Date() + ".  For more information please see http://www.xsd2jsonschema.org";
+			this.type = jsonSchemaTypes.OBJECT;
 		}
 		// This needs to be documented
 		if (parms.ref !== undefined) {
@@ -200,19 +204,20 @@ class JsonSchemaFile {
 		var retval;
 		if (this.subSchemas[searchName] != undefined) {
 			retval = this.subSchemas[searchName];
+		} else {
+			Object.keys(this.subSchemas).forEach(function (subschemaName, index, array) {
+				retval = this.subSchemas[subschemaName].getSubschema(searchName);
+			}, this);
 		}
-		Object.keys(this.subSchemas).forEach(function (subschemaName, index, array) {
-			retval = this.subSchemas[subschemaName].getSubschema(searchName);
-		}, this);
 		return retval;
 	}
 
-/*
-	// Search through all schemas for a given schema name
-	getSubschema(subschemaName) {
-		return this.getSubschema(subschemaName);
-	}
-*/
+	/*
+		// Search through all schemas for a given schema name
+		getSubschema(subschemaName) {
+			return this.getSubschema(subschemaName);
+		}
+	*/
 
 	// Read-only properties
 	getTargetSchema() {
@@ -230,12 +235,8 @@ class JsonSchemaFile {
 		return this.filename;
 	}
 
-	getResolvedFilename() {
-		return this.resolvedFilename;
-	}
-
 	get$RefToSchema() {
-		return new JsonSchemaFile({ $ref: this.ref });
+		return this.ref == undefined ? this : new JsonSchemaFile({ $ref: this.ref });
 	}
 
 	getSubschemaStr() {
@@ -417,20 +418,21 @@ class JsonSchemaFile {
 				if (this.definitions[key] !== undefined) {
 					jsonSchema.definitions[key] = this.definitions[key].getJsonSchema();
 				}
-			},this);
+			}, this);
 		}
 
 		if (!this.isEmpty(this.subSchemas)) {
-			var subschemaNames = Object.keys(this.subSchemas);
+			const subschemaNames = Object.keys(this.subSchemas);
 			subschemaNames.forEach(function (subschemaName, index, array) {
-				try { 
+				try {
 					jsonSchema[subschemaName] = this.subSchemas[subschemaName].getJsonSchema();
 				} catch (err) {
 					console.log(err);
 					console.log(this.subSchemas);
 				}
-			},this);
+			}, this);
 		}
+
 		return jsonSchema;
 	}
 
@@ -444,6 +446,7 @@ class JsonSchemaFile {
 		this[filename_NAME] = newFilename;
 	}
 
+/*
 	// resolvedFilename
 	get resolvedFilename() {
 		return this[resolvedFilename_NAME];
@@ -451,6 +454,7 @@ class JsonSchemaFile {
 	set resolvedFilename(newResolvedFilename) {
 		this[resolvedFilename_NAME] = newResolvedFilename;
 	}
+*/
 
 	// targetSchema
 	get targetSchema() {
@@ -474,7 +478,7 @@ class JsonSchemaFile {
 		return this[ref_NAME];
 	}
 	set ref(newRef) {
-		this[ref_NAME] = newRef;  
+		this[ref_NAME] = newRef;
 	}
 
 	// $ref
@@ -504,7 +508,7 @@ class JsonSchemaFile {
 	set subSchemas(newSubSchemas) {
 		this[subSchemas_NAME] = newSubSchemas;
 	}
-	
+
 	// $schema
 	get $schema() {
 		return this[$schema_NAME];  // uri
@@ -517,7 +521,7 @@ class JsonSchemaFile {
 	// JSON Schema Validation specification sections referenced unless otherwise noted
 	// 6.1 Metadata keywords "title" and "description"
 	get title() {
-		return 	this[title_NAME];
+		return this[title_NAME];
 	}
 	set title(newTitle) {
 		this[title_NAME] = newTitle;
@@ -708,8 +712,8 @@ class JsonSchemaFile {
 	// patternProperties
 	// 5.4.4.1 MUST be an object. Each property name of this object SHOULD be a valid regular expression, according to the ECMA 262 regular expression dialect. Each property value of this object MUST be a valid JSON Schema.
 	get patternProperties() {
-		return this[patternProperties_NAME]; 
-	}	
+		return this[patternProperties_NAME];
+	}
 	set patternProperties(newPatternProperties) {
 		this[patternProperties_NAME] = newPatternProperties;
 	}
@@ -775,7 +779,7 @@ class JsonSchemaFile {
 	// not
 	// 5.5.6.1 This object MUST be a valid JSON Schema.
 	get not() {
-		return this[not_NAME];  
+		return this[not_NAME];
 	}
 	set not(newNot) {
 		this[not_NAME] = newNot;
@@ -784,14 +788,21 @@ class JsonSchemaFile {
 	// definitions
 	// 5.5.7.1 MUST be an object. Each member value of this object MUST be a valid JSON Schema.
 	get definitions() {
-		return this[definitions_NAME];  
+		return this[definitions_NAME];
 	}
 	set definitions(newDefinitions) {
 		this[definitions_NAME] = newDefinitions;
 	}
 
 
-	clone(target) {
+	clone() {
+		var target = new JsonSchemaFile({});
+		if (!this.isEmpty(this.ref)) {
+			target.ref = this.copy(this.ref);
+		}
+		if (!this.isEmpty(this.$ref)) {
+			target.$ref = this.copy(this.$ref);
+		}
 		if (!this.isEmpty(this.id)) {
 			target.id = this.copy(this.id);
 		}
@@ -914,18 +925,23 @@ class JsonSchemaFile {
 		if (!this.isEmpty(this.definitions)) {
 			target.definitions = this.copy(this.definitions);
 		}
+		return target;
 	}
 
 	addEnum(val) {
 		this.enum.push(val);
 	}
-	
+
 	addRequired(_required) {
 		this.required.push(_required);
 	}
-	
-	setProperty(_property, _type) {
-		this.properties[_property] = _type;
+
+	getProperty(propertyName) {
+		return this.properties[propertyName];
+	}
+
+	setProperty(propertyName, type) {
+		this.properties[propertyName] = type;
 	}
 
 	writeFile(dir) {
@@ -957,7 +973,15 @@ class JsonSchemaFile {
 		}
 		this.setProperty(name, customType);
 	}
-
+	
+	addRequiredPropertyToBaseSchema(name, type) {
+		if (this.getProperty(name) == undefined) {
+			var anyOfProp = new JsonSchemaFile({});
+			anyOfProp.addRequired(name);
+			this.anyOf.push(anyOfProp);
+			this.setProperty(name, type.get$RefToSchema());
+		}		
+	}
 }
 
 module.exports = JsonSchemaFile;

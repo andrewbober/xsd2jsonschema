@@ -5,15 +5,17 @@
 	"configurations": [
 		{
 			// Name of configuration; appears in the launch configuration drop down menu.
-			"name": "BMS Conversion",
+			"name": "Example Conversion",
 			// Type of configuration. Possible values: "node", "mono".
 			"type": "node",
+			// Action to take
+			"request": "launch",
 			// Workspace relative or absolute path to the program.
 			"program": "${workspaceRoot}/example/example.js",
 			// Automatically stop program after launch.
 			"stopOnEntry": false,
 			// Command line arguments passed to the program.
-			"args": ["convert", "/Users/andrewbober/BMS/2016R2_V5.4.0/BMSCodeExtSchemas/", "BMSRoot_CodeExt_2016R2_V5.4.0.xsd"],
+			"args": ["convert"],
 			"cwd": "${workspaceRoot}/",
 			// Workspace relative or absolute path to the runtime executable to be used. Default is the runtime executable on the PATH.
 			"runtimeExecutable": null,
@@ -24,21 +26,21 @@
 				"NODE_ENV": "development"
 			},
 			// Use JavaScript source maps (if they exist).
-			"sourceMaps": false,
-			// If JavaScript source maps are enabled, the generated code is expected in this directory.
-			"outDir": null
+			"sourceMaps": false
 		},
 		{
 			// Name of configuration; appears in the launch configuration drop down menu.
-			"name": "Launch example.js",
+			"name": "Example Validation",
 			// Type of configuration. Possible values: "node", "mono".
 			"type": "node",
+			// Action to take
+			"request": "launch",
 			// Workspace relative or absolute path to the program.
 			"program": "${workspaceRoot}/example/example.js",
 			// Automatically stop program after launch.
 			"stopOnEntry": false,
 			// Command line arguments passed to the program.
-			"args": ["convert", "${workspaceRoot}/example/", "ExampleTypes_2016-01-01.xsd"],
+			"args": ["validate"],
 			"cwd": "${workspaceRoot}/",
 			// Workspace relative or absolute path to the runtime executable to be used. Default is the runtime executable on the PATH.
 			"runtimeExecutable": null,
@@ -49,21 +51,21 @@
 				"NODE_ENV": "development"
 			},
 			// Use JavaScript source maps (if they exist).
-			"sourceMaps": false,
-			// If JavaScript source maps are enabled, the generated code is expected in this directory.
-			"outDir": null
+			"sourceMaps": false
 		},
 		{
 			// Name of configuration; appears in the launch configuration drop down menu.
-			"name": "Launch test.js",
+			"name": "Launch Functional Test Suite",
 			// Type of configuration. Possible values: "node", "mono".
 			"type": "node",
+			// Action to take
+			"request": "launch",
 			// Workspace relative or absolute path to the program.
 			"program": "${workspaceRoot}/test/functional/testAttributes.js",
 			// Automatically stop program after launch.
 			"stopOnEntry": false,
 			// Command line arguments passed to the program.
-			"args": ["convert", "${workspaceRoot}/example/", "ExampleTypes_2016-01-01.xsd"],
+			"args": [],
 			"cwd": "${workspaceRoot}/",
 			// Workspace relative or absolute path to the runtime executable to be used. Default is the runtime executable on the PATH.
 			"runtimeExecutable": null,
@@ -74,9 +76,32 @@
 				"NODE_ENV": "development"
 			},
 			// Use JavaScript source maps (if they exist).
-			"sourceMaps": false,
-			// If JavaScript source maps are enabled, the generated code is expected in this directory.
-			"outDir": null
+			"sourceMaps": false
+		},
+		{
+			// Name of configuration; appears in the launch configuration drop down menu.
+			"name": "Launch Jasmine Test Suite",
+			// Type of configuration. Possible values: "node", "mono".
+			"type": "node",
+			// Action to take
+			"request": "launch",
+			// Workspace relative or absolute path to the program.
+			"program": "${workspaceRoot}/node_modules/.bin/jasmine",
+			// Automatically stop program after launch.
+			"stopOnEntry": false,
+			// Command line arguments passed to the program.
+			"args": [],
+			"cwd": "${workspaceRoot}/",
+			// Workspace relative or absolute path to the runtime executable to be used. Default is the runtime executable on the PATH.
+			"runtimeExecutable": null,
+			// Optional arguments passed to the runtime executable.
+			"runtimeArgs": ["--nolazy"],
+			// Environment variables passed to the program.
+			"env": {
+				"NODE_ENV": "development"
+			},
+			// Use JavaScript source maps (if they exist).
+			"sourceMaps": false
 		},
 		{
 			"name": "Attach",

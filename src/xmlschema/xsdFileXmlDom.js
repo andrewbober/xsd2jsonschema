@@ -1,21 +1,22 @@
 "use strict";
 
-var DOMParser = require('xmldom').DOMParser;
-var fs = require("fs");
-var path = require("path");
-var xsdAttributes = require("./xsdAttributes");
+const DOMParser = require('xmldom').DOMParser;
+const fs = require("fs");
+const path = require("path");
+const xsdAttributes = require("./xsdAttributes");
+const XsdNodeTypes = require('./xsdNodeTypes');
 
 
-var baseFilename_NAME = Symbol();
-var xmlSchemaNamespace_NAME = Symbol();
-var uri_NAME = Symbol();
-var xmlDoc_NAME = Symbol();
-var schemaElement_NAME = Symbol();
-var includeUris_NAME = Symbol();
-var namespace_NAME = Symbol();
-var schemaNamespace_NAME = Symbol();
-var namespaces_NAME = Symbol();
-var targetNamespace_NAME = Symbol();
+const baseFilename_NAME = Symbol();
+const xmlSchemaNamespace_NAME = Symbol();
+const uri_NAME = Symbol();
+const xmlDoc_NAME = Symbol();
+const schemaElement_NAME = Symbol();
+const includeUris_NAME = Symbol();
+const namespace_NAME = Symbol();
+const schemaNamespace_NAME = Symbol();
+const namespaces_NAME = Symbol();
+const targetNamespace_NAME = Symbol();
 
 /**
  * XML Schema file operations
@@ -30,7 +31,7 @@ class XsdFile {
         this.xmlDoc = new DOMParser().parseFromString(data.toString(), "text/xml");
         this.schemaElement = this.xmlDoc.documentElement;
         //this.includeUris = undefined;
-        this.namespace = this.schemaElement.getAttribute(xsdAttributes.targetNamespace);
+        this.namespace = this.schemaElement.getAttribute(xsdAttributes.TARGET_NAMESPACE);
         //this.schemaNamespace = undefined;
         //this.namespaces = undefined;
         //this.targetNamespace = undefined;
@@ -101,7 +102,7 @@ class XsdFile {
 
     get targetNamespace() {
         if (this[targetNamespace_NAME] === undefined) {
-            this.targetNamespace = this.schemaElement.getAttribute(xsdAttributes.targetNamespace);
+            this.targetNamespace = this.schemaElement.getAttribute(xsdAttributes.TARGET_NAMESPACE);
         }
         return this[targetNamespace_NAME];
     }
@@ -111,6 +112,18 @@ class XsdFile {
 
     hasIncludes() {
         return this.getIncludes().length > 0;
+    }
+
+    getIncludes() {
+        if (this.includeUris === undefined) {
+            var includeNodes = this.schemaElement.getElementsByTagName(this.schemaElement.prefix + ":include");
+            this.includeUris = [];
+            for (let i = 0; i < includeNodes.length; i++) {
+                const includeNode = includeNodes.item(i);
+                this.includeUris.push(includeNode.getAttribute(xsdAttributes.SCHEMA_LOCATION));
+            }
+        }
+        return this.includeUris;
     }
 
     /**
@@ -132,19 +145,19 @@ class XsdFile {
      */
     /* *********************************************************************************** */
 
-    dumpAttrs(node) {
+    static dumpAttrs(node) {
         var attrs = node.attributes;
         console.log("XML-TAG-Attributes:");
         if (attrs != undefined) {
             Object.keys(attrs).forEach(function (attr, index, array) {
-                if (attrs[attr].nodeType === this.xmlDoc.ATTRIBUTE_NODE) {  // 2
+                if (attrs[attr].nodeType === XsdNodeTypes.ATTRIBUTE_NODE) {  // 2
                     console.log("\t" + index + ") " + attrs[attr].localName + "=" + attrs[attr].value);
                 }
-            }, attrs);
+            }, this);
         }
     }
 
-    getAttrValue(node, attrName) {
+    static getAttrValue(node, attrName) {
         var retval;
         if (this.hasAttribute(node, attrName)) {
             retval = node.getAttribute(attrName);
@@ -152,7 +165,7 @@ class XsdFile {
         return retval;
     }
 
-    hasAttribute(node, attrName) {
+    static hasAttribute(node, attrName) {
         if (node.hasAttribute !== undefined) {
             return node.hasAttribute(attrName);
         } else {
@@ -160,11 +173,11 @@ class XsdFile {
         }
     }
 
-    getValueAttr(node) {
-        return this.getAttrValue(node, xsdAttributes.value);
+    static getValueAttr(node) {
+        return this.getAttrValue(node, xsdAttributes.VALUE);
     }
 
-    dumpNode(node) {
+    static dumpNode(node) {
         console.log("__________________________________________");
         console.log("XML-Type= " + node.nodeType);
         console.log("XML-TAG-Name= " + node.nodeName);
@@ -177,13 +190,13 @@ class XsdFile {
         console.log("_______________________");
     }
 
-    getNodeName(node) {
+    static getNodeName(node) {
         var name;
         switch (node.nodeType) {
-            case this.xmlDoc.TEXT_NODE: // 3
+            case XsdNodeTypes.TEXT_NODE: // 3
                 name = "text";
                 break;
-            case this.xmlDoc.COMMENT_NODE: // 8
+            case XsdNodeTypes.COMMENT_NODE: // 8
                 name = "comment";
                 break;
             default:
@@ -192,42 +205,33 @@ class XsdFile {
         return name;
     }
 
-    isNamed(node) {
-        return this.hasAttribute(node, xsdAttributes.name);
+    static isNamed(node) {
+        return this.hasAttribute(node, xsdAttributes.NAME);
     }
 
-    isReference(node) {
-        return this.hasAttribute(node, xsdAttributes.ref);
+    static isReference(node) {
+        return this.hasAttribute(node, xsdAttributes.REF);
     }
 
-    getIncludes() {
-        if (this.includeUris === undefined) {
-            var includeNodes = this.schemaElement.getElementsByTagName(this.schemaElement.prefix + ":include");
-            this.includeUris = [];
-            for (let i = 0; i < includeNodes.length; i++) {
-                const includeNode = includeNodes.item(i);
-                this.includeUris.push(includeNode.getAttribute(xsdAttributes.schemaLocation));
-            }
-        }
-        return this.includeUris;
+    static countChildren(node, tagName) {
+        // return node.childNodes.length;
+        const nodeName = node.prefix + ':' + tagName;
+        var len = node.getElementsByTagName(nodeName).length;
+        return len;
     }
 
-    countChildren(node, tagName) {
-        return node.childNodes.length;
-    }
-
-    buildAttributeMap(node) {
+    static buildAttributeMap(node) {
         var map = {};
         var attrs = node.attributes;
         Object.keys(attrs).forEach(function (attr, index, array) {
-            if (attrs[attr].nodeType === this.xmlDoc.ATTRIBUTE_NODE) {
+            if (attrs[attr].nodeType === XsdNodeTypes.ATTRIBUTE_NODE) {
                 map[attrs[attr].nodeName] = attrs[attr].value;
             }
         }, this);
         return map;
     }
 
-    getChildNodes(node) {
+    static getChildNodes(node) {
         var retval = [];
         var nodelist = node.childNodes;
         if (nodelist != undefined) {

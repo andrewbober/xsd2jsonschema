@@ -3,7 +3,7 @@
 var libxmljs = require("libxmljs");
 var fs = require("fs");
 var path = require("path");
-var xsdAttributes = require("./xsdAttributes");
+var XsdAttributes = require("./xsdAttributes");
 
 
 var baseFilename_NAME = Symbol();
@@ -191,7 +191,7 @@ class XsdFile {
 	}
 
 	getValueAttr(node) {
-		return this.getAttrValue(node, xsdAttributes.value);
+		return this.getAttrValue(node, XsdAttributes.VALUE);
 	}
 
 	dumpNode(node) {
@@ -212,11 +212,11 @@ class XsdFile {
 	}
 
 	isNamed(node) {
-		return this.hasAttribute(node, xsdAttributes.name);
+		return this.hasAttribute(node, XsdAttributes.NAME);
 	}
 
 	isReference(node) {
-		return this.hasAttribute(node, xsdAttributes.ref);
+		return this.hasAttribute(node, XsdAttributes.REF);
 	}
 
 	getIncludes() {

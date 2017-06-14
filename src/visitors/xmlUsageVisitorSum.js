@@ -1,7 +1,3 @@
-/**
- *  TBD
- */
-
 "use strict";
 
 var BaseConvertionVisitor = require("./baseConversionVisitor");
@@ -9,7 +5,17 @@ var BaseConvertionVisitor = require("./baseConversionVisitor");
 var uris_NAME = Symbol();
 var tagCounts_NAME = Symbol();
 
+/**
+ * Class representing a custom visitor.  This visitor counts the XML Schema elments used by the provided
+ * {@link XsdFile|XML Schema} files and displays aggregate counts of elements used accross all scheam files.
+ */
 class XmlUsageVisitorSum extends BaseConvertionVisitor {
+	/**
+	 * Constructs an instance of XmlUsageVisitor without a converter because all processing will be done here in the
+	 * visitor.  Notice {@link BaseConversionVisitor#visit|BaseConversionVisitor.visit()} is overridden.
+	 * 
+	 * @constructor
+	 */
 	constructor() {
 		super(undefined);
 		this.uris = {};

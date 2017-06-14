@@ -1,13 +1,24 @@
 "use strict";
 
-var jsonSchemaTypes = require("./jsonSchemaTypes");
-var jsonSchemaFormats = require("./jsonSchemaFormats");
-var JsonSchemaFile = require("./jsonSchemaFile");
+var jsonSchemaTypes = require("./jsonschema/jsonSchemaTypes");
+var jsonSchemaFormats = require("./jsonschema/jsonSchemaFormats");
+var JsonSchemaFile = require("./jsonschema/jsonSchemaFile");
 
 /**
- *  Class representing a converter of XML Schema built-in simple types to JSON Schema types.
+ * Class representing a collection of XML Handler methods for converting XML Schema restrictions to JSON Schema.
+ * Handler methods convert XML Schema built-in simple types to JSON Schema types.  Each hander minimally sets the 
+ * JSON Schema *type* attribute to the appropriate built-in type.  Many handlers will further restrict the *type*
+ * using a JSON Schmea {@link http://json-schema.org/latest/json-schema-validation.html#rfc.section.7|format}, a
+ * regular expression, or a numeric restrictoion such as JSON Schema
+ * {@link http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4\minimum} or
+ * {@link http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4\maximum}.
  * 
- *  Please see: {@link http://www.w3.org/TR/xmlschema11-2/|W3C XML Schema Definition Language (XSD) 1.1 Part 2: Datatypes}.  Section 3 {@link http://www.w3.org/TR/xmlschema11-2/#built-in-datatypes|Built-in Datatypes and Their Definitions} has a nice diagram showing the built-in type hierarchy.  Also, {@link http://www.w3.org/TR/xmlschema-0/|XML Schema Part 0: Primer Second Edition} has a {@link http://www.w3.org/TR/xmlschema-0/#simpleTypesTable|reference table} summarizing the built-in types.
+ * Please see: 
+ * {@link http://www.w3.org/TR/xmlschema11-2/ |W3C XML Schema Definition Language (XSD) 1.1 Part 2: Datatypes} for 
+ * more information.  Section 3 {@link http://www.w3.org/TR/xmlschema11-2/#built-in-datatypes |Built-in Datatypes and Their Definitions} 
+ * has a nice diagram showing the built-in type hierarchy.  Also, 
+ * {@link http://www.w3.org/TR/xmlschema-0/ |XML Schema Part 0: Primer Second Edition} has a 
+ * {@link http://www.w3.org/TR/xmlschema-0/#simpleTypesTable |reference table} summarizing the XML Schema built-in types.
  */
 class RestrictionConverter {
 
@@ -15,73 +26,168 @@ class RestrictionConverter {
 	// *****************************************************************************************
 
 	// 3.3.1 string: http://www.w3.org/TR/xmlschema11-2/#string
-
 	/**
-	 * Converts an {@link http://www.w3.org/TR/xmlschema11-2/#string|XML String} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2|JSON Schema String}.
+	 * XML handler method to convert a {@link http://www.w3.org/TR/xmlschema11-2/#string |XML Schema String} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema String}.
 	 * 
-	 * @param {Node} node - the current element in xsd being converted.
-	 * @param {JsonSchemaFile} jsonSchema - the JSON Schema representing the current restriction from the XML schema file {@link XsdFile|xsd}.
-	 * @param {XsdFile} xsd - the XML schema file currently being converted.
+	 * @param {Node} node - The current element in xsd being converted.
+	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current restriction from the XML schema file {@link XsdFile|xsd}.
+	 * @param {XsdFile} xsd - The XML schema file currently being converted.
 	 * 
-	 * @returns {Boolean} - true.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
+	 * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
 	 */
 	string(node, jsonSchema, xsd) {
 		jsonSchema.type = jsonSchemaTypes.STRING;
 		return true;
 	}
 
-	// 3.3.2 boolean: http://www.w3.org/TR/xmlschema11-2/#boolean
+	/*
+		// 3.3.2 boolean: http://www.w3.org/TR/xmlschema11-2/#boolean
+		/ **
+		 * XML handler method to convert a {@link http://www.w3.org/TR/xmlschema11-2/#boolean |XML Schema Boolean} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema Boolean}.
+		 * 
+		 * @param {Node} node - The current element in xsd being converted.
+		 * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current restriction from the XML schema file {@link XsdFile|xsd}.
+		 * @param {XsdFile} xsd - The XML schema file currently being converted.
+		 * 
+		 * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
+		 * /
+		boolean(node, jsonSchema, xsd) {
+			jsonSchema.type = jsonSchemaTypes.BOOLEAN;
+			return true;
+		}
+	*/
+
+	/**
+	 * XML handler method to convert a {@link http://www.w3.org/TR/xmlschema11-2/#boolean |XML Schema Boolean} to either a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema Boolean} or {@link http://www.w3.org/TR/xmlschema11-2/#integer JSON Schema Integer} with values limited to 0 or 1.
+	 * 
+	 * @param {Node} node - The current element in xsd being converted.
+	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current restriction from the XML schema file {@link XsdFile|xsd}.
+	 * @param {XsdFile} xsd - The XML schema file currently being converted.
+	 * 
+	 * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
+	 */
 	boolean(node, jsonSchema, xsd) {
-		jsonSchema.type = jsonSchemaTypes.BOOLEAN;
+		var booleanSchema = new JsonSchemaFile({});
+		booleanSchema.type = jsonSchemaTypes.BOOLEAN;
+
+		var integerSchema = new JsonSchemaFile({});
+		integerSchema.type = jsonSchemaTypes.INTEGER;
+		integerSchema.maximum = 1;
+		integerSchema.minimum = 0;
+
+		jsonSchema.oneOf.push(booleanSchema);
+		jsonSchema.oneOf.push(integerSchema);
 		return true;
 	}
 
 	// 3.3.3 decimal: http://www.w3.org/TR/xmlschema11-2/#decimal
+	/**
+	 * XML handler method to convert a {@link http://www.w3.org/TR/xmlschema11-2/#decimal |XML Schema Decimal} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema Number}.
+	 * 
+	 * @param {Node} node - The current element in xsd being converted.
+	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current restriction from the XML schema file {@link XsdFile|xsd}.
+	 * @param {XsdFile} xsd - The XML schema file currently being converted.
+	 * 
+	 * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
+	 */
 	decimal(node, jsonSchema, xsd) {
 		jsonSchema.type = jsonSchemaTypes.NUMBER;
 		return true;
 	}
 
 	// 3.3.4 float: http://www.w3.org/TR/xmlschema11-2/#float
+	/**
+	 * XML handler method to convert a {@link http://www.w3.org/TR/xmlschema11-2/#float |XML Schema Float} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema Number}.
+	 * 
+	 * @param {Node} node - The current element in xsd being converted.
+	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current restriction from the XML schema file {@link XsdFile|xsd}.
+	 * @param {XsdFile} xsd - The XML schema file currently being converted.
+	 * 
+	 * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
+	 */
 	float(node, jsonSchema, xsd) {
 		jsonSchema.type = jsonSchemaTypes.NUMBER;
 		return true;
 	}
 
 	// 3.3.5 double: http://www.w3.org/TR/xmlschema11-2/#double
+	/**
+	 * XML handler method to convert a {@link http://www.w3.org/TR/xmlschema11-2/#double |XML Schema Double} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema Number}.
+	 * 
+	 * @param {Node} node - The current element in xsd being converted.
+	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current restriction from the XML schema file {@link XsdFile|xsd}.
+	 * @param {XsdFile} xsd - The XML schema file currently being converted.
+	 * 
+	 * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
+	 */
 	double(node, jsonSchema, xsd) {
 		jsonSchema.type = jsonSchemaTypes.NUMBER;
 		return true;
 	}
 
 	// 3.3.6 duration: http://www.w3.org/TR/xmlschema11-2/#duration
+	/**
+	 * XML handler method to convert a {@link http://www.w3.org/TR/xmlschema11-2/#duration |XML Schema Duration} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema String} 
+	 * and utilizes regex to validate the string against the XML Schema duration specification.
+	 * 
+	 * <pre>
+	 * 		jsonSchema.pattern = "^[-]?P(?!$)(?:\d+Y)?(?:\d+M)?(?:\d+D)?(?:T(?!$)(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?$";
+	 * </pre>
+	 * Source: {@link http://www.regexlib.com/REDetails.aspx?regexp_id=1219};
+	 * 
+	 * @param {Node} node - The current element in xsd being converted.
+	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current restriction from the XML schema file {@link XsdFile|xsd}.
+	 * @param {XsdFile} xsd - The XML schema file currently being converted.
+	 * 
+	 * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
+	 */
 	duration(node, jsonSchema, xsd) {
 		jsonSchema.type = jsonSchemaTypes.STRING;
-		jsonSchema.pattern= "^[-]?P(?!$)(?:\\d+Y)?(?:\\d+M)?(?:\\d+D)?(?:T(?!$)(?:\\d+H)?(?:\\d+M)?(?:\\d+(?:\\.\\d+)?S)?)?$";
+		jsonSchema.pattern = "^[-]?P(?!$)(?:\\d+Y)?(?:\\d+M)?(?:\\d+D)?(?:T(?!$)(?:\\d+H)?(?:\\d+M)?(?:\\d+(?:\\.\\d+)?S)?)?$";
 		// jsonSchema.description = "Matches the XSD schema duration built in type as defined by http://www.w3.org/TR/xmlschema-2/#duration.  Source: http://www.regexlib.com/REDetails.aspx?regexp_id=1219";
+
+		//jsonSchema.pattern = "-?P((( [0-9]+Y([0-9]+M)?([0-9]+D)?|([0-9]+M)([0-9]+D)?|([0-9]+D))(T(([0-9]+H)([0-9]+M)?([0-9]+(\\.[0-9]+)?S)?|([0-9]+M)([0-9]+(\\.[0-9]+)?S)?|([0-9]+(\\.[0-9]+)?S)))?)|(T(([0-9]+H)([0-9]+M)?([0-9]+(\\.[0-9]+)?S)?|([0-9]+M)([0-9]+(\\.[0-9]+)?S)?|([0-9]+(\\.[0-9]+)?S))))";
+		// jsonSchema.description = "Source:  http://www.w3.org/TR/xmlschema-2/#duration";
 		return true;
 	}
 
 	// 3.3.7 dateTime: http://www.w3.org/TR/xmlschema11-2/#dateTime
+	/**
+	 * XML handler method to convert a {@link http://www.w3.org/TR/xmlschema11-2/#dateTime |XML Schema dateTime} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema String} 
+	 * and utilizes regex to validate the string against the XML Schema dateTime specification.  Note XML Schema dateTime values are based on ISO 8601 whereas JSON Schema date-time values are based on RFC 3339.
+	 * Because of this the regular expression below is used to validate dateTime values converted from XML Schema.
+	 * 
+	 * <pre>
+	 * 		jsonSchema.pattern = ^(-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(\.[0-9]+)?(Z|[+-](?:2[0-3]|[01][0-9]):[0-5][0-9])?$
+	 * </pre>
+	 * Source: {@link http://www.regexlib.com/REDetails.aspx?regexp_id=1219};
+	 * 
+	 * @param {Node} node - The current element in xsd being converted.
+	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current restriction from the XML schema file {@link XsdFile|xsd}.
+	 * @param {XsdFile} xsd - The XML schema file currently being converted.
+	 * 
+	 * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
+	 */
 	dateTime(node, jsonSchema, xsd) {
 		jsonSchema.type = jsonSchemaTypes.STRING;
-		jsonSchema.format = jsonSchemaFormats.DATE_TIME;
+		jsonSchema.pattern = "-?([1-9][0-9]{3,}|0[0-9]{3})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T(([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?|(24:00:00(\\.0+)?))(Z|(\\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))?";
+		// jsonSchema.description = "Source:  http://www.w3.org/TR/xmlschema11-2/#dateTime"
 		return true;
 	}
 
 	// 3.3.8 time: http://www.w3.org/TR/xmlschema11-2/#time
 	time(node, jsonSchema, xsd) {
 		jsonSchema.type = jsonSchemaTypes.STRING;
-		jsonSchema.pattern = "^(24:00(:00(\\.[0]+)?)?|(([0-1][0-9]|2[0-3])(:)[0-5][0-9])((:)[0-5][0-9](\\.[\\d]+)?)?)((\\+|-)(14:00|(0[0-9]|1[0-3])(:)[0-5][0-9])|Z)$";
-		// jsonSchema.description = "This is a regular expression to check for a properly formatted time according to the international date and time notation ISO 8601.  Time portion taken from the source sited.  Source: http://www.regexlib.com/REDetails.aspx?regexp_id=2219";
+		jsonSchema.pattern = "(([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?|(24:00:00(\\.0+)?))(Z|(\\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))?";
+		// jsonSchema.description = "Source:  http://www.w3.org/TR/xmlschema11-2/#time"
 		return true;
 	}
 
 	// 3.3.9 date: http://www.w3.org/TR/xmlschema11-2/#date
 	date(node, jsonSchema, xsd) {
 		jsonSchema.type = jsonSchemaTypes.STRING;
-		jsonSchema.pattern = "^(?:(?=[02468][048]00|[13579][26]00|[0-9][0-9]0[48]|[0-9][0-9][2468][048]|[0-9][0-9][13579][26])\\d{4}(?:(-|)(?:(?:00[1-9]|0[1-9][0-9]|[1-2][0-9][0-9]|3[0-5][0-9]|36[0-6])|(?:01|03|05|07|08|10|12)(?:\\1(?:0[1-9]|[12][0-9]|3[01]))?|(?:04|06|09|11)(?:\\1(?:0[1-9]|[12][0-9]|30))?|02(?:\\1(?:0[1-9]|[12][0-9]))?|W(?:0[1-9]|[1-4][0-9]|5[0-3])(?:\\1[1-7])?))?)$|^(?:(?![02468][048]00|[13579][26]00|[0-9][0-9]0[48]|[0-9][0-9][2468][048]|[0-9][0-9][13579][26])\\d{4}(?:(-|)(?:(?:00[1-9]|0[1-9][0-9]|[1-2][0-9][0-9]|3[0-5][0-9]|36[0-5])|(?:01|03|05|07|08|10|12)(?:\\2(?:0[1-9]|[12][0-9]|3[01]))?|(?:04|06|09|11)(?:\\2(?:0[1-9]|[12][0-9]|30))?|(?:02)(?:\\2(?:0[1-9]|1[0-9]|2[0-8]))?|W(?:0[1-9]|[1-4][0-9]|5[0-3])(?:\\2[1-7])?))?)$";
-		// jsonSchema.description = "Validate a date according to the ISO 8601 standard (no time part) considering long-short months to allow 31st day of month and leap years to allow 29th February.  Source: http://regexlib.com/REDetails.aspx?regexp_id=3344";
+		jsonSchema.pattern = "-?([1-9][0-9]{3,}|0[0-9]{3})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])(Z|(\\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))?";
+		// jsonSchema.description = "Source:  http://www.w3.org/TR/xmlschema11-2/#date"
 		return true;
 	}
 
@@ -141,10 +247,33 @@ class RestrictionConverter {
 		return true;
 	}
 
+	/**
+	 * 
+	 * @param {*} node 
+	 * @param {*} jsonSchema 
+	 * @param {*} xsd 
+	 */
 	// 3.3.17 anyURI: http://www.w3.org/TR/xmlschema11-2/#anyURI
+	/**
+	 * XML handler method to convert a {@link  http://www.w3.org/TR/xmlschema11-2/#anyURI |XML Schema dateTime} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema String} 
+	 * and utilizes regex to validate the string against the XML Schema anyURI specification.  Note XML Schema URI values are based on {@link  https://tools.ietf.org/html/rfc2396|RFC2396} whereas JSON Schema URI values are based on {@link  https://tools.ietf.org/html/rfc3986|RFC 3986}.
+	 * Because of this the regular expression below is used to validate dateTime values converted from XML Schema.
+	 * 
+	 * <pre>
+	 * 		jsonSchema.pattern = ^(([a-zA-Z][0-9a-zA-Z+\\-\\.]*:)?\/{0,2}[0-9a-zA-Z;/?:@&=+$\\.\\-_!~*'()%]+)?(#[0-9a-zA-Z;/?:@&=+$\\.\\-_!~*'()%]+)?$
+	 * </pre>
+	 * Source: {@link http://lists.xml.org/archives/xml-dev/200108/msg00891.html | Regular expression for URI matching} (28);
+	 * 
+	 * @param {Node} node - The current element in xsd being converted.
+	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current restriction from the XML schema file {@link XsdFile|xsd}.
+	 * @param {XsdFile} xsd - The XML schema file currently being converted.
+	 * 
+	 * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
+	 */
 	anyURI(node, jsonSchema, xsd) {
 		jsonSchema.type = jsonSchemaTypes.STRING;
-		jsonSchema.format = jsonSchemaFormats.URI;
+		//jsonSchema.format = jsonSchemaFormats.URI;
+		jsonSchema.pattern = "^(([a-zA-Z][0-9a-zA-Z+\\-\\.]*:)?\/{0,2}[0-9a-zA-Z;/?:@&=+$\\.\\-_!~*'()%]+)?(#[0-9a-zA-Z;/?:@&=+$\\.\\-_!~*'()%]+)?$"
 		return true;
 	}
 
@@ -204,7 +333,7 @@ class RestrictionConverter {
 		jsonSchema.type = jsonSchemaTypes.ARRAY;
 		return true;
 	}
-	
+
 	// 3.4.6 Name: http://www.w3.org/TR/xmlschema11-2/#Name
 	Name(node, jsonSchema, xsd) {
 		jsonSchema.type = jsonSchemaTypes.STRING;
@@ -287,7 +416,7 @@ class RestrictionConverter {
 	long(node, jsonSchema, xsd) {
 		jsonSchema.type = jsonSchemaTypes.INTEGER;
 		jsonSchema.minium = -9223372036854775808;
-		jsonSchema.maximum =9223372036854775807;
+		jsonSchema.maximum = 9223372036854775807;
 		return true;
 	}
 

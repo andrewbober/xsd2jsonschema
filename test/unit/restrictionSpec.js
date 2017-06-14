@@ -29,9 +29,12 @@ describe("Restriction", function() {
     });
 
 // boolean
-    it("should convert boolean tags to JSON Schema boolean type", function() {
+    it("should convert boolean tags to JSON Schema with two potential types (Integer|Boolean) represented with anyOf", function() {
         rc.boolean(node, jsonSchema, xsd);
-        expect(jsonSchema.type).toEqual(jsonSchemaTypes.BOOLEAN);
+        expect(jsonSchema.type).toBeUndefined();
+        expect(jsonSchema.oneOf.length).toBe(2);
+        expect(jsonSchema.oneOf[0].type).toBe(jsonSchemaTypes.BOOLEAN);
+        expect(jsonSchema.oneOf[1].type).toBe(jsonSchemaTypes.INTEGER);
     });
 
 // decimal
@@ -60,10 +63,11 @@ describe("Restriction", function() {
     });
     
 // dateTime
-    it("should convert dateTime tags to JSON Schema string type with a JSON Schema format", function() {
+    it("should convert dateTime tags to JSON Schema string type with a JSON Schema pattern", function() {
         rc.dateTime(node, jsonSchema, xsd);
         expect(jsonSchema.type).toEqual(jsonSchemaTypes.STRING);
-        expect(jsonSchema.format).toEqual(jsonSchemaFormats.DATE_TIME);
+        // expect(jsonSchema.format).toEqual(jsonSchemaFormats.DATE_TIME);
+        expect(jsonSchema.pattern).not.toBeNull();
     });
     
 // time
@@ -131,7 +135,7 @@ describe("Restriction", function() {
     it("should convert anyURI tags to JSON Schema string type with a JSON Schema format", function() {
         rc.anyURI(node, jsonSchema, xsd);
         expect(jsonSchema.type).toEqual(jsonSchemaTypes.STRING);
-        expect(jsonSchema.format).toEqual(jsonSchemaFormats.URI);
+        expect(jsonSchema.pattern).not.toBeNull();
     });
 
 // QName
@@ -365,15 +369,27 @@ describe("Restriction", function() {
         rc.dateTimeDuration(node, jsonSchema, xsd);
         expect(jsonSchema.type).toEqual(jsonSchemaTypes.STRING);
         // TODO: once a pattern is utilized in the converter
-        // expect(jsonSchema.pattern).not.toBeNull();
+        expect(jsonSchema.pattern).not.toBeNull();
     });
 
 // dateTimeStamp
-    it("should convert dateTimeStamp tags to JSON Schema string type with a JSON Schema format", function() {
+    it("should convert dateTimeStamp tags to JSON Schema string type with a JJSON Schema pattern", function() {
         rc.dateTimeStamp(node, jsonSchema, xsd);
         expect(jsonSchema.type).toEqual(jsonSchemaTypes.STRING);
         expect(jsonSchema.format).toEqual(jsonSchemaFormats.DATE_TIME);
     });
     
+/*
+    it("should identify the following as bad URI values", function(){
+        var regex = new RegExp("^(([a-zA-Z][0-9a-zA-Z+\-\.]*:)?\/{0,2}[0-9a-zA-Z;/?:@&=+$\.\-_!~*'()%]+)?(#[0-9a-zA-Z;/?:@&=+$\.\-_!~*'()%]+)?$");
+        expect("http://datypic.com#frag1#frag2".match(regex)).not.toBeTruthy();
+        expect("#".match(regex)).toBeTruthy();
+        expect("##".match(regex)).not.toBeTruthy();
+        expect("any_string:anystring".match(regex)).not.toBeTruthy();
+        console.log("any_string:anystring = " + "any_string:anystring".match(regex));
+        expect("any@string:http".match(regex)).not.toBeTruthy();
+        expect("a#a#a".match(regex)).not.toBeTruthy();
+    });
+*/
 
 })

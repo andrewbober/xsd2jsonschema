@@ -1,0 +1,45 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "properties": {
+        "ObjectTest": {
+            "oneOf": [
+                {
+                    "$ref": "#/definitions/ObjectTestType"
+                },
+                {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ObjectTestType"
+                    }
+                }
+            ]
+        }
+    },
+    "required": [
+        "ObjectTest"
+    ],
+    "additionalProperties": false,
+    "definitions": {
+        "ObjectTestType": {
+            "type": "object",
+            "properties": {
+                "FirstName": {
+                    "type": "string"
+                },
+                "LastName": {
+                    "type": "string"
+                },
+                "Age": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "FirstName",
+                "LastName",
+                "Age"
+            ],
+            "additionalProperties": false
+        }
+    }
+}

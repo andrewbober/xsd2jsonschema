@@ -1,19 +1,27 @@
-/**
- *  TBD
- */
-
 "use strict";
 
 var BaseConvertionVisitor = require("./baseConversionVisitor");
 
 var uris_NAME = Symbol();
 
+
+/**
+ * Class representing a custom visitor.  This visitor lists the XML Schema elments used by the provided 
+ * {@link XsdFile|XML Schema} files and displays element counts by file.
+ */
 class XmlUsageVisitor extends BaseConvertionVisitor {
+	/**
+	 * Constructs an instance of XmlUsageVisitor without a converter because all processing will be done here in the
+	 * visitor.  Notice {@link BaseConversionVisitor#visit|BaseConversionVisitor.visit()} is overridden.
+	 * 
+	 * @constructor
+	 */
 	constructor() {
 		super(undefined);
 		this.uris = {};
 	}
 
+	// Getters/Setters
 	get uris() {
 		return this[uris_NAME];
 	}
@@ -36,6 +44,15 @@ class XmlUsageVisitor extends BaseConvertionVisitor {
 		}
 	}
 
+	/**
+	 * Overrides {@link BaseConversionVisitor#visit|BaseConversionVisitor.visit()} to do the work of calculating node counts by file.
+	 * 
+	 * @param {Node} node - the current element in xsd being converted.
+	 * @param {JsonSchemaFile} jsonSchema - the JSON Schema representing the current XML Schema file {@link XsdFile|xsd} being converted.
+	 * @param {XsdFile} xsd - the XML schema file currently being converted.
+	 * 
+	 * @returns {Boolean} True
+	 */
 	visit(node, jsonSchema, xsd) {
 		var uri = xsd.uri;
 		this.addSchema(uri);
@@ -43,6 +60,15 @@ class XmlUsageVisitor extends BaseConvertionVisitor {
 		return true;
 	}
 
+	/**
+	 * Overrides {@link BaseConversionVisitor#onBegin|BaseConversionVisitor.onBegin()} to ensure each file is only processed once. The
+	 * counts would be off is one common file is included by several files and all files were processed.
+	 * 
+	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema file that will represent converted XML Schema file {@link XsdFile|xsd}.
+	 * @param {XsdFile} xsd - The XML schema file about to be processed.
+	 * 
+	 * @returns {Boolean} True If xsd has not already been processed.  False otherwise.
+	 */
 	onBegin(jsonSchema, xsd) {
 		if (this.uris[xsd.uri] === undefined) {
 			return true;

@@ -1,0 +1,11 @@
+{
+    "PersonInfoType": {
+        "PersonName": {
+            "FirstName": "Andrew",
+            "MiddleName": "Jenkins",
+            "LastName": "Bober"
+        },
+        "Age": 48,
+        "BirthDate": "1968-12-27"
+    }
+}

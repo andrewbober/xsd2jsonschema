@@ -18,13 +18,13 @@
         "cleverLinks": false,
         "monospaceLinks": false,
         "dateFormat": "ddd MMM Do YYYY",
-        "outputSourceFiles": true,
-        "outputSourcePath": true,
-        "systemName": "DocStrap",
+        "outputSourceFiles": false,
+        "outputSourcePath": false,
+        "systemName": "Xsd2JsonSchema",
         "footer": "",
-        "copyright": "DocStrap Copyright © 2012-2015 The contributors to the JSDoc3 and DocStrap projects.",
+        "copyright": "Xsd2JsonSchema Copyright © 2016-2017 Andrew Bober.",
         "navType": "vertical",
-        "theme": "superhero",
+        "theme": "oblivion",
         "linenums": true,
         "collapseSymbols": false,
         "inverseNav": true,
@@ -32,7 +32,8 @@
         "methodHeadingReturns": false
     },
     "markdown": {
-        "parser": "gfm",
-        "hardwrap": true
+        "parser": "evilstreak",
+        "dialect": "Maruku",
+        "hardwrap": false
     }
 }

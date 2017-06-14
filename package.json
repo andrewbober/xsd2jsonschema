@@ -1,7 +1,7 @@
 {
-  "name": "Xsd2JsonSchema",
+  "name": "xsd2jsonschema",
   "description": "A tool to convert XML Schema to JSON Schema.",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "homepage": "http://www.xsd2jsonschema.org",
   "license": "Apache-2.0",
   "author": {
@@ -36,15 +36,21 @@
     "node": ">=6.9.2"
   },
   "dependencies": {
+    "ajv": "^4.11.5",
+    "urijs": "^1.18.10",
+    "xml2js": "^0.4.17",
     "xmldom": "^0.1.27"
   },
   "scripts": {
-    "postinstall": "require-self",
+    "prepare": "require-self",
     "test": "jasmine",
     "cover": "istanbul cover jasmine",
     "update-coveralls": "cat coverage/lcov.info | coveralls",
-    "example": "node example/example.js convert example/ ExampleTypes_2016-01-01.xsd",
-    "jsdoc": "jsdoc -c jsdoc-conf.json -t ./node_modules/ink-docstrap/template -R README.md -r ./src/"
+    "example-convert": "node example/example.js convert",
+    "example-validate": "node example/example.js validate",
+    "example-xml-usage": "node example/example.js xml-usage",
+    "example-xml-usage-sum": "node example/example.js xml-usage-sum",
+    "jsdoc": "jsdoc -c jsdoc-conf.json -t ./node_modules/jsdoc-oblivion/template -R README.md -r ./src/"
   },
   "devDependencies": {
     "coveralls": "^2.11.15",
@@ -52,6 +58,7 @@
     "istanbul": "^0.4.5",
     "jasmine": "^2.5.2",
     "jsdoc": "^3.4.3",
+    "jsdoc-oblivion": "0.0.4",
     "require-self": "^0.1.0"
   }
 }

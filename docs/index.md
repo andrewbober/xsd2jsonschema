@@ -27,7 +27,7 @@
 
 ``` npm install ```
 
-5. Add this line to the "dependancies" section to include faster native xml pricessing support provided by [libxmljs](https://www.npmjs.com/package/libxmljs).   **Please note**: you will need to have a compiler installed to build *libxmljs*, which is a native Node module.  On Windows you may need to install [node-gyp](https://github.com/nodejs/node-gyp#installation) separately as described in [step #3](#3).
+5. Add this line to the "dependancies" section of the package.json file to include faster native xml processing support provided by [libxmljs](https://www.npmjs.com/package/libxmljs).   **Please note**: you will need to have a C/C++ compiler installed to build *libxmljs*, which is a native Node module.  On Windows you may need to install [node-gyp](https://github.com/nodejs/node-gyp#installation) separately as described in [step #3](#3).
 
 ``` "libxmljs-dom": "0.0.8" ```
 
@@ -149,3 +149,8 @@ Command line to run the example.  **NOTE:** This is the command used to run the 
   * Added Coveralls.io support
   * Created initial documentation
 
+* v0.0.3
+  * Refactored xmlschema and jsonschema specific code into corresponding sub folders
+  * Heavy work on documentaiion
+  * Several variable name refactorings for readability
+  * Added faux interfaces to assist customizations

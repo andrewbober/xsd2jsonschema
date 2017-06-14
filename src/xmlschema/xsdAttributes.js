@@ -1,0 +1,61 @@
+"use strict";
+
+/**
+ * Defines constants for XML Schema Attribute Keywords
+ * 
+ * @module XsdAttributes
+ */
+
+module.exports = {
+	ABSTRACT: "abstract",
+	APPLIES_TO_EMPTY: "appliesToEmpty",
+	ATTRIBUTE_FORM_DEFAULT: "attributeFormDefault",
+	BASE: "base",
+	BLOCK: "block",
+	BLOCK_DEFAULT: "blockDefaut",
+	DEFAULT: "default",
+	DEFAULT_ATTRIBUTES: "defaultAttributes",
+	ELEMENT_FORM_DEFAULT: "elementFormDefault",
+	FACET_AVAILABLE: "facetAvailable",
+	FACET_UNAVAILABLE: "facetUnavailable",
+	FINAL: "final",
+	FINAL_DEFAULT: "finalDefault",
+	FIXED: "fixed",
+	FORM: "form",
+	ID: "id",
+	INHERITABLE: "inheritable",
+	ITEM_TYPE: "itemType",
+	LANG: "lang",
+	MAX_OCCURS: "maxOccurs",
+	MAX_VERSION: "maxVersion",
+	MEMBER_TYPES: "memberTypes",
+	MIN_OCCURS: "minOccurs",
+	MIN_VERSION: "minVersion",
+	MIXED: "mixed",
+	MODE: "mode",
+	NAME: "name",
+	NAMESPACE: "namespace",
+	NIL: "nil",
+	NILLABLE: "nillable",
+	NO_NAMESPACE_SCHEMA_LOCATION: "noNamespaceSchemaLocation",
+	NOT_NAMESPACE: "notNamespace",
+	NOT_QNAME: "notQName",
+	PROCESS_CONTENTS: "processContents",
+	PUBLIC: "public",
+	REF: "ref",
+	REFER: "refer",
+	SCHEMA_LOCATION: "schemaLocation",
+	SOURCE: "isourced",
+	SUBSTITUTION_GROUP: "substitutionGroup",
+	SYSTEM: "system",
+	TARGET_NAMESPACE: "targetNamespace",
+	TEST: "test",
+	TYPE: "type",
+	TYPE_AVAILABLE: "typeAvailable",
+	TYPE_UNAVAILABLE: "typeUnavailable",
+	USE: "use",
+	VALUE: "value",
+	VERSION: "version",
+	XPATH: "xpath",
+	XPATH_DEFAULT_NAMESPACE: "xpathDefaultNamespace"
+}

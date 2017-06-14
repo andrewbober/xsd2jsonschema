@@ -6,8 +6,8 @@
 		"module": "commonjs"
 	},
 	"files": [
-		"src/",
-		"test/",
-		"example/"
+		"src/**/*",
+		"test/**/*",
+		"example/**/*"
 	]
 }
