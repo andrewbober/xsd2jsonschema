@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "ajv": "^4.11.5",
+    "fs-extra": "^3.0.1",
     "urijs": "^1.18.10",
     "xml2js": "^0.4.17",
     "xmldom": "^0.1.27"

@@ -153,4 +153,24 @@ Command line to run the example.  **NOTE:** This is the command used to run the 
   * Refactored xmlschema and jsonschema specific code into corresponding sub folders
   * Heavy work on documentaiion
   * Several variable name refactorings for readability
-  * Added faux interfaces to assist customizations
+  * Added faux interfaces to assist customizations.
+
+  ## Third-Party Libraries used by this module:
+* [xmldom](https://www.npmjs.com/package/xmldom) - A pure JavaScript library for xml parsing.
+* [libxmljs](https://www.npmjs.com/package/libxmljs) (optional) - A native library for faster xml parsing.  This requires a C/C++ compiler to build and changes the programming model for customizations. (but it is over twice as fast)
+* [urijs](https://www.npmjs.com/package/urijs) - 
+
+## Third-Party Development Libraries used by this module:
+* [require-self](https://www.npmjs.com/package/require-self) - This support library allows the example.js script and functional tests to utilize the library as intended.
+* [Jasmine](https://github.com/jasmine/jasmine) - JavaScript Testing Framework
+* [Istanbul](https://github.com/gotwarlost/istanbul) - JavaScript code coverage tool
+* [node-coveralls](https://github.com/nickmerwin/node-coveralls) - Automated updates to [Coveralls.io](http://coveralls.io)
+* [JSDoc](https://usejsdoce.org) - Javascript documentation generation library
+* [jsdoc-oblivion](http://jsdoc-oblivion.moogs.io) - A template theme for [JSDoc](https://usejsdoce.org)
+
+## Alternatives
+* [xsd2json](https://www.npmjs.com/package/xsd2json)
+* [xsd2json2](https://www.npmjs.com/package/xsd2json2)
+* [Jsonix Schema Complier](https://github.com/highsource/jsonix-schema-compiler)
+* [XMLSpy](https://www.altova.com/xmlspy/json-schema-editor.html)
+

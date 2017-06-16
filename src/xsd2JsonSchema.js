@@ -7,7 +7,7 @@ const JsonSchemaFile = require("./jsonschema/jsonSchemaFile");
 const DepthFirstTraversal = require("./depthFirstTraversal");
 const DefaultConversionVisitor = require('./visitors/defaultConversionVisitor');
 const path = require("path");
-const fs = require("fs");
+const fs = require('fs-extra');
 
 const xsdBaseDir_NAME = Symbol();
 const baseId_NAME = Symbol();
@@ -161,9 +161,9 @@ class Xsd2JsonSchema {
 
 	writeFiles() {
 		try {
-			fs.mkdirSync(this.outputDir);
+			fs.ensureDirSync(this.outputDir);
 		} catch (err) {
-			// log something here
+			console.error(err);
 		}
 		Object.keys(this.jsonSchemas).forEach(function (uri, index, array) {
 			this.jsonSchemas[uri].writeFile(this.outputDir);
