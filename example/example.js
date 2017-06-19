@@ -18,7 +18,6 @@ const ajv = new Ajv({
 
 const action = process.argv[2];
 
-/*
 // Options for example
 const options = {
 	mask: /_\d{4}-\d{2}-\d{2}/,
@@ -29,19 +28,6 @@ const options = {
 
 const xsdFilenames = [
 		"ExampleTypes_2016-01-01.xsd"
-	];
-*/
-
-// Options for BMS
-const options = {
-        mask: /(_CodeExt|_ClassicCode)?_2017R1_V5.5.0/,
-        outputDir: "example/generated_jsonschema",
-        baseId: 'http://www.cieca.com/schema/',
-        xsdBaseDir: '/Users/andrewbober/BMS/5.5.0/BMSCodeExtSchemas/',
-}
-
-const xsdFilenames = [
-		"BMSRoot_CodeExt_2017R1_V5.5.0.xsd"
 	];
 
 const converter = new Xsd2JsonSchema(options);
