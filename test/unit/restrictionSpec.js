@@ -1,7 +1,7 @@
-var RestrictionConverter = require("xsd2JsonSchema").RestrictionConverter;
-var JsonSchemaFile = require("xsd2JsonSchema").JsonSchemaFile;
-var jsonSchemaTypes = require("xsd2JsonSchema").JsonSchemaTypes;
-var jsonSchemaFormats = require("xsd2JsonSchema").JsonSchemaFormats;
+var RestrictionConverter = require("xsd2jsonschema").RestrictionConverter;
+var JsonSchemaFile = require("xsd2jsonschema").JsonSchemaFile;
+var jsonSchemaTypes = require("xsd2jsonschema").JsonSchemaTypes;
+var jsonSchemaFormats = require("xsd2jsonschema").JsonSchemaFormats;
 
 describe("Restriction", function() {
     var rc = new RestrictionConverter();

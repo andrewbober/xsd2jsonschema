@@ -3,8 +3,9 @@
 const parsingState = require("./../parsingState");
 const Visitor = require("./visitor");
 const XsdFile = require("./../xmlschema/xsdFileXmlDom");
+const Processor = require("./../processor");
 
-var processor_NAME = Symbol();
+const processor_NAME = Symbol();
 
 /**
  * Class representing a visitor.  Vistors are utilized by {@link DepthFirstTraversal} to process each node within an XML 
@@ -12,14 +13,19 @@ var processor_NAME = Symbol();
  * from XMLSchema to JSON Schema.  It also adds error handling.
  */
 class BaseConversionVisitor extends Visitor {
+
 	/**
-	 * Constructs an instance of BaseConversionVisiter passing the converter parameter to super.constructor().
+	 * Constructs an instance of BaseConversionVisiter.
 	 * @constructor
 	 * @param {Processor} processor - {@link BaseConverter} or a subclass of {@link Processor}
 	 */
 	constructor(processor) {
 		super();
-		this.processor = processor;
+		if (processor != undefined) {
+			this.processor = processor;
+		} else {
+			this.processor = new Processor();
+		}
 	}
 
 	get processor() {

@@ -1,7 +1,7 @@
 "use strict";
 
-const XsdFile = require("xsd2JsonSchema").XsdFile;
-const BaseSpecialCaseIdentifier = require("xsd2JsonSchema").BaseSpecialCaseIdentifier;
+const XsdFile = require("xsd2jsonschema").XsdFile;
+const BaseSpecialCaseIdentifier = require("xsd2jsonschema").BaseSpecialCaseIdentifier;
 
 /*
 const Qname = require("./qname");

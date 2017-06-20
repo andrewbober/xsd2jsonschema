@@ -1,7 +1,7 @@
 {
-  "name": "xsd2JsonSchema",
+  "name": "xsd2jsonschema",
   "description": "A tool to convert XML Schema to JSON Schema.",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "homepage": "http://www.xsd2jsonschema.org",
   "license": "Apache-2.0",
   "author": {
@@ -11,16 +11,12 @@
   },
   "contributors": [],
   "keywords": [
-    "XML",
     "xml",
-    "Schema",
-    "XML Schema",
+    "schema",
     "xml schema",
-    "XSD",
     "xsd",
-    "JSON",
     "json",
-    "JSON Schema",
+    "jsonschema",
     "json schema",
     "draft-v4",
     "conversion",
@@ -33,7 +29,7 @@
     "url": "https://github.com/andrewbober/xsd2jsonschema.git"
   },
   "engines": {
-    "node": ">=6.9.2"
+    "node": ">=6.11.0"
   },
   "dependencies": {
     "ajv": "^4.11.5",

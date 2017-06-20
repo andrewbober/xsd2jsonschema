@@ -1,9 +1,12 @@
 "use strict";
 
-var BaseConvertionVisitor = require("./baseConversionVisitor");
+const BaseConvertionVisitor = require("./baseConversionVisitor");
 
-var uris_NAME = Symbol();
-var tagCounts_NAME = Symbol();
+const XsdAttributes = require("./../xmlschema/xsdAttributes");
+const XsdFile = require("./../xmlschema/xsdFileXmlDom");
+
+const uris_NAME = Symbol();
+const tagCounts_NAME = Symbol();
 
 /**
  * Class representing a custom visitor.  This visitor counts the XML Schema elments used by the provided
@@ -17,7 +20,7 @@ class XmlUsageVisitorSum extends BaseConvertionVisitor {
 	 * @constructor
 	 */
 	constructor() {
-		super(undefined);
+		super();
 		this.uris = {};
 		this.tagCounts = {};
 	}
@@ -56,7 +59,7 @@ class XmlUsageVisitorSum extends BaseConvertionVisitor {
 	visit(node, jsonSchema, xsd) {
 		var uri = xsd.uri;
 		this.addSchema(uri);
-		this.addTag(node.name());
+		this.addTag(XsdFile.getAttrValue(node, XsdAttributes.NAME));
 		return true;
 	}
 

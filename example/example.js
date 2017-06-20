@@ -23,7 +23,7 @@ const options = {
 	mask: /_\d{4}-\d{2}-\d{2}/,
 	outputDir: "example/generated_jsonschema",
 	baseId: "http://www.xsd2jsonschema.org/schema/",
-	xsdBaseDir: "example/",
+	xsdBaseDir: "example/schema",
 };
 
 const xsdFilenames = [
@@ -78,8 +78,8 @@ if (action === "convert") {
 		exampleTypesSchema
 	]);
 	const exampleDataFilenames = [
-		"example/ExampleDataPersonInfo.json",
-		"example/ExampleDataPersonName.json"
+		"example/data/ExampleDataPersonInfo.json",
+		"example/data/ExampleDataPersonName.json"
 	];
 	const validate = ajv.getSchema("http://www.xsd2jsonschema.org/schema/ExampleTypes.json");
 	exampleDataFilenames.forEach(function (filename, index, array) {

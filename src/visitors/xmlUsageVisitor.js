@@ -1,8 +1,10 @@
 "use strict";
 
-var BaseConvertionVisitor = require("./baseConversionVisitor");
+const BaseConvertionVisitor = require("./baseConversionVisitor");
+const XsdAttributes = require("./../xmlschema/xsdAttributes");
+const XsdFile = require("./../xmlschema/xsdFileXmlDom");
 
-var uris_NAME = Symbol();
+const uris_NAME = Symbol();
 
 
 /**
@@ -17,7 +19,7 @@ class XmlUsageVisitor extends BaseConvertionVisitor {
 	 * @constructor
 	 */
 	constructor() {
-		super(undefined);
+		super();
 		this.uris = {};
 	}
 
@@ -56,7 +58,7 @@ class XmlUsageVisitor extends BaseConvertionVisitor {
 	visit(node, jsonSchema, xsd) {
 		var uri = xsd.uri;
 		this.addSchema(uri);
-		this.addTag(uri, node.name());
+		this.addTag(uri, XsdFile.getAttrValue(node, XsdAttributes.NAME));
 		return true;
 	}
 

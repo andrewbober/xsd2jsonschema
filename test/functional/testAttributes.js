@@ -4,7 +4,7 @@
 
 "use strict";
 
-var Xsd2JsonSchema = require('Xsd2JsonSchema').Xsd2JsonSchema;
+var Xsd2JsonSchema = require('xsd2jsonschema').Xsd2JsonSchema;
 
 // Options for tests
 var options = {

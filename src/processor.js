@@ -6,7 +6,8 @@
  * found in {@link module:XsdElements}.  For example, the choice handler method:\
  * <pre><code>choice(node, jsonSchema, xsd)</code></pre>
  * 
- * This class should be subclassesed and a concrete implementation of {@link Processor#process|Processor.process()} provided.
+ * This class should be subclassesed and a concrete implementation of {@link Processor#process|Processor.process()} provided to
+ * do useful XML processing.
  */
 class Processor {
 	/**
@@ -29,7 +30,7 @@ class Processor {
      * @see {@link BaseConverter#process|BaseConverter.process()}
 	 */
 	process(node, jsonSchema, xsd) {
-        throw new Error("Please implement this method.  Processor.process()");
+		//throw new Error("Please implement this method.  Processor.process()");
 	}
 
 	/**
@@ -39,7 +40,7 @@ class Processor {
      * @see {@link BaseConverter#processSpecialCases|BaseConverter.processSpecialCases()}
 	 */
 	processSpecialCases() {
-		throw new Error("Please implement this method.  Processor.processSpecialCases()");
+		//throw new Error("Please implement this method.  Processor.processSpecialCases()");
 	}
 }
 
