@@ -3,6 +3,7 @@
 [![Codeship Status for andrewbober/xsd2jsonschema](https://app.codeship.com/projects/ee9a49e0-46b3-0133-28c9-569fce9c4062/status?branch=master)](https://app.codeship.com/projects/104942)
 [![Coverage Status](https://coveralls.io/repos/github/andrewbober/xsd2jsonschema/badge.svg?branch=master)](https://coveralls.io/github/andrewbober/xsd2jsonschema?branch=master)
 [![GitHub version](https://badge.fury.io/gh/andrewbober%2Fxsd2jsonschema.png)](https://badge.fury.io/gh/andrewbober%2Fxsd2jsonschema)
+[![npm version](https://badge.fury.io/js/xsd2jsonschema.svg)](https://badge.fury.io/js/xsd2jsonschema)
 
 ## Features:
 1. A pure Javascript library for converting XML Schema to JSON Schema.  Xsd2JsonSchema was designed to be fast and extendable.  The classes in Xsd2JsonSchema can be readily subclassed to create the customized conversion your project requires.
