@@ -4,12 +4,10 @@ const JsonSchemaFile = require("./jsonschema/jsonSchemaFile");
 const utils = require("./utils");
 const URI = require("urijs");
 
-var namespaces = { globalAttributes: { customTypes: {} } };
-
 /**
- * This module is a singleton used to manage custom types, which are defined as XML Schema aggregates that
- * have been converted to JSON Schema.  Custom types are arranged by their XML Namespaces. Custom types can
- * be added and retrieved as needed.
+ * Class representing custom types, which are defined as XML Schema aggregates that have been converted
+ * to JSON Schema.  Custom types are arranged by their XML Namespaces. Custom types can be added and
+ * retrieved as needed.
  * 
  * This module also manages global attributes.  As a reminder global attributes are global accross all XML
  * Schema files being considered.  This includes schemas that are brought in by an *&lt;include&gt;* tag
@@ -27,30 +25,14 @@ var namespaces = { globalAttributes: { customTypes: {} } };
  * @module CustomTypes
  */
 
-module.exports = {
-	/**
-	 * Adds a namespace to the to the collection.  The namespace is initially empty.
-	 * 
-	 * @param {String} _namespace The name of the XML Namespace.
-	 * @see {@link Xsd2JsonSchema#initializeNamespaces|Xsd2JsonSchema.initializeNamespaces()}
-	 */
-	addNamespace: function (_namespace) {
-		var namespace = utils.getSafeNamespace(_namespace);
-		if (!namespaces.hasOwnProperty(namespace)) {
-			namespaces[namespace] = { customTypes: {} };
-		}
-	},
+const namespaces_NAME = Symbol();
 
-	/**
-	 * Returns the namespace object for a given namespace.
-	 * 
-	 * @param {String} namespace The string value of the namespace.  For example: this would be the value of
-	 * the "targetNamespace" attribute of the *&lt;schema&gt;* tag in an XML Schema file.
-	 * @returns {Object} The namespace if present.
-	 */
-	getNamespace: function (namespace) {
-		return namespaces[namespace];
-	},
+class CustomTypes {
+	constructor() {
+		this.namespaces = { globalAttributes: { customTypes: {} } };
+	}
+
+	// Getters/Setters
 
 	/**
 	 * Returns the namespaces object.  It will have been initialized with at least the globalAttributes
@@ -58,9 +40,37 @@ module.exports = {
 	 * 
 	 * @returns {Object} Returns the namespaces object.
 	 */
-	getNamespaces: function () {
-		return namespaces;
-	},
+	getNamespaces() {
+		return this[namespaces_NAME];
+	}
+
+	setNamespaces(newNamespaces) {
+		this[namespaces_NAME] = newNamespaces;
+	}
+
+	/**
+	 * Adds a namespace to the to the collection.  The namespace is initially empty.
+	 * 
+	 * @param {String} _namespace The name of the XML Namespace.
+	 * @see {@link Xsd2JsonSchema#initializeNamespaces|Xsd2JsonSchema.initializeNamespaces()}
+	 */
+	addNamespace(_namespace) {
+		var namespace = utils.getSafeNamespace(_namespace);
+		if (!this.namespaces.hasOwnProperty(namespace)) {
+			this.namespaces[namespace] = { customTypes: {} };
+		}
+	}
+
+	/**
+	 * Returns the namespace object for a given namespace.
+	 * 
+	 * @param {String} namespace The name of the namespace.  For example: this could be 
+	 * "targetNamespace" of the *&lt;schema&gt;* tag in an XML Schema file.
+	 * @returns {Object} The namespace if present or enstantiats a new namesapce otherwise.
+	 */
+	getNamespace(namespace) {
+		return this.namespaces[namespace];
+	}
 
 	/**
 	 * This method returns the requested custom type.  If the type exists in the namesapce of baseJsonSchema the
@@ -72,7 +82,7 @@ module.exports = {
 	 * 
 	 * @returns {JsonSchemaFile} The request custom type.
 	 */
-	getCustomType: function (typeName, baseJsonSchema) {
+	getCustomType(typeName, baseJsonSchema) {
 		if (typeName === undefined) {
 			throw new Error("\"typeName\" parameter required");
 		}
@@ -80,20 +90,20 @@ module.exports = {
 			throw new Error("\"baseJsonSchema\" parameter required");
 		}
 		var namespace = baseJsonSchema.getSubschemaStr();
-		if (namespaces[namespace].customTypes[typeName] === undefined) {
+		if (this.namespaces[namespace].customTypes[typeName] === undefined) {
 			//console.log("Unable to find custom type: " + type);
 			var parms = {};
 			parms.ref = baseJsonSchema.id + "#" + baseJsonSchema.getSubschemaStr() + "/" + typeName;
-			namespaces[namespace].customTypes[typeName] = new JsonSchemaFile(parms);
+			this.namespaces[namespace].customTypes[typeName] = new JsonSchemaFile(parms);
 		}
-		var type = namespaces[namespace].customTypes[typeName];
+		var type = this.namespaces[namespace].customTypes[typeName];
 		var baseId = new URI(baseJsonSchema.id);
 		var typeId = new URI(type.ref);
 		if (baseId.filename() == typeId.filename()) {
 			baseJsonSchema.addRequiredPropertyToBaseSchema(typeName, type);
 		}
 		return type;
-	},
+	}
 
 	/**
 	 * This method inserts a entry into the type's namespace by reference name rather than by type name.
@@ -104,11 +114,11 @@ module.exports = {
 	 * @param {JsonSchemaFile} baseJsonSchema The JsonShemaFile being created as a result of converting an XML
 	 * Schema file to JSON Schema.
 	 */
-	addCustomTypeReference: function (refName, type, baseJsonSchema) {
+	addCustomTypeReference(refName, type, baseJsonSchema) {
 		var namespace = baseJsonSchema.getSubschemaStr();
-		namespaces[namespace].customTypes[refName] = type;
+		this.namespaces[namespace].customTypes[refName] = type;
 		baseJsonSchema.addRequiredPropertyToBaseSchema(refName, type);
-	},
+	}
 
 	/**
 	 * This method returns the requested global attribute.  If the attribute exists in the global attribute
@@ -120,14 +130,14 @@ module.exports = {
 	 * 
 	 * @returns {JsonSchemaFile} The request global attribute.
 	 */
-	getGlobalAtrribute: function (name, baseJsonSchema) {
+	getGlobalAtrribute(name, baseJsonSchema) {
 		if (name === undefined) {
 			throw new Error("\"name\" parameter required");
 		}
 		if (baseJsonSchema === undefined) {
 			throw new Error("\"baseJsonSchema\" parameter required");
 		}
-		var globalAttributesNamespace = namespaces.globalAttributes;
+		var globalAttributesNamespace = this.namespaces.globalAttributes;
 		if (globalAttributesNamespace.customTypes[name] === undefined) {
 			var parms = {};
 			parms.ref = baseJsonSchema.id + "#" + baseJsonSchema.getSubschemaStr() + "/" + name;
@@ -136,3 +146,5 @@ module.exports = {
 		return globalAttributesNamespace.customTypes[name];
 	}
 }
+
+module.exports = CustomTypes;

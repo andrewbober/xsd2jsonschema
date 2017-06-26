@@ -85,7 +85,8 @@ class BaseConversionVisitor extends Visitor {
 
 	/**
 	 * This method is called before conversion of {@link XsdFile|xsd} is started.  Subclasss can override this method to implement class 
-	 * specific pre-processing behavior.  The default implementation simply returns true to allow conversion to start.
+	 * specific pre-processing behavior.  The default implementation initializes a namespace for the XML Schema file's targetNamespace
+	 * and returns true to allow conversion to start.
 	 * 
 	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema file that will represent converted XML Schema file {@link XsdFile|xsd}.
 	 * @param {XsdFile} xsd - The XML schema file about to be processed.
@@ -98,6 +99,7 @@ class BaseConversionVisitor extends Visitor {
 				console.log("Converting " + xsd.getBaseFilename());
 				console.log("****************************************************************************************************\n");
 		*/
+		this.processor.initializeNamespace(xsd.targetNamespace);
 		return true;
 	}
 

@@ -2,7 +2,7 @@
 
 const Qname = require("./qname");
 const jsonSchemaTypes = require("./jsonschema/jsonSchemaTypes");
-const customTypes = require("./customTypes");
+const CustomTypes = require("./customTypes");
 const JsonSchemaFile = require("./jsonschema/jsonSchemaFile");
 const RestrictionConverter = require("./restrictionConverter");
 const Processor = require("./processor");
@@ -17,6 +17,7 @@ const SpecialCases = require('./specialCases');
 
 const workingJsonSchema_NAME = Symbol();
 const restrictionConverter_NAME = Symbol();
+const customTypes_NAME = Symbol();
 
 /**
  * Class representing a collection of XML Handler methods for converting XML Schema elements to JSON Schema.  XML 
@@ -37,6 +38,14 @@ class BaseConverter extends Processor {
 		super();
 		this.restrictionConverter = new RestrictionConverter();
 		this.specialCaseIdentifier = new BaseSpecialCaseIdentifier();
+		this.customTypes= new CustomTypes();
+	}
+
+	get customTypes() {
+		return this[customTypes_NAME];
+	}
+	set customTypes(newCustomTypes) {
+		this[customTypes_NAME] = newCustomTypes;
 	}
 
 	get workingJsonSchema() {
@@ -60,6 +69,16 @@ class BaseConverter extends Processor {
 	}
 
 	/**
+	 * Creates a namespaces for the given namespace name.  This method is called once for ea ch XML Schema supplying the
+	 * targetNamespace attribute.
+	 * 
+     * @see {@link CustomTypes#createNamespace|customTypes.createNamespace()}
+	 */
+	initializeNamespace(namespace) {
+		this.customTypes.addNamespace(namespace);
+	}
+
+/**
 	 * This method is called for each node in the XML Schema file being processed.  It first processes an ID attribute if present and 
 	 * then calls the appropriate XML Handler method.
 	 * @param {Node} node - the current element in xsd being converted.
@@ -182,12 +201,12 @@ class BaseConverter extends Processor {
 		parsingState.pushSchema(this.workingJsonSchema);
 		if (typeName !== undefined) {
 			var qualifiedTypeName = new Qname(typeName);
-			attributeJsonSchema = customTypes.getGlobalAtrribute(name, jsonSchema);
+			attributeJsonSchema = this.customTypes.getGlobalAtrribute(name, jsonSchema);
 			jsonSchema.addSubSchema(name, attributeJsonSchema);
 			return this.restrictionConverter[qualifiedTypeName.getLocal()](node, attributeJsonSchema);
 		} else {
 			// Setup the working schema and allow processing to continue for any contained simpleType or annotation nodes.
-			attributeJsonSchema = customTypes.getGlobalAtrribute(name, jsonSchema);
+			attributeJsonSchema = this.customTypes.getGlobalAtrribute(name, jsonSchema);
 			jsonSchema.addSubSchema(name, attributeJsonSchema);
 			this.workingJsonSchema = attributeJsonSchema;
 		}
@@ -220,7 +239,7 @@ class BaseConverter extends Processor {
 		// TODO: id, default, fixed, inheritable (TBD)
 
 		if (ref !== undefined) {
-			var attrSchema = customTypes.getGlobalAtrribute(ref, jsonSchema);
+			var attrSchema = this.customTypes.getGlobalAtrribute(ref, jsonSchema);
 			this.addAttributeProperty(this.workingJsonSchema, name, attrSchema.get$RefToSchema(), use);
 			this.workingJsonSchema.addAttributeProperty(name, attrSchema.get$RefToSchema(), use);
 		}
@@ -338,7 +357,7 @@ class BaseConverter extends Processor {
 		var state = parsingState.getCurrentState();
 		switch (state.name) {
 			case XsdElements.SCHEMA:
-				this.workingJsonSchema = customTypes.getCustomType(nameAttr, jsonSchema);
+				this.workingJsonSchema = this.customTypes.getCustomType(nameAttr, jsonSchema);
 				jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
 				this.workingJsonSchema.type = jsonSchemaTypes.OBJECT;
 				break;
@@ -385,15 +404,15 @@ class BaseConverter extends Processor {
 
 		if (typeAttr !== undefined) {
 			var typeName = typeAttr;
-			var customType = customTypes.getCustomType(typeName, jsonSchema);
+			var customType = this.customTypes.getCustomType(typeName, jsonSchema);
 			var refType = customType.clone();
 			refType.id = jsonSchema.id
-			customTypes.addCustomTypeReference(nameAttr, refType, jsonSchema)
+			this.customTypes.addCustomTypeReference(nameAttr, refType, jsonSchema)
 			this.workingJsonSchema = customType.get$RefToSchema();
 			jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
 			//workingJsonSchema.type = jsonSchemaTypes.OBJECT;
 		} else {
-			this.workingJsonSchema = customTypes.getCustomType(nameAttr, jsonSchema);
+			this.workingJsonSchema = this.customTypes.getCustomType(nameAttr, jsonSchema);
 			jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
 			this.workingJsonSchema.type = jsonSchemaTypes.OBJECT;
 		}
@@ -452,9 +471,9 @@ class BaseConverter extends Processor {
 		var propertyName = nameAttr;  // name attribute is required for local element
 		var customType;
 		if (lookupName !== undefined) {
-			customType = customTypes.getCustomType(lookupName, jsonSchema).get$RefToSchema();
+			customType = this.customTypes.getCustomType(lookupName, jsonSchema).get$RefToSchema();
 		} else {
-			customType = customTypes.getCustomType(propertyName, jsonSchema);
+			customType = this.customTypes.getCustomType(propertyName, jsonSchema);
 		}
 		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED));
 		var state = parsingState.getCurrentState();
@@ -490,7 +509,7 @@ class BaseConverter extends Processor {
 		// a name nor a type attribute - just a ref attribute.  This is awkward when the reference elmenent
 		// is a property of an object in JSON.  With no other options to name the property ref is used.
 		var propertyName = refAttr;  // ref attribute is required for an element reference
-		var customType = customTypes.getCustomType(propertyName, jsonSchema).get$RefToSchema();
+		var customType = this.customTypes.getCustomType(propertyName, jsonSchema).get$RefToSchema();
 		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED));
 		var state = parsingState.getCurrentState();
 		switch (state.name) {
@@ -549,7 +568,7 @@ class BaseConverter extends Processor {
 		var state = parsingState.getCurrentState();
 		switch (state.name) {
 			case XsdElements.COMPLEX_CONTENT:
-				this.workingJsonSchema = this.workingJsonSchema.extend(customTypes.getCustomType(baseTypeName, jsonSchema)) //, jsonSchemaTypes.OBJECT);
+				this.workingJsonSchema = this.workingJsonSchema.extend(this.customTypes.getCustomType(baseTypeName, jsonSchema)) //, jsonSchemaTypes.OBJECT);
 				break;
 			case XsdElements.SIMPLE_TYPE:
 				throw new Error("extension() needs to be impemented within simpleType!");
@@ -578,7 +597,7 @@ class BaseConverter extends Processor {
 		var state = parsingState.getCurrentState();
 		switch (state.name) {
 			case XsdElements.SCHEMA:
-				this.workingJsonSchema = customTypes.getCustomType(nameAttr, jsonSchema);
+				this.workingJsonSchema = this.customTypes.getCustomType(nameAttr, jsonSchema);
 				jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
 				this.workingJsonSchema.type = jsonSchemaTypes.OBJECT;
 				break;
@@ -611,7 +630,7 @@ class BaseConverter extends Processor {
 				if (minOccursAttr === undefined || minOccursAttr > 0) {
 					this.workingJsonSchema.addRequired(refName);
 				}
-				var customType = customTypes.getCustomType(refName, jsonSchema);
+				var customType = this.customTypes.getCustomType(refName, jsonSchema);
 				this.workingJsonSchema.setProperty(refName, customType.get$RefToSchema());
 				break;
 			default:
@@ -627,7 +646,7 @@ class BaseConverter extends Processor {
 		// TODO: id
 
 		var propertyName = refAttr;  // ref attribute is required for group reference
-		var customType = customTypes.getCustomType(propertyName, jsonSchema).get$RefToSchema();
+		var customType = this.customTypes.getCustomType(propertyName, jsonSchema).get$RefToSchema();
 		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED));
 		var state = parsingState.getCurrentState();
 		switch (state.name) {
@@ -815,8 +834,8 @@ class BaseConverter extends Processor {
 		// TODO: id, (base inheritance via allOf)
 
 		if (this.restrictionConverter[baseTypeName] === undefined) {
-			// customTypes.getCustomType(baseTypeName, jsonSchema).clone(workingJsonSchema);
-			this.workingJsonSchema = this.workingJsonSchema.extend(customTypes.getCustomType(baseTypeName, jsonSchema));
+			// this.customTypes.getCustomType(baseTypeName, jsonSchema).clone(workingJsonSchema);
+			this.workingJsonSchema = this.workingJsonSchema.extend(this.customTypes.getCustomType(baseTypeName, jsonSchema));
 			return true;
 		} else {
 			return this.restrictionConverter[baseTypeName](node, this.workingJsonSchema);
@@ -890,7 +909,7 @@ class BaseConverter extends Processor {
 		var nameAttr = XsdFile.getAttrValue(node, XsdAttributes.NAME);
 		// TODO: id, final
 
-		this.workingJsonSchema = customTypes.getCustomType(nameAttr, jsonSchema);
+		this.workingJsonSchema = this.customTypes.getCustomType(nameAttr, jsonSchema);
 		jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
 		return true;
 	}

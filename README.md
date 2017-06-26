@@ -1,5 +1,6 @@
 
 # Xsd2JsonSchema 
+
 [![Codeship Status for andrewbober/xsd2jsonschema](https://app.codeship.com/projects/ee9a49e0-46b3-0133-28c9-569fce9c4062/status?branch=master)](https://app.codeship.com/projects/104942)
 [![Coverage Status](https://coveralls.io/repos/github/andrewbober/xsd2jsonschema/badge.svg?branch=master)](https://coveralls.io/github/andrewbober/xsd2jsonschema?branch=master)
 [![GitHub version](https://badge.fury.io/gh/andrewbober%2Fxsd2jsonschema.png)](https://badge.fury.io/gh/andrewbober%2Fxsd2jsonschema)
@@ -11,7 +12,7 @@
 3. Support included files - Many XML Schemas are broken up into multiple files to promote reuse.  Others are combined from disperate sources using different namespaces.
 4. Support imported files - Future feature!
 5. Support the original file organization in the resulting schema conversion - If the author of an XML Schema organized it into three files I wanted the JSON Schema conversion to follow the same file organization and grouping of types.
-6. Support xml attributess.
+6. Support xml attributes.
 7. Free!
 
 ## JSON Schema Support

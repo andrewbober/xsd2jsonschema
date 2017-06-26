@@ -1,6 +1,5 @@
 "use strict";
 
-const customTypes = require("./customTypes");
 // var XsdFile = require("./xmlschema/xsdFile");
 const XsdFile = require("./xmlschema/xsdFileXmlDom");
 const JsonSchemaFile = require("./jsonschema/jsonSchemaFile");
@@ -20,12 +19,12 @@ const xmlSchemas_NAME = Symbol();
 
 /**
  * Class prepresenting an instance of the Xsd2JsonSchema library.  This needs to be refactored to
- * remove the filesystem focus and work off URI's or possibly just strings represending the contents
- * of the XML Schema files being converted to JSON Schema.
+ * remove the filesystem focus and work off URI's or possibly just strings/buffers representing the contents
+ * of the XML Schema files that are being converted to JSON Schema.
  * 
  * I would like the library to be encapsulated from IO if possible.
  * 
- * In the current implementation is is really only usable as a cli.
+ * The current implementation is really only usable as a cli.
  */
 class Xsd2JsonSchema {
 	constructor(options) {
@@ -42,6 +41,7 @@ class Xsd2JsonSchema {
 		this.jsonSchema = {};
 	}
 
+	// Getters/Setters
 	get xsdBaseDir() {
 		return this[xsdBaseDir_NAME]
 	}
@@ -110,20 +110,6 @@ class Xsd2JsonSchema {
 		return this.xmlSchemas;
 	}
 
-	/**
-	 * Runs through the list of XML Schema files and creates namespaces for all targetNamespaces
-	 * discovered.
-	 * 
-	 * NOTE: This needs to be reviewed because it only supports targetNamespaces.  Technically,
-	 * any element could have a namespace associated with it.
-	 */
-	initializeNamespaces() {
-		Object.keys(this.xmlSchemas).forEach(function (uri, index, array) {
-			var targetNamespace = this.xmlSchemas[uri].targetNamespace;
-			customTypes.addNamespace(targetNamespace);
-		}, this);
-	}
-
 	processSchema(uri) {
 		var xsd = this.xmlSchemas[uri];
 		if (xsd.hasIncludes()) {
@@ -153,9 +139,8 @@ class Xsd2JsonSchema {
 		if (parms.visitor != undefined) {
 			this.visitor = parms.visitor;
 		}
-		this.loadAllSchemas(parms.xsdFilenames);
-		this.initializeNamespaces();
 		this.jsonSchemas = {};
+		this.loadAllSchemas(parms.xsdFilenames);
 		this.processSchemas(Object.keys(this.xmlSchemas));
 	}
 
@@ -178,7 +163,7 @@ class Xsd2JsonSchema {
 		}, this);
 
 		console.log("\n*** Namespaces and Types ***")
-		console.log(JSON.stringify(customTypes.getNamespaces(), null, '\t'));
+		console.log(JSON.stringify(this.getCustomTypes(), null, '\t'));
 	}
 
 	dumpSchemas() {
@@ -191,7 +176,7 @@ class Xsd2JsonSchema {
 	}
 
 	getCustomTypes() {
-		return customTypes;
+		return this.visitor.processor.customTypes;
 	}
 }
 

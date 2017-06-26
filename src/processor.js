@@ -18,6 +18,15 @@ class Processor {
 	}
 
 	/**
+	 * Creates a namespace for the given namespace.  This method is called once for ea ch XML Schema supplying the
+	 * targetNamespace attribute.
+	 * 
+     * @see {@link CustomTypes#createNamespace|CustomTypes.createNamespace()}
+	 */
+	initializeNamespace(namespace) {
+	}
+
+	/**
 	 * This method is called for each node in the XML Schema file being processed.  It first processes an ID attribute if present and 
 	 * then calls the appropriate XML Handler method.  Subclasses should override this method.
      * 

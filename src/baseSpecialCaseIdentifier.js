@@ -7,12 +7,6 @@ const XsdNodeTypes = require('./xmlschema/xsdNodeTypes');
 const SpecialCases = require('./specialCases');
 const JsonSchemaFile = require("./jsonschema/jsonSchemaFile");
 
-var Qname = require('./qname');
-var jsonSchemaTypes = require('./jsonschema/jsonSchemaTypes');
-var customTypes = require('./customTypes');
-var parsingState = require('./parsingState');
-var XsdElements = require('./xmlschema/xsdElements');
-
 const specialCases_NAME = Symbol();
 
 /**
