@@ -7,13 +7,12 @@
 [![npm version](https://badge.fury.io/js/xsd2jsonschema.svg)](https://badge.fury.io/js/xsd2jsonschema)
 
 ## Features:
-1. A pure Javascript library for converting XML Schema to JSON Schema.  Xsd2JsonSchema was designed to be fast and extendable.  The classes in Xsd2JsonSchema can be readily subclassed to create the customized conversion your project requires.
-2. Support multiple namespaces - XML Schemas can utilize any number of namespaces and Xsd2JsonSchema leverages JSON Schema's sub-schema feature to provide this support.
-3. Support included files - Many XML Schemas are broken up into multiple files to promote reuse.  Others are combined from disperate sources using different namespaces.
-4. Support imported files - Future feature!
-5. Support the original file organization in the resulting schema conversion - If the author of an XML Schema organized it into three files I wanted the JSON Schema conversion to follow the same file organization and grouping of types.
-6. Support xml attributes.
-7. Free!
+1. A pure Javascript library for converting XML Schema to JSON Schema.  Xsd2JsonSchema was designed to be readily customizable.  The classes in Xsd2JsonSchema can be readily subclassed to change the conversion logic and create the conversion your project requires.
+2. Multiple namespaces - XML Schemas can utilize any number of namespaces; and Xsd2JsonSchema leverages JSON Schema's sub-schema idiom to implement this feature.
+3. \<Include\> tag - Many XML Schemas are broken up into multiple files to promote reuse.  Others are combined from disperate sources using different namespaces.
+4. \<Import\> tag - Future feature!
+5. Preserves the original file organization in the resulting schema conversion: If the author of an XML Schema organized it into three files, the resulting JSON Schema conversion should follow the same file organization and grouping of types.
+6. Supports XML attributes.
 
 ## JSON Schema Support
 Currently JSON Schema draft v4 is supported.  (http://json-schema.org/draft-04/schema#)
@@ -25,17 +24,22 @@ All entities are supported.
 TBD
 
 ## XML Schema Support Details
+
 [Xsd2JsonSchmea XML Schema Support Status](https://drive.google.com/open?id=1AMeTHNNvwuI06mjkAQi7mt8KmU7qUSFI7x-o_kF1Ko8)
 
-## Documentation
+## Documentation 
+
 TBD
 
+## Where to file issues 
+[https://github.com/andrewbober/xsd2jsonschema/issues](https://github.com/andrewbober/xsd2jsonschema/issues)
+
 ## Developing
-Please see the wiki for an overview of the code and outstanding development needs.  [Developing](https://github.com/andrewbober/xsd2jsonschema/wiki/Developing)
+Please see the [Wiki](https://github.com/andrewbober/xsd2jsonschema/wiki/Developing) for an overview of the code and outstanding development needs.  
 
 ## Node & Npm version requirements
 * Node - Version 6.11.0 LTS or higher
-* Npm - Version 4.2.0 or higher
+* Npm - Version 3.10.0 or higher
 
 ## Tools
 * Created with [Visual Studio Code](https://github.com/Microsoft/vscode), [site](http://code.visualstudio.com)
