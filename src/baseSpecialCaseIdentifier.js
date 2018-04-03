@@ -1,11 +1,14 @@
-"use strict";
+'use strict';
+
+const debug = require('debug')('xsd2jsonschema:BaseSpecialCaseIdentifier')
 
 const XsdFile = require('./xmlschema/xsdFileXmlDom');
 const XsdAttributes = require('./xmlschema/xsdAttributes');
 const XsdAttributeValues = require('./xmlschema/xsdAttributeValues');
 const XsdNodeTypes = require('./xmlschema/xsdNodeTypes');
-const SpecialCases = require('./specialCases');
-const JsonSchemaFile = require("./jsonschema/jsonSchemaFile");
+const XsdElements = require('./xmlschema/xsdElements');
+const JsonSchemaFile = require('./jsonschema/jsonSchemaFile');
+
 
 const specialCases_NAME = Symbol();
 
@@ -16,27 +19,43 @@ const specialCases_NAME = Symbol();
  * 1. A <choice> where the goal is really anyOf.  For example:
  * 			<xs:choice>
  *				<xs:sequence>
- *					<xs:element name="DemandingPartyInfo" type="DemandingPartyInfoType"/>
- *					<xs:element name="ResponsiblePartyInfo" type="DemandingPartyInfoType" minOccurs="0"/>
- *					<xs:element name="ArbitrationDecisionInfo" type="DemandingPartyInfoType" minOccurs="0"/>
+ *					<xs:element name='DemandingPartyInfo' type='DemandingPartyInfoType'/>
+ *					<xs:element name='ResponsiblePartyInfo' type='DemandingPartyInfoType' minOccurs='0'/>
+ *					<xs:element name='ArbitrationDecisionInfo' type='DemandingPartyInfoType' minOccurs='0'/>
  *  			</xs:sequence>
  *				<xs:sequence>
- *					<xs:element name="ResponsiblePartyInfo" type="DemandingPartyInfoType"/>
- *					<xs:element name="ArbitrationDecisionInfo" type="DemandingPartyInfoType" minOccurs="0"/>
+ *					<xs:element name='ResponsiblePartyInfo' type='DemandingPartyInfoType'/>
+ *					<xs:element name='ArbitrationDecisionInfo' type='DemandingPartyInfoType' minOccurs='0'/>
  *				</xs:sequence>
- *				<xs:element name="ArbitrationDecisionInfo" type="DemandingPartyInfoType"/>
+ *				<xs:element name='ArbitrationDecisionInfo' type='DemandingPartyInfoType'/>
  *			</xs:choice>
- * 2. Sibling <choice>
+ *
+ * 2. Sibling <choice>.  For example:
+ *		<xs:complexType name='SiblingChoince'>
+ *			<xs:sequence>
+ *				<xs:choice>
+ *					<xs:element name='OptionB' type='xs:string'/>
+ *					<xs:element name='OptionA' type='xs:string' minOccurs='0'/>
+ *				</xs:choice>
+ *				<xs:choice>
+ *					<xs:element name='Option3' type='xs:string' />
+ *					<xs:element name='Option2' type='xs:string' minOccurs='0' />
+ *					<xs:element name='Option1' type='xs:string' minOccurs='0' />
+ *				</xs:choice>
+ *			</xs:sequence>
+ *		</xs:complexType>
+ *
  * 3. Need a solution for optional <sequence>, <choice>, etc.  Currently just using an empty schema {} as an option.
  *
- * 
- * @see {@link ParsingState}
  */
+
 class BaseSpecialCaseIdentifier {
 
     constructor() {
         this.specialCases = [];
     }
+
+	// Getters/Setters
 
 	get specialCases() {
 		return this[specialCases_NAME];
@@ -45,25 +64,35 @@ class BaseSpecialCaseIdentifier {
 		this[specialCases_NAME] = newSpecialCase;
 	}
 
-    addSpecialCase(specialCase, jsonschema) {
+    addSpecialCase(specialCase, jsonschema, node) {
         this.specialCases.push({
             'specialCase': specialCase,
-            'jsonSchema': jsonschema
+            'jsonSchema': jsonschema,
+            'node': node
         });
     }
 
-    isOptionalSequence(node, xsd) {
-        var retval = false;
+    isOptional(minOccursAttr) {
+        return (minOccursAttr !== undefined && minOccursAttr == 0);
+    }
+
+    isOptionalChoice(node, xsd, minOccursAttr) {
+        var minOccurs;
+        if (minOccursAttr == undefined) {
+            minOccurs = XsdFile.getAttrValue(node, XsdAttributes.MIN_OCCURS);
+        } else {
+            minOccurs = minOccursAttr;
+        }
+        var retval = this.isOptional(minOccurs);
         return retval;
     }
 
-    isOptionalChoice(node, xsd) {
-        var retval = false;
-        return retval;
+    isOptionalSequence(node, xsd, minOccursAttr) {
+        return this.isOptionalChoice(node, xsd, minOccursAttr);
     }
 
     isSiblingChoice(node, xsd) {
-        var retval = false;
+        var retval = XsdFile.countChildren(node.parentNode, XsdElements.CHOICE) > 1;
         return retval;
     }
 
@@ -185,24 +214,94 @@ class BaseSpecialCaseIdentifier {
         return retval;
     }
 
-    fixAnyOfChoice(jsonSchema) {
-
+    generateAnyOfChoice(jsonSchema) {
         if (jsonSchema.oneOf.length == 0) {
             return;
         }
-        //console.log("BEFORE\n" + JSON.stringify(jsonSchema.getJsonSchema(), null, 2));
+        debug('BEFORE Generating anyOfChoice\n' + jsonSchema);
 
         var anyOf = jsonSchema.oneOf[0];
         anyOf.required.length = 0;
 		Object.keys(anyOf.properties).forEach(function (prop, index, array) {
-			//console.log(prop + "=" + anyOf.properties[prop]);
+			debug(prop + '=' + anyOf.properties[prop]);
             const newAnyOf = new JsonSchemaFile({});
             newAnyOf.setProperty(prop, anyOf.properties[prop]);
+            newAnyOf.addRequired(prop);
             jsonSchema.anyOf.push(newAnyOf);
 		});
         jsonSchema.oneOf.length = 0;
 
-        //console.log("AFTER\n" + JSON.stringify(jsonSchema.getJsonSchema(), null, 2));
+        debug('AFTER Generating anyOfChoice\n' + jsonSchema);
+    }
+
+    fixAnyOfChoice(jsonSchema, node) {
+        if(jsonSchema.allOf.length != 0) {
+            // A sibling choice will have the siblings in the allOf array.
+            jsonSchema.allOf.forEach(function (choiceSchema, index, array) {
+                if(choiceSchema.isAnyOfChoice === true) {
+                    this.generateAnyOfChoice(choiceSchema);
+                }
+            }, this);
+        } else {
+             this.generateAnyOfChoice(jsonSchema);
+        }
+    }
+
+    // The "Everything else is valid" SOLUTION
+    // 1) Push an empty schema onto anyOf.  Always passes validation, as if the empty schema {}
+    fixOptionalChoiceTruthy(jsonSchema, node) {
+/*
+        var optionalChoiceSchema = new JsonSchemaFile({});
+        this.workingJsonSchema.anyOf.push(optionalChoiceSchema);
+        // Add an the optional part (empty schema)
+        var emptySchema = new JsonSchemaFile({});
+        this.workingJsonSchema.anyOf.push(emptySchema);
+        parsingState.pushSchema(this.workingJsonSchema)
+        this.workingJsonSchema = optionalChoiceSchema;
+ */
+    }
+
+    // The "Not" SOLUTION - elimiated because allows ANYTHING not listed in the dependent properties.
+    // 1) push oneOf onto anyOf and create new empty oneOf array
+    // 2) create new 'optional' schema and also push it onto anyOf
+    // 3) populate optional schema allOf with a 'not' for each member of the original oneOf
+    fixOptionalChoiceNot(jsonSchema, node) {
+        const originalOneOf = new JsonSchemaFile({});
+        originalOneOf.oneOf = Array.from(jsonSchema.oneOf);
+        jsonSchema.anyOf.push(originalOneOf);
+        const theOptionalPart = new JsonSchemaFile({});
+        jsonSchema.oneOf.forEach(function(option, index, array) {
+            const notSchema = new JsonSchemaFile({});
+            notSchema.not = option;
+            theOptionalPart.allOf.push(notSchema);
+        })
+        jsonSchema.anyOf.push(theOptionalPart);
+        jsonSchema.oneOf = [];
+    }
+
+    // The "Property Depenency" SOLUTION
+    // 1) push oneOf onto anyOf and create new empty oneOf array
+    // 2) create new 'optional' schema and also push it onto anyOf
+    // 3) populate optional schema allOf with a 'not' for each member of the original oneOf
+    fixOptionalChoicePropertyDependency(jsonSchema, node) {
+        const originalOneOf = new JsonSchemaFile({});
+        originalOneOf.oneOf = Array.from(jsonSchema.oneOf);
+        jsonSchema.anyOf.push(originalOneOf);
+        const theOptionalPart = new JsonSchemaFile({});
+        jsonSchema.oneOf.forEach(function(option, index, array) {
+            const dependencySchema = new JsonSchemaFile({});
+            dependencySchema.not = option;
+            theOptionalPart.addPropertyDependency[option.name] = option
+            //theOptionalPart.allOf.push(notSchema);
+        })
+        jsonSchema.anyOf.push(theOptionalPart);
+        jsonSchema.oneOf = [];
+    }
+
+    fixOptionalChoice(jsonSchema, node) { 
+        // switch (options)
+        //this.fixOptionalChoiceTruthy(jsonSchema, node)
+        return; 
     }
 
 }

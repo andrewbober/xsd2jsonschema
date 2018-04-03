@@ -1,9 +1,10 @@
-"use strict";
+'use strict';
 
-const BaseConvertionVisitor = require("./baseConversionVisitor");
+const BaseConvertionVisitor = require('./baseConversionVisitor');
 
-const XsdAttributes = require("./../xmlschema/xsdAttributes");
-const XsdFile = require("./../xmlschema/xsdFileXmlDom");
+const XsdAttributes = require('./../xmlschema/xsdAttributes');
+const XsdFile = require('./../xmlschema/xsdFileXmlDom');
+
 
 const uris_NAME = Symbol();
 const tagCounts_NAME = Symbol();
@@ -12,6 +13,7 @@ const tagCounts_NAME = Symbol();
  * Class representing a custom visitor.  This visitor counts the XML Schema elments used by the provided
  * {@link XsdFile|XML Schema} files and displays aggregate counts of elements used accross all scheam files.
  */
+
 class XmlUsageVisitorSum extends BaseConvertionVisitor {
 	/**
 	 * Constructs an instance of XmlUsageVisitor without a converter because all processing will be done here in the
@@ -72,13 +74,13 @@ class XmlUsageVisitorSum extends BaseConvertionVisitor {
 	}
 
 	dump() {
-		console.log("----------------------------");
-		console.log("Overall XML Schema Tag Usage");
-		console.log("----------------------------");
+		console.log('----------------------------');
+		console.log('Overall XML Schema Tag Usage');
+		console.log('----------------------------');
 		console.log(Object.keys(this.uris));
-		console.log("----------------------------");
+		console.log('----------------------------');
 		Object.keys(this.tagCounts).sort().forEach(function (xmlTag, index, array) {
-			console.log(xmlTag + " = " + this.tagCounts[xmlTag]);
+			console.log(xmlTag + ' = ' + this.tagCounts[xmlTag]);
 		}, this)
 		console.log();
 	}

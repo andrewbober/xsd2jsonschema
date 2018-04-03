@@ -1,16 +1,17 @@
-"use strict";
+'use strict';
 
-const BaseConvertionVisitor = require("./baseConversionVisitor");
-const XsdAttributes = require("./../xmlschema/xsdAttributes");
-const XsdFile = require("./../xmlschema/xsdFileXmlDom");
+const BaseConvertionVisitor = require('./baseConversionVisitor');
+const XsdAttributes = require('./../xmlschema/xsdAttributes');
+const XsdFile = require('./../xmlschema/xsdFileXmlDom');
+
 
 const uris_NAME = Symbol();
-
 
 /**
  * Class representing a custom visitor.  This visitor lists the XML Schema elments used by the provided 
  * {@link XsdFile|XML Schema} files and displays element counts by file.
  */
+
 class XmlUsageVisitor extends BaseConvertionVisitor {
 	/**
 	 * Constructs an instance of XmlUsageVisitor without a converter because all processing will be done here in the
@@ -82,9 +83,9 @@ class XmlUsageVisitor extends BaseConvertionVisitor {
 	dump() {
 		Object.keys(this.uris).sort().forEach(function (uri, index, array) {
 			console.log(uri);
-			console.log("-----------------");
+			console.log('-----------------');
 			Object.keys(this.uris[uri].tagCounts).sort().forEach(function (xmlTag, index, array) {
-				console.log(xmlTag + " = " + this.uris[uri].tagCounts[xmlTag]);
+				console.log(xmlTag + ' = ' + this.uris[uri].tagCounts[xmlTag]);
 			}, this)
 			console.log();
 		}, this);

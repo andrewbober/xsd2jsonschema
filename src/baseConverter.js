@@ -1,23 +1,25 @@
-"use strict";
+'use strict';
 
-const Qname = require("./qname");
-const jsonSchemaTypes = require("./jsonschema/jsonSchemaTypes");
-const CustomTypes = require("./customTypes");
-const JsonSchemaFile = require("./jsonschema/jsonSchemaFile");
-const RestrictionConverter = require("./restrictionConverter");
-const Processor = require("./processor");
-const parsingState = require("./parsingState");
-const XsdElements = require("./xmlschema/xsdElements");
-const XsdAttributes = require("./xmlschema/xsdAttributes");
-const XsdAttributeValues = require("./xmlschema/xsdAttributeValues");
-const utils = require("./utils");
-const XsdFile = require("./xmlschema/xsdFileXmlDom");
-const BaseSpecialCaseIdentifier = require("./baseSpecialCaseIdentifier");
+const debug = require('debug')('xsd2jsonschema:BaseConverter')
+
+const Qname = require('./qname');
+const jsonSchemaTypes = require('./jsonschema/jsonSchemaTypes');
+const NamespaceManager = require('./namespaceManager');
+const JsonSchemaFile = require('./jsonschema/jsonSchemaFile');
+const BuiltInTypeConverter = require('./builtInTypeConverter');
+const Processor = require('./processor');
+const XsdElements = require('./xmlschema/xsdElements');
+const XsdAttributes = require('./xmlschema/xsdAttributes');
+const XsdAttributeValues = require('./xmlschema/xsdAttributeValues');
+const XsdNodeType = require('./xmlschema/xsdNodeTypes');
+const utils = require('./utils');
+const XsdFile = require('./xmlschema/xsdFileXmlDom');
+const BaseSpecialCaseIdentifier = require('./baseSpecialCaseIdentifier');
 const SpecialCases = require('./specialCases');
 
-const workingJsonSchema_NAME = Symbol();
-const restrictionConverter_NAME = Symbol();
-const customTypes_NAME = Symbol();
+
+const builtInTypeConverter_NAME = Symbol();
+const NamespaceManager_NAME = Symbol();
 
 /**
  * Class representing a collection of XML Handler methods for converting XML Schema elements to JSON Schema.  XML 
@@ -29,56 +31,54 @@ const customTypes_NAME = Symbol();
  * 
  * @see {@link ParsingState}
  */
-class BaseConverter extends Processor {
+
+ class BaseConverter extends Processor {
 	/**
 	 * Constructs an instance of BaseConverter.
 	 * @constructor
 	 */
 	constructor() {
 		super();
-		this.restrictionConverter = new RestrictionConverter();
+		this.builtInTypeConverter = new BuiltInTypeConverter();
 		this.specialCaseIdentifier = new BaseSpecialCaseIdentifier();
-		this.customTypes= new CustomTypes();
+		this.namespaceManager = new NamespaceManager();
+		// The working schema is initilized as needed through XML Handlers
 	}
 
-	get customTypes() {
-		return this[customTypes_NAME];
+	// Getters/Setters
+
+	get NamespaceManager() {
+		return this[NamespaceManager_NAME];
 	}
-	set customTypes(newCustomTypes) {
-		this[customTypes_NAME] = newCustomTypes;
+	set NamespaceManager(newNamespaceManager) {
+		this[NamespaceManager_NAME] = newNamespaceManager;
 	}
 
-	get workingJsonSchema() {
-		return this[workingJsonSchema_NAME];
+	get builtInTypeConverter() {
+		return this[builtInTypeConverter_NAME];
 	}
-	set workingJsonSchema(newWorkingSchema) {
-		this[workingJsonSchema_NAME] = newWorkingSchema;
-	}
-
-	get restrictionConverter() {
-		return this[restrictionConverter_NAME];
-	}
-	set restrictionConverter(newRestrictionConverter) {
-		this[restrictionConverter_NAME] = newRestrictionConverter;
+	set builtInTypeConverter(newBuiltInTypeConverter) {
+		this[builtInTypeConverter_NAME] = newBuiltInTypeConverter;
 	}
 
 	dumpJsonSchema(jsonSchema) {
 		Object.keys(jsonSchema).forEach(function (prop, index, array) {
-			console.log(prop + "=" + jsonSchema[prop]);
+			debug(prop + '=' + jsonSchema[prop]);
 		});
 	}
 
 	/**
-	 * Creates a namespaces for the given namespace name.  This method is called once for ea ch XML Schema supplying the
-	 * targetNamespace attribute.
+	 * Creates a namespaces for the given namespace name.  This method is called from the schema XML Handler.
 	 * 
-     * @see {@link CustomTypes#createNamespace|customTypes.createNamespace()}
+     * @see {@link NamespaceManager#createNamespace|NamespaceManager.createNamespace()}
 	 */
-	initializeNamespace(namespace) {
-		this.customTypes.addNamespace(namespace);
+	initializeNamespaces(xsd) {
+		Object.keys(xsd.namespaces).forEach(function (namespace, index, array) {
+			this.namespaceManager.addNamespace(xsd.namespaces[namespace]);
+		}, this);
 	}
 
-/**
+	/**
 	 * This method is called for each node in the XML Schema file being processed.  It first processes an ID attribute if present and 
 	 * then calls the appropriate XML Handler method.
 	 * @param {Node} node - the current element in xsd being converted.
@@ -87,7 +87,7 @@ class BaseConverter extends Processor {
 	 * 
 	 * @returns {Boolean} - handler methods can return false to cancel traversal of {@link XsdFile|xsd}.  An XML Schema handler method
 	 *  has a common footprint and a name that corresponds to one of the XML Schema element names found in {@link module:XsdElements}.
-	 *  For example, the choice handler method: <pre><code>choice(node, jsonSchema, xsd)</code></pre>
+	 *  For example, the <choice> handler method is <pre><code>choice(node, jsonSchema, xsd)</code></pre>
 	 */
 	process(node, jsonSchema, xsd) {
 		var id = XsdFile.getAttrValue(node, XsdAttributes.ID);
@@ -95,21 +95,11 @@ class BaseConverter extends Processor {
 			var qualifiedTypeName = new Qname(id);
 			this.workingJsonSchema.addAttributeProperty(qualifiedTypeName.getLocal(), this.createAttributeSchema(node, jsonSchema, xsd, qualifiedTypeName));
 		}
-		return this[XsdFile.getNodeName(node)](node, jsonSchema, xsd);
+		const keepProcessing = this[XsdFile.getNodeName(node)](node, jsonSchema, xsd);
+		super.process(node, jsonSchema, xsd);
+		return keepProcessing
 	}
 
-	/*
-	
-	Need to figure out what to do with this CIECA specific stuff.
-	
-		BMSVersion(node, jsonSchema, xsd) {
-			return true;
-		};
-	
-		SchemaBuildNumber(node, jsonSchema, xsd) {
-			return true;
-		};
-	*/ 
 	all(node, jsonSchema, xsd) {
 		// TODO: id, minOccurs, maxOccurs
 		// (TBD)
@@ -130,20 +120,20 @@ class BaseConverter extends Processor {
 	any(node, jsonSchema, xsd) {
 		// TODO: id, minOccurs, maxOccurs, namespace, processContents, notNamespace, not QName
 		// (TBD)
-		var state = parsingState.getCurrentState();
+		var state = this.parsingState.getCurrentState();
 		switch (state.name) {
 			case XsdElements.CHOICE:
-				throw new Error("any() needs to be implemented within choice!");
+				throw new Error('any() needs to be implemented within choice!');
 			case XsdElements.SEQUENCE:
-				throw new Error("any() needs to be implemented within sequence!");
+				throw new Error('any() needs to be implemented within sequence!');
 			case XsdElements.ALL:
-				throw new Error("any() needs to be implemented within all!");
+				throw new Error('any() needs to be implemented within all!');
 			case XsdElements.OPEN_CONTENT:
-				throw new Error("any() needs to be implemented within openContent!");
+				throw new Error('any() needs to be implemented within openContent!');
 			case XsdElements.DEFAULT_OPEN_CONTENT:
-				throw new Error("any() needs to be implemented within defaultOpenContent");
+				throw new Error('any() needs to be implemented within defaultOpenContent');
 			default:
-				throw new Error("any() called from within unexpected parsing state!");
+				throw new Error('any() called from within unexpected parsing state!');
 		}
 		return true;
 	}
@@ -173,22 +163,13 @@ class BaseConverter extends Processor {
 		return true;
 	}
 
-	// TODO: this function has been moved to jsonSchemaFile
-	addAttributeProperty(targetSchema, propertyName, customType, minOccursAttr) {
-		var name = "@" + propertyName;
-		if (minOccursAttr === "required") {
-			targetSchema.addRequired(name);
-		}
-		targetSchema.setProperty(name, customType);
-	}
-
 	/* 
-	 * A factory method to create JSON Schemas of one of the basic JSON Schema Types.
+	 * A factory method to create JSON Schemas of one of the XML Schema built-in types.
 	 *
 	 */
 	createAttributeSchema(node, jsonSchema, xsd, qualifiedTypeName) {
 		var attributeJsonSchema = new JsonSchemaFile({});
-		this.restrictionConverter[qualifiedTypeName.getLocal()](node, attributeJsonSchema)
+		this.builtInTypeConverter[qualifiedTypeName.getLocal()](node, attributeJsonSchema)
 		return attributeJsonSchema;
 	}
 
@@ -198,16 +179,16 @@ class BaseConverter extends Processor {
 		// TODO: id, default, fixed, inheritable (TBD)
 		var attributeJsonSchema;
 
-		parsingState.pushSchema(this.workingJsonSchema);
+		this.parsingState.pushSchema(this.workingJsonSchema);
 		if (typeName !== undefined) {
 			var qualifiedTypeName = new Qname(typeName);
-			attributeJsonSchema = this.customTypes.getGlobalAtrribute(name, jsonSchema);
-			jsonSchema.addSubSchema(name, attributeJsonSchema);
-			return this.restrictionConverter[qualifiedTypeName.getLocal()](node, attributeJsonSchema);
+			attributeJsonSchema = this.namespaceManager.getGlobalAttribute(name, jsonSchema);
+			jsonSchema.getGlobalAttributesSchema().addSubSchema(name, attributeJsonSchema);
+			return this.builtInTypeConverter[qualifiedTypeName.getLocal()](node, attributeJsonSchema);
 		} else {
 			// Setup the working schema and allow processing to continue for any contained simpleType or annotation nodes.
-			attributeJsonSchema = this.customTypes.getGlobalAtrribute(name, jsonSchema);
-			jsonSchema.addSubSchema(name, attributeJsonSchema);
+			attributeJsonSchema = this.namespaceManager.getGlobalAttribute(name, jsonSchema);
+			jsonSchema.getGlobalAttributesSchema().addSubSchema(name, attributeJsonSchema);
 			this.workingJsonSchema = attributeJsonSchema;
 		}
 		return true;
@@ -219,7 +200,7 @@ class BaseConverter extends Processor {
 		var use = XsdFile.getAttrValue(node, XsdAttributes.USE);
 		// TODO: id, form, default, fixed, targetNamespace, inheritable (TBD)
 
-		parsingState.pushSchema(this.workingJsonSchema);
+		this.parsingState.pushSchema(this.workingJsonSchema);
 		if (type !== undefined) {
 			var qualifiedTypeName = new Qname(type);
 			this.workingJsonSchema.addAttributeProperty(name, this.createAttributeSchema(node, jsonSchema, xsd, qualifiedTypeName), use);
@@ -233,15 +214,13 @@ class BaseConverter extends Processor {
 	}
 
 	handleAttributeReference(node, jsonSchema, xsd) {
-		var name = XsdFile.getAttrValue(node, XsdAttributes.NAME);
-		var ref = XsdFile.getAttrValue(node, XsdAttributes.REF);
-		var use = XsdFile.getAttrValue(node, XsdAttributes.USE);
+		const ref = XsdFile.getAttrValue(node, XsdAttributes.REF);
+		const use = XsdFile.getAttrValue(node, XsdAttributes.USE);
 		// TODO: id, default, fixed, inheritable (TBD)
 
 		if (ref !== undefined) {
-			var attrSchema = this.customTypes.getGlobalAtrribute(ref, jsonSchema);
-			this.addAttributeProperty(this.workingJsonSchema, name, attrSchema.get$RefToSchema(), use);
-			this.workingJsonSchema.addAttributeProperty(name, attrSchema.get$RefToSchema(), use);
+			var attrSchema = this.namespaceManager.getGlobalAttribute(ref, jsonSchema);
+			this.workingJsonSchema.addAttributeProperty(ref, attrSchema.get$RefToSchema(), use);
 		}
 
 		return true;
@@ -252,7 +231,7 @@ class BaseConverter extends Processor {
 		//dumpNode(node);	
 		if (XsdFile.isReference(node)) {
 			return this.handleAttributeReference(node, jsonSchema, xsd);
-		} else if (parsingState.isTopLevelEntity()) {
+		} else if (this.parsingState.isTopLevelEntity()) {
 			return this.handleAttributeGlobal(node, jsonSchema, xsd);
 		} else {
 			return this.handleAttributeLocal(node, jsonSchema, xsd);
@@ -278,63 +257,91 @@ class BaseConverter extends Processor {
 		var maxOccursAttr = XsdFile.getAttrValue(node, XsdAttributes.MAX_OCCURS);
 		// TODO: id
 		// (TBD Don't forget to support singles)
-		throw new Error("choice array needs to be implemented!!");
+		throw new Error('choice array needs to be implemented!!');
 		return true;
+	}
+
+	allChildrenAreOptional(node) {
+		var retval = true;
+		const children = Array.from(node.childNodes);
+		children.forEach(function (childNode) {
+			if (childNode.nodeType != XsdNodeType.TEXT_NODE) {
+				const minOccursAttr = XsdFile.getAttrValue(childNode, XsdAttributes.MIN_OCCURS);
+				if (minOccursAttr != 0) {
+					retval = false;
+				}
+			}
+		})
+		return retval;
 	}
 
 	choice(node, jsonSchema, xsd) {
 		// TODO: id
-		var minOccursAttr = XsdFile.getAttrValue(node, XsdAttributes.MIN_OCCURS);
-		var maxOccursAttr = XsdFile.getAttrValue(node, XsdAttributes.MAX_OCCURS);
-
-		if(this.specialCaseIdentifier.isAnyOfChoice(node, xsd)) {
-			this.specialCaseIdentifier.addSpecialCase(SpecialCases.ANY_OF_CHOICE, this.workingJsonSchema);
+		const minOccursAttr = XsdFile.getAttrValue(node, XsdAttributes.MIN_OCCURS);
+		const maxOccursAttr = XsdFile.getAttrValue(node, XsdAttributes.MAX_OCCURS);
+		const isAnyOfChoice = this.specialCaseIdentifier.isAnyOfChoice(node, xsd);
+		if (isAnyOfChoice === true) {
+			this.specialCaseIdentifier.addSpecialCase(SpecialCases.ANY_OF_CHOICE, this.workingJsonSchema, node);
+			// This could be optional too.  Need a test! 
 		}
-		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED));
+		const isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED));
 		if (isArray) {
 			return this.handleChoiceArray(node, jsonSchema, xsd);
 		}
-		var isOptional = (minOccursAttr !== undefined && minOccursAttr == 0);
-		var isMultiChoice = XsdFile.countChildren(node.parentNode, XsdElements.CHOICE) > 1;
-		var state = parsingState.getCurrentState();
+		const isOptional = this.specialCaseIdentifier.isOptionalChoice(node, xsd, minOccursAttr);
+		const allChildrenAreOptional = this.allChildrenAreOptional(node);
+		const isSiblingChoice = this.specialCaseIdentifier.isSiblingChoice(node, xsd);
+		var state = this.parsingState.getCurrentState();
 		switch (state.name) {
 			case XsdElements.CHOICE:
-				throw new Error("choice() needs to be implemented within choice");
+				throw new Error('choice() needs to be implemented within choice');
 			case XsdElements.COMPLEX_TYPE:
 				// Allow to fall through and continue processing.  The schema is estabished with the complexType.
-				//throw new Error("choice() needs to be implemented within complexType");
+				//throw new Error('choice() needs to be implemented within complexType');
 				break;
 			case XsdElements.EXTENSION:
-				throw new Error("choice() needs to be implemented within extension");
+				throw new Error('choice() needs to be implemented within extension');
 			case XsdElements.GROUP:
 				// Allow to fall through and continue processing.  The schema is estabished with the group.
-				//throw new Error("choice() needs to be implemented within group");
+				//throw new Error('choice() needs to be implemented within group');
 				break;
 			case XsdElements.RESTRICTION:
-				throw new Error("choice() needs to be implemented within restriction");
+				throw new Error('choice() needs to be implemented within restriction');
 			case XsdElements.SEQUENCE:
-				if (isOptional) {
+				if (isSiblingChoice) {
+					var allOfSchema = new JsonSchemaFile({});
+					this.workingJsonSchema.allOf.push(allOfSchema);
+					this.parsingState.pushSchema(this.workingJsonSchema);
+					this.workingJsonSchema = allOfSchema;
+					if(isAnyOfChoice === true) {
+						// Ducktype it on there for now.  This is checked in baseSpecialCaseIdentifier.fixAnyOfChoice.
+						// It is needed because all sibling choices may not be anyOfChoices.
+						allOfSchema.isAnyOfChoice = true;
+					}
+				}
+				if (!allChildrenAreOptional && isOptional) {
 					var optionalChoiceSchema = new JsonSchemaFile({});
 					this.workingJsonSchema.anyOf.push(optionalChoiceSchema);
 					// Add an the optional part (empty schema)
 					var emptySchema = new JsonSchemaFile({});
+					emptySchema.description = "This truthy schema is what makes an optional <choice> optional.  This needs a better solution because it allows anything."
 					this.workingJsonSchema.anyOf.push(emptySchema);
-					parsingState.pushSchema(this.workingJsonSchema)
+					if (!isSiblingChoice) {
+						this.parsingState.pushSchema(this.workingJsonSchema)
+					}
 					this.workingJsonSchema = optionalChoiceSchema;
-				} else if (isMultiChoice) {
-					var allOfSchema = new JsonSchemaFile({});
-					this.workingJsonSchema.allOf.push(allOfSchema);
-					parsingState.pushSchema(this.workingJsonSchema);
-					this.workingJsonSchema = allOfSchema;
+						// The optional part will be added as a special case
+					this.specialCaseIdentifier.addSpecialCase(SpecialCases.OPTIONAL_CHOICE, this.workingJsonSchema, node);
 				} else {
+					// This is an needless grouping just allow to fall through and continue processing
 					// Allow to fall through and continue processing.  
 					// The schema should be estabished by the parent of the sequence.
 					//  (Keep an eye on this one)
-					//throw new Error("choice() needs to be implemented within sequence");
+					//throw new Error('choice() needs to be implemented within sequence');
 				}
 				break;
 			default:
-				throw new Error("choice() called from within unexpected parsing state!");
+				throw new Error('choice() called from within unexpected parsing state!');
 		}
 		return true;
 	}
@@ -354,19 +361,19 @@ class BaseConverter extends Processor {
 		var nameAttr = XsdFile.getAttrValue(node, XsdAttributes.NAME);
 		// TODO: id, mixed, abstract, block, final, defaultAttributesApply
 
-		var state = parsingState.getCurrentState();
+		var state = this.parsingState.getCurrentState();
 		switch (state.name) {
 			case XsdElements.SCHEMA:
-				this.workingJsonSchema = this.customTypes.getCustomType(nameAttr, jsonSchema);
+				this.workingJsonSchema = this.namespaceManager.getType(nameAttr, jsonSchema, xsd);
 				jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
 				this.workingJsonSchema.type = jsonSchemaTypes.OBJECT;
 				break;
 			case XsdElements.REDEFINE:
-				throw new Error("complexType() needs to be impemented within redefine");
+				throw new Error('complexType() needs to be impemented within redefine');
 			case XsdElements.OVERRIDE:
-				throw new Error("complexType() needs to be impemented within override");
+				throw new Error('complexType() needs to be impemented within override');
 			default:
-				throw new Error("complexType() called from within unexpected parsing state! state=" + state.name);
+				throw new Error('complexType() called from within unexpected parsing state! state=' + state.name);
 		}
 		return true;
 	}
@@ -404,26 +411,26 @@ class BaseConverter extends Processor {
 
 		if (typeAttr !== undefined) {
 			var typeName = typeAttr;
-			var customType = this.customTypes.getCustomType(typeName, jsonSchema);
+			var customType = this.namespaceManager.getType(typeName, jsonSchema, xsd);
 			var refType = customType.clone();
-			refType.id = jsonSchema.id
-			this.customTypes.addCustomTypeReference(nameAttr, refType, jsonSchema)
+			refType.id = jsonSchema.id;
+			this.namespaceManager.addTypeReference(nameAttr, refType, jsonSchema, xsd);
 			this.workingJsonSchema = customType.get$RefToSchema();
 			jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
 			//workingJsonSchema.type = jsonSchemaTypes.OBJECT;
 		} else {
-			this.workingJsonSchema = this.customTypes.getCustomType(nameAttr, jsonSchema);
+			this.workingJsonSchema = this.namespaceManager.getType(nameAttr, jsonSchema, xsd);
 			jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
 			this.workingJsonSchema.type = jsonSchemaTypes.OBJECT;
 		}
-		if (parsingState.inChoice()) {
-			throw new Error("choice needs to be implemented in handleElementGlobal()!");
+		if (this.parsingState.inChoice()) {
+			throw new Error('choice needs to be implemented in handleElementGlobal()!');
 		}
 		return true;
 	}
 
 	addProperty(targetSchema, propertyName, customType, minOccursAttr) {
-		if (minOccursAttr === undefined || minOccursAttr === "required" || minOccursAttr > 0) {
+		if (minOccursAttr === undefined || minOccursAttr === 'required' || minOccursAttr > 0) {
 			targetSchema.addRequired(propertyName);
 		}
 		targetSchema.setProperty(propertyName, customType);
@@ -471,18 +478,26 @@ class BaseConverter extends Processor {
 		var propertyName = nameAttr;  // name attribute is required for local element
 		var customType;
 		if (lookupName !== undefined) {
-			customType = this.customTypes.getCustomType(lookupName, jsonSchema).get$RefToSchema();
+			customType = this.namespaceManager.getType(lookupName, jsonSchema, xsd).get$RefToSchema();
 		} else {
-			customType = this.customTypes.getCustomType(propertyName, jsonSchema);
+			customType = this.namespaceManager.getType(propertyName, jsonSchema, xsd);
 		}
 		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED));
-		var state = parsingState.getCurrentState();
+		var state = this.parsingState.getCurrentState();
 		switch (state.name) {
 			case XsdElements.CHOICE:
-				if (isArray) {
-					this.addChoicePropertyAsArray(this.workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
+				if (this.specialCaseIdentifier.isOptionalChoice(node.parentNode, xsd) || this.allChildrenAreOptional(node.parentNode)) {
+					if (isArray) {
+						this.addPropertyAsArray(this.workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
+					} else {
+						this.addProperty(this.workingJsonSchema, propertyName, customType, minOccursAttr);
+					}
 				} else {
-					this.addChoiceProperty(this.workingJsonSchema, propertyName, customType, minOccursAttr);
+					if (isArray) {
+						this.addChoicePropertyAsArray(this.workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
+					} else {
+						this.addChoiceProperty(this.workingJsonSchema, propertyName, customType, minOccursAttr);
+					}
 				}
 				break;
 			case XsdElements.SEQUENCE:
@@ -494,7 +509,7 @@ class BaseConverter extends Processor {
 				}
 				break;
 			default:
-				throw new Error("element() [local] called from within unexpected parsing state!");
+				throw new Error('element() [local] called from within unexpected parsing state!');
 		}
 		return true;
 	}
@@ -505,19 +520,27 @@ class BaseConverter extends Processor {
 		var refAttr = XsdFile.getAttrValue(node, XsdAttributes.REF);
 		// TODO: id
 
-		// An element within a model group (such as "group") may be a reference.  References have neither
+		// An element within a model group (such as 'group') may be a reference.  References have neither
 		// a name nor a type attribute - just a ref attribute.  This is awkward when the reference elmenent
 		// is a property of an object in JSON.  With no other options to name the property ref is used.
 		var propertyName = refAttr;  // ref attribute is required for an element reference
-		var customType = this.customTypes.getCustomType(propertyName, jsonSchema).get$RefToSchema();
+		var customType = this.namespaceManager.getType(propertyName, jsonSchema, xsd).get$RefToSchema();
 		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED));
-		var state = parsingState.getCurrentState();
+		var state = this.parsingState.getCurrentState();
 		switch (state.name) {
 			case XsdElements.CHOICE:
-				if (isArray) {
-					this.addChoicePropertyAsArray(this.workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
+				if (this.specialCaseIdentifier.isOptionalChoice(node.parentNode, xsd) || this.allChildrenAreOptional(node.parentNode)) {
+					if (isArray) {
+						this.addPropertyAsArray(this.workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
+					} else {
+						this.addProperty(this.workingJsonSchema, propertyName, customType, minOccursAttr);
+					}
 				} else {
-					this.addChoiceProperty(this.workingJsonSchema, propertyName, customType, minOccursAttr);
+					if (isArray) {
+						this.addChoicePropertyAsArray(this.workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
+					} else {
+						this.addChoiceProperty(this.workingJsonSchema, propertyName, customType, minOccursAttr);
+					}
 				}
 				break;
 			case XsdElements.SEQUENCE:
@@ -529,7 +552,7 @@ class BaseConverter extends Processor {
 				}
 				break;
 			default:
-				throw new Error("element() [reference] called from within unexpected parsing state!");
+				throw new Error('element() [reference] called from within unexpected parsing state!');
 		}
 		return true;
 	}
@@ -539,7 +562,7 @@ class BaseConverter extends Processor {
 
 		if (refAttr !== undefined) {
 			return this.handleElementReference(node, jsonSchema, xsd);
-		} else if (parsingState.isTopLevelEntity()) {
+		} else if (this.parsingState.isTopLevelEntity()) {
 			return this.handleElementGlobal(node, jsonSchema, xsd);
 		} else {
 			return this.handleElementLocal(node, jsonSchema, xsd);
@@ -565,15 +588,15 @@ class BaseConverter extends Processor {
 		// TODO: id
 		var baseType = new Qname(baseAttr);
 		var baseTypeName = baseType.getLocal();
-		var state = parsingState.getCurrentState();
+		var state = this.parsingState.getCurrentState();
 		switch (state.name) {
 			case XsdElements.COMPLEX_CONTENT:
-				this.workingJsonSchema = this.workingJsonSchema.extend(this.customTypes.getCustomType(baseTypeName, jsonSchema)) //, jsonSchemaTypes.OBJECT);
+				this.workingJsonSchema = this.workingJsonSchema.extend(this.namespaceManager.getType(baseTypeName, jsonSchema, xsd)) //, jsonSchemaTypes.OBJECT);
 				break;
 			case XsdElements.SIMPLE_TYPE:
-				throw new Error("extension() needs to be impemented within simpleType!");
+				throw new Error('extension() needs to be impemented within simpleType!');
 			default:
-				throw new Error("extension() called from within unexpected parsing state!");
+				throw new Error('extension() called from within unexpected parsing state!');
 		}
 		return true;
 	}
@@ -594,19 +617,19 @@ class BaseConverter extends Processor {
 		var nameAttr = XsdFile.getAttrValue(node, XsdAttributes.NAME);
 		// TODO: id
 
-		var state = parsingState.getCurrentState();
+		var state = this.parsingState.getCurrentState();
 		switch (state.name) {
 			case XsdElements.SCHEMA:
-				this.workingJsonSchema = this.customTypes.getCustomType(nameAttr, jsonSchema);
+				this.workingJsonSchema = this.namespaceManager.getType(nameAttr, jsonSchema, xsd);
 				jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
 				this.workingJsonSchema.type = jsonSchemaTypes.OBJECT;
 				break;
 			case XsdElements.REDEFINE:
-				throw new Error("group() [definition] needs to be impemented within restriction!");
+				throw new Error('group() [definition] needs to be impemented within restriction!');
 			case XsdElements.OVERRIDE:
-				throw new Error("group() [definition] needs to be impemented within choice!");
+				throw new Error('group() [definition] needs to be impemented within choice!');
 			default:
-				throw new Error("group() [definition] called from within unexpected parsing state!");
+				throw new Error('group() [definition] called from within unexpected parsing state!');
 		}
 		return true;
 	}
@@ -616,25 +639,25 @@ class BaseConverter extends Processor {
 		var refName = XsdFile.getAttrValue(node, XsdAttributes.REF);
 		// TODO: id, maxOccurs
 
-		var state = parsingState.getCurrentState();
+		var state = this.parsingState.getCurrentState();
 		switch (state.name) {
 			case XsdElements.EXTENSION:
-				throw new Error("group() [reference] needs to be impemented within extension!");
+				throw new Error('group() [reference] needs to be impemented within extension!');
 			case XsdElements.RESTRICTION:
-				throw new Error("group() [reference] needs to be impemented within restriction!");
+				throw new Error('group() [reference] needs to be impemented within restriction!');
 			case XsdElements.CHOICE:
-				throw new Error("group() [reference] needs to be impemented within choice!");
+				throw new Error('group() [reference] needs to be impemented within choice!');
 			case XsdElements.COMPLEX_TYPE:
 			case XsdElements.SEQUENCE:
 			case XsdElements.ALL:
 				if (minOccursAttr === undefined || minOccursAttr > 0) {
 					this.workingJsonSchema.addRequired(refName);
 				}
-				var customType = this.customTypes.getCustomType(refName, jsonSchema);
+				var customType = this.namespaceManager.getType(refName, jsonSchema, xsd);
 				this.workingJsonSchema.setProperty(refName, customType.get$RefToSchema());
 				break;
 			default:
-				throw new Error("group() [reference] called from within unexpected parsing state!");
+				throw new Error('group() [reference] called from within unexpected parsing state!');
 		}
 		return true;
 	}
@@ -646,14 +669,14 @@ class BaseConverter extends Processor {
 		// TODO: id
 
 		var propertyName = refAttr;  // ref attribute is required for group reference
-		var customType = this.customTypes.getCustomType(propertyName, jsonSchema).get$RefToSchema();
+		var customType = this.namespaceManager.getType(propertyName, jsonSchema, xsd).get$RefToSchema();
 		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED));
-		var state = parsingState.getCurrentState();
+		var state = this.parsingState.getCurrentState();
 		switch (state.name) {
 			case XsdElements.EXTENSION:
-				throw new Error("group() [reference] needs to be impemented within extension!");
+				throw new Error('group() [reference] needs to be impemented within extension!');
 			case XsdElements.RESTRICTION:
-				throw new Error("group() [reference] needs to be impemented within restriction!");
+				throw new Error('group() [reference] needs to be impemented within restriction!');
 			case XsdElements.CHOICE:
 				if (isArray) {
 					this.addChoicePropertyAsArray(this.workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
@@ -671,7 +694,7 @@ class BaseConverter extends Processor {
 				}
 				break;
 			default:
-				throw new Error("group() [reference] called from within unexpected parsing state!");
+				throw new Error('group() [reference] called from within unexpected parsing state!');
 		}
 		return true;
 	}
@@ -732,7 +755,7 @@ class BaseConverter extends Processor {
 
 	length(node, jsonSchema, xsd) {
 		// TODO: id, fixed
-		var len = XsdFile.getValueAttr(node);
+		var len = XsdFile.getNumberValueAttr(node);
 
 		this.workingJsonSchema.maxLength = len;
 		this.workingJsonSchema.minLength = len;
@@ -746,7 +769,7 @@ class BaseConverter extends Processor {
 	}
 
 	maxExclusive(node, jsonSchema, xsd) {
-		var val = XsdFile.getValueAttr(node);
+		var val = XsdFile.getNumberValueAttr(node);
 		// TODO: id, fixed
 
 		this.workingJsonSchema.maximum = val;
@@ -755,7 +778,7 @@ class BaseConverter extends Processor {
 	}
 
 	maxInclusive(node, jsonSchema, xsd) {
-		var val = XsdFile.getValueAttr(node);
+		var val = XsdFile.getNumberValueAttr(node);
 		// TODO: id, fixed
 
 		this.workingJsonSchema.maximum = val; // inclusive is the JSON Schema default
@@ -763,7 +786,7 @@ class BaseConverter extends Processor {
 	}
 
 	maxLength(node, jsonSchema, xsd) {
-		var len = XsdFile.getValueAttr(node);
+		var len = XsdFile.getNumberValueAttr(node);
 		// TODO: id, fixed
 
 		this.workingJsonSchema.maxLength = len;
@@ -771,7 +794,7 @@ class BaseConverter extends Processor {
 	}
 
 	minExclusive(node, jsonSchema, xsd) {
-		var val = XsdFile.getValueAttr(node);
+		var val = XsdFile.getNumberValueAttr(node);
 		// TODO: id, fixed
 
 		this.workingJsonSchema.minimum = val;
@@ -780,7 +803,7 @@ class BaseConverter extends Processor {
 	}
 
 	minInclusive(node, jsonSchema, xsd) {
-		var val = XsdFile.getValueAttr(node);
+		var val = XsdFile.getNumberValueAttr(node);
 		// TODO: id, fixed
 
 		this.workingJsonSchema.minimum = val; // inclusive is the JSON Schema default
@@ -788,7 +811,7 @@ class BaseConverter extends Processor {
 	}
 
 	minLength(node, jsonSchema, xsd) {
-		var len = XsdFile.getValueAttr(node);
+		var len = XsdFile.getNumberValueAttr(node);
 		// TODO: id, fixed
 
 		this.workingJsonSchema.minLength = len;
@@ -833,19 +856,20 @@ class BaseConverter extends Processor {
 		var baseTypeName = baseType.getLocal();
 		// TODO: id, (base inheritance via allOf)
 
-		if (this.restrictionConverter[baseTypeName] === undefined) {
-			// this.customTypes.getCustomType(baseTypeName, jsonSchema).clone(workingJsonSchema);
-			this.workingJsonSchema = this.workingJsonSchema.extend(this.customTypes.getCustomType(baseTypeName, jsonSchema));
+		if (this.builtInTypeConverter[baseTypeName] === undefined) {
+			this.parsingState.pushSchema(this.workingJsonSchema);
+			this.workingJsonSchema = this.workingJsonSchema.extend(this.namespaceManager.getType(baseTypeName, jsonSchema, xsd));
 			return true;
 		} else {
-			return this.restrictionConverter[baseTypeName](node, this.workingJsonSchema);
+			return this.builtInTypeConverter[baseTypeName](node, this.workingJsonSchema);
 		}
 	}
 
 	schema(node, jsonSchema, xsd) {
 		// TODO: id, version, targetNamespace, attributeFormDefualt, elementFormDefualt, blockDefault, finalDefault, xml:lang, defaultAttributes, xpathDefaultNamespace
-		// (TBD)
-		jsonSchema.description = "Schema tag attributes: " + utils.objectToString(XsdFile.buildAttributeMap(node));
+
+		jsonSchema.description = 'Schema tag attributes: ' + utils.objectToString(XsdFile.buildAttributeMap(node));
+		this.initializeNamespaces(xsd);
 		return true;
 	}
 
@@ -860,16 +884,25 @@ class BaseConverter extends Processor {
 		var maxOccursAttr = XsdFile.getAttrValue(node, XsdAttributes.MAX_OCCURS);
 		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED));
 		if (isArray) {
-			throw new Error("sequence arrays need to be implemented!");
+			throw new Error('sequence arrays need to be implemented!');
 		}
 		var isOptional = (minOccursAttr !== undefined && minOccursAttr == 0);
-		var state = parsingState.getCurrentState();
+		if (isOptional === true) {
+			const type = XsdFile.getTypeNode(node);
+			const typeName = type.getAttribute('name');
+			debug('Optional Sequence Found : ' + xsd.baseFilename + ':' + typeName);
+			if (typeName == '') {
+				this.parsingState.dumpStates(xsd.baseFilename);
+				XsdFile.dumpNode(node);
+			}
+		}
+		var state = this.parsingState.getCurrentState();
 		switch (state.name) {
 			case XsdElements.CHOICE:
 				var choiceSchema = new JsonSchemaFile({});
 				//choiceSchema.additionalProperties = false;
 				this.workingJsonSchema.oneOf.push(choiceSchema);
-				parsingState.pushSchema(this.workingJsonSchema);
+				this.parsingState.pushSchema(this.workingJsonSchema);
 				this.workingJsonSchema = choiceSchema;
 				break;
 			case XsdElements.COMPLEX_TYPE:
@@ -887,14 +920,14 @@ class BaseConverter extends Processor {
 					// Add an the optional part (empty schema)
 					var emptySchema = new JsonSchemaFile({});
 					this.workingJsonSchema.anyOf.push(emptySchema);
-					parsingState.pushSchema(this.workingJsonSchema);
+					this.parsingState.pushSchema(this.workingJsonSchema);
 					this.workingJsonSchema = optionalSequenceSchema;
 				} else {
-					throw new Error("Required nested sequences need to be implemented!");
+					throw new Error('Required nested sequences need to be implemented!');
 				}
 				break;
 			default:
-				throw new Error("sequence() called from within unexpected parsing state!");
+				throw new Error('sequence() called from within unexpected parsing state! state = [' + state.name + ']');
 		}
 		return true;
 	}
@@ -909,7 +942,7 @@ class BaseConverter extends Processor {
 		var nameAttr = XsdFile.getAttrValue(node, XsdAttributes.NAME);
 		// TODO: id, final
 
-		this.workingJsonSchema = this.customTypes.getCustomType(nameAttr, jsonSchema);
+		this.workingJsonSchema = this.namespaceManager.getType(nameAttr, jsonSchema, xsd);
 		jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
 		return true;
 	}
@@ -927,19 +960,19 @@ class BaseConverter extends Processor {
 		} else {
 			continueParsing = this.handleSimpleTypeAnonymousLocal(node, jsonSchema, xsd);
 		}
-		if (parsingState.inAttribute()) {
+		if (this.parsingState.inAttribute()) {
 			// need to pop
 		}
 		return continueParsing;
 	}
 
 	text(node, jsonSchema, xsd) {
-		if (parsingState.inDocumentation()) {
+		if (this.parsingState.inDocumentation()) {
 			return true;
 			// TODO: This should be a configurable option
 			// workingJsonSchema.description = node.text();
-		} else if (parsingState.inAppInfo()) {
-			this.workingJsonSchema.concatDescription(node.parent().name() + "=" + node.text() + " ");
+		} else if (this.parsingState.inAppInfo()) {
+			this.workingJsonSchema.concatDescription(node.parent().name() + '=' + node.text() + ' ');
 		}
 		return true;
 	}
@@ -981,7 +1014,7 @@ class BaseConverter extends Processor {
 
 	processSpecialCases() {
 		this.specialCaseIdentifier.specialCases.forEach(function (sc, index, array) {
-			this.specialCaseIdentifier[sc.specialCase](sc.jsonSchema);
+			this.specialCaseIdentifier[sc.specialCase](sc.jsonSchema, sc.node);
 		}, this);
 	}
 }

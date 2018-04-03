@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  * Defines constants for well known XML Schema Attribute Values
@@ -7,6 +7,7 @@
  */
 
 module.exports = {
-    UNBOUNDED: "unbounded",
-    ZERO: "0"
+    UNBOUNDED: 'unbounded',
+    ZERO: '0',
+    XMLNS: 'xmlns'
 }

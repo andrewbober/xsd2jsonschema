@@ -1,12 +1,13 @@
-"use strict";
+'use strict';
 
-const XsdFile = require("./xmlschema/xsdFileXmlDom");
+const XsdFile = require('./xmlschema/xsdFileXmlDom');
 
 /**
  * Class represtending a depth first traversal algorithm.  This class is used as part of a visitor pattern 
  * to traverse the nodes within an XML Schema file visiting each to facitiate conversion to JSON Schema.
  */
-class DepthFirstTraversal {
+
+ class DepthFirstTraversal {
 	/**
 	 * Constructs an instance of DepthFirstTraversal.
 	 * @constructor
@@ -15,14 +16,13 @@ class DepthFirstTraversal {
 
 	}
 
-	
 	/**
-	 * This funciton implements a recursive algorithm to traverse a tree of xml schema nodes in a depth first manner.  Each
+	 * This function implements a recursive algorithm to traverse a tree of xml schema nodes in a depth first manner.  Each
 	 * node is visited and a customizalbe {@link BaseConversionVisitor|visiter} is applied.  The visiter can abandon the traversal at any time by 
 	 * returning false from the {@link BaseConversionVisitor#visit|visit()} method.
 	 * 
 	 * @param {BaseConversionVisitor} visitor - {@link BaseConversionVisitor} or a subclass of {@link BaseConversionVisitor}
-	 * @param {Node} node - The XML "schema" element within {@link XsdFile|xsd} to be used as the start of conversion.
+	 * @param {Node} node - The XML 'schema' element within {@link XsdFile|xsd} to be used as the start of conversion.
 	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current XML Schema file {@link XsdFile|xsd} being converted.
 	 * @param {XsdFile} xsd - The XML schema file currently being converted.
 	 * 
@@ -41,7 +41,7 @@ class DepthFirstTraversal {
 					}, this);
 				}
 			}
-			visitor.exitState();
+			visitor.exitState(node, jsonSchema, xsd);
 		}
 
 	}

@@ -32,16 +32,20 @@
     "node": ">=6.11.0"
   },
   "dependencies": {
-    "ajv": "^4.11.5",
+    "clone": "^2.1.1",
+    "debug": "^3.1.0",
     "fs-extra": "^3.0.1",
-    "urijs": "^1.18.10",
-    "xml2js": "^0.4.17",
-    "xmldom": "^0.1.27"
+    "urijs": "^1.19.0",
+    "xml2js": "^0.4.19",
+    "xmldom": "^0.1.27",
+    "xpath": "0.0.24"
   },
   "scripts": {
     "prepare": "require-self",
-    "test": "jasmine",
-    "cover": "istanbul cover jasmine",
+    "test": "jasmine --config=test/unit/jasmine.json",
+    "functionalTestJ": "jasmine test/functional/functionalTestSpec.js",
+    "functionalTest": "node test/functional/allFunctionalTests.js",
+    "cover": "istanbul cover jasmine test/unit/**/*Spec.js  test/functional/**/*Spec.js",
     "update-coveralls": "cat coverage/lcov.info | coveralls",
     "example-convert": "node example/example.js convert",
     "example-validate": "node example/example.js validate",
@@ -50,11 +54,12 @@
     "jsdoc": "jsdoc -c jsdoc-conf.json -t ./node_modules/jsdoc-oblivion/template -R README.md -r ./src/"
   },
   "devDependencies": {
-    "coveralls": "^2.11.15",
+    "ajv": "^4.11.5",
+    "coveralls": "^2.13.3",
     "ink-docstrap": "^1.3.0",
     "istanbul": "^0.4.5",
-    "jasmine": "^2.5.2",
-    "jsdoc": "^3.4.3",
+    "jasmine": "^2.8.0",
+    "jsdoc": "^3.5.5",
     "jsdoc-oblivion": "0.0.4",
     "require-self": "^0.1.0"
   }

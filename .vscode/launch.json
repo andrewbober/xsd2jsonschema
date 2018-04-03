@@ -55,13 +55,13 @@
 		},
 		{
 			// Name of configuration; appears in the launch configuration drop down menu.
-			"name": "Launch Functional Test Suite",
+			"name": "Launch Functional Test",
 			// Type of configuration. Possible values: "node", "mono".
 			"type": "node",
 			// Action to take
 			"request": "launch",
 			// Workspace relative or absolute path to the program.
-			"program": "${workspaceRoot}/test/functional/testAttributes.js",
+			"program": "${workspaceRoot}/test/functional/allFunctionalTests.js",
 			// Automatically stop program after launch.
 			"stopOnEntry": false,
 			// Command line arguments passed to the program.
@@ -73,7 +73,59 @@
 			"runtimeArgs": ["--nolazy"],
 			// Environment variables passed to the program.
 			"env": {
+				"NODE_ENV": "development",
+				"DEBUG": "xsd2jsonschema:AttributeFunctionalTest"
+			},
+			// Use JavaScript source maps (if they exist).
+			"sourceMaps": false
+		},
+		{
+			// Name of configuration; appears in the launch configuration drop down menu.
+			"name": "Launch Functional Test Jasmine",
+			// Type of configuration. Possible values: "node", "mono".
+			"type": "node",
+			// Action to take
+			"request": "launch",
+			// Workspace relative or absolute path to the program.
+			"program": "${workspaceRoot}/node_modules/.bin/jasmine",
+			// Automatically stop program after launch.
+			"stopOnEntry": false,
+			// Command line arguments passed to the program.
+			"args": ["./test/functional/**/*Spec*"],
+			"cwd": "${workspaceRoot}/",
+			// Workspace relative or absolute path to the runtime executable to be used. Default is the runtime executable on the PATH.
+			"runtimeExecutable": null,
+			// Optional arguments passed to the runtime executable.
+			"runtimeArgs": ["--nolazy"],
+			// Environment variables passed to the program.
+			"env": {
 				"NODE_ENV": "development"
+			},
+			// Use JavaScript source maps (if they exist).
+			"sourceMaps": false
+		},
+		{
+			// Name of configuration; appears in the launch configuration drop down menu.
+			"name": "Launch Specification Test",
+			// Type of configuration. Possible values: "node", "mono".
+			"type": "node",
+			// Action to take
+			"request": "launch",
+			// Workspace relative or absolute path to the program.
+			"program": "${workspaceRoot}/test/specification/specificationTest.js",
+			// Automatically stop program after launch.
+			"stopOnEntry": false,
+			// Command line arguments passed to the program.
+			"args": [],
+			"cwd": "${workspaceRoot}/",
+			// Workspace relative or absolute path to the runtime executable to be used. Default is the runtime executable on the PATH.
+			"runtimeExecutable": null,
+			// Optional arguments passed to the runtime executable.
+			"runtimeArgs": ["--nolazy"],
+			// Environment variables passed to the program.
+			"env": {
+				"NODE_ENV": "development",
+				"DEBUG": "xsd2jsonschema:*FunctionalTest"
 			},
 			// Use JavaScript source maps (if they exist).
 			"sourceMaps": false
@@ -90,7 +142,7 @@
 			// Automatically stop program after launch.
 			"stopOnEntry": false,
 			// Command line arguments passed to the program.
-			"args": [],
+			"args": ["test/unit/**/*Spec.js"],
 			"cwd": "${workspaceRoot}/",
 			// Workspace relative or absolute path to the runtime executable to be used. Default is the runtime executable on the PATH.
 			"runtimeExecutable": null,

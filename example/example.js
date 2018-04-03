@@ -61,8 +61,8 @@ if (action === "convert") {
 	var log = JSON.stringify(apt.getJsonSchema(), null, 2);
 	console.log(log);
 
-	var customTypes = converter.getCustomTypes();
-	var apt2 = customTypes.getNamespace("/www.xsd2jsonschema.org/example").customTypes["PersonInfoType"];
+	var namespaceManager = converter.getNamespaceManager();
+	var apt2 = namespaceManager.getNamespace("/www.xsd2jsonschema.org/example").types["PersonInfoType"];
 	var log2 = JSON.stringify(apt2.getJsonSchema(), null, 2);
 	console.log(log2);
 } else if (action === "dump-schemas") {
