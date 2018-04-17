@@ -168,7 +168,7 @@ const NamespaceManager_NAME = Symbol();
 	 *
 	 */
 	createAttributeSchema(node, jsonSchema, xsd, qualifiedTypeName) {
-		var attributeJsonSchema = new JsonSchemaFile({});
+		var attributeJsonSchema = new JsonSchemaFile();
 		this.builtInTypeConverter[qualifiedTypeName.getLocal()](node, attributeJsonSchema)
 		return attributeJsonSchema;
 	}
@@ -206,7 +206,7 @@ const NamespaceManager_NAME = Symbol();
 			this.workingJsonSchema.addAttributeProperty(name, this.createAttributeSchema(node, jsonSchema, xsd, qualifiedTypeName), use);
 		} else {
 			// Setup the working schema and allow processing to continue for any contained simpleType or annotation nodes.
-			var attributeJsonSchema = new JsonSchemaFile({});
+			var attributeJsonSchema = new JsonSchemaFile();
 			this.workingJsonSchema.addAttributeProperty(name, attributeJsonSchema, use);
 			this.workingJsonSchema = attributeJsonSchema;
 		}
@@ -309,7 +309,7 @@ const NamespaceManager_NAME = Symbol();
 				throw new Error('choice() needs to be implemented within restriction');
 			case XsdElements.SEQUENCE:
 				if (isSiblingChoice) {
-					var allOfSchema = new JsonSchemaFile({});
+					var allOfSchema = new JsonSchemaFile();
 					this.workingJsonSchema.allOf.push(allOfSchema);
 					this.parsingState.pushSchema(this.workingJsonSchema);
 					this.workingJsonSchema = allOfSchema;
@@ -320,10 +320,10 @@ const NamespaceManager_NAME = Symbol();
 					}
 				}
 				if (!allChildrenAreOptional && isOptional) {
-					var optionalChoiceSchema = new JsonSchemaFile({});
+					var optionalChoiceSchema = new JsonSchemaFile();
 					this.workingJsonSchema.anyOf.push(optionalChoiceSchema);
 					// Add an the optional part (empty schema)
-					var emptySchema = new JsonSchemaFile({});
+					var emptySchema = new JsonSchemaFile();
 					emptySchema.description = "This truthy schema is what makes an optional <choice> optional.  This needs a better solution because it allows anything."
 					this.workingJsonSchema.anyOf.push(emptySchema);
 					if (!isSiblingChoice) {
@@ -437,28 +437,28 @@ const NamespaceManager_NAME = Symbol();
 	}
 
 	addChoiceProperty(targetSchema, propertyName, customType, minOccursAttr) {
-		var choiceSchema = new JsonSchemaFile({});
+		var choiceSchema = new JsonSchemaFile();
 		//choiceSchema.additionalProperties = false;
 		this.addProperty(choiceSchema, propertyName, customType, minOccursAttr);
 		targetSchema.oneOf.push(choiceSchema);
 	}
 
 	addPropertyAsArray(targetSchema, propertyName, customType, minOccursAttr, maxOccursAttr) {
-		var arraySchema = new JsonSchemaFile({});
+		var arraySchema = new JsonSchemaFile();
 		arraySchema.type = jsonSchemaTypes.ARRAY;
 		var min = minOccursAttr === undefined ? undefined : minOccursAttr;
 		var max = maxOccursAttr === undefined ? undefined : maxOccursAttr;
 		arraySchema.minItems = min;
 		arraySchema.maxItems = max === XsdAttributeValues.UNBOUNDED ? undefined : max;
 		arraySchema.items = customType.get$RefToSchema();
-		var oneOfSchema = new JsonSchemaFile({});
+		var oneOfSchema = new JsonSchemaFile();
 		oneOfSchema.oneOf.push(customType.get$RefToSchema());
 		oneOfSchema.oneOf.push(arraySchema);
 		this.addProperty(targetSchema, propertyName, oneOfSchema, minOccursAttr);
 	}
 
 	addChoicePropertyAsArray(targetSchema, propertyName, customType, minOccursAttr, maxOccursAttr) {
-		var choiceSchema = new JsonSchemaFile({});
+		var choiceSchema = new JsonSchemaFile();
 		//choiceSchema.additionalProperties = false;
 		this.addPropertyAsArray(choiceSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
 		targetSchema.oneOf.push(choiceSchema);
@@ -899,7 +899,7 @@ const NamespaceManager_NAME = Symbol();
 		var state = this.parsingState.getCurrentState();
 		switch (state.name) {
 			case XsdElements.CHOICE:
-				var choiceSchema = new JsonSchemaFile({});
+				var choiceSchema = new JsonSchemaFile();
 				//choiceSchema.additionalProperties = false;
 				this.workingJsonSchema.oneOf.push(choiceSchema);
 				this.parsingState.pushSchema(this.workingJsonSchema);
@@ -915,10 +915,10 @@ const NamespaceManager_NAME = Symbol();
 				break;
 			case XsdElements.SEQUENCE:
 				if (isOptional) {
-					var optionalSequenceSchema = new JsonSchemaFile({});
+					var optionalSequenceSchema = new JsonSchemaFile();
 					this.workingJsonSchema.anyOf.push(optionalSequenceSchema);
 					// Add an the optional part (empty schema)
-					var emptySchema = new JsonSchemaFile({});
+					var emptySchema = new JsonSchemaFile();
 					this.workingJsonSchema.anyOf.push(emptySchema);
 					this.parsingState.pushSchema(this.workingJsonSchema);
 					this.workingJsonSchema = optionalSequenceSchema;

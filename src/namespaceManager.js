@@ -107,7 +107,7 @@ const builtInTypeConverter_NAME = Symbol();
 
 	getBuiltInType(typeName, xsd) {
 		if (this.namespaces[this.XML_SCHEMA_NAMESPACE].types[typeName] === undefined) {
-			const newType = new JsonSchemaFile({});
+			const newType = new JsonSchemaFile();
 			// The 'node' parameter to the builtInTypeConverter's xml handler methods is not currently
 			// used so it is save to pass in null for now.  This is likely a future bug.
 			this.builtInTypeConverter[typeName](null, newType, xsd);

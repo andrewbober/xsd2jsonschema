@@ -52,7 +52,7 @@ describe('The Library Test -', function() {
     
     //const jsonSchemaTypes = new JsonSchemaTypes();
     //const jsonSchemaFormats = new JsonSchemaFormats();
-    const jsonSchemaFile = new JsonSchemaFile({});
+    const jsonSchemaFile = new JsonSchemaFile();
     
     const defaultConversionVisitor = new DefaultConversionVisitor();
     const baseConvertionVisitor = new BaseConvertionVisitor();

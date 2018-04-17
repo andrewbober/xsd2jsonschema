@@ -11,7 +11,7 @@ describe("BuiltInTypeConverter Test -", function() {
 
   beforeEach(function() {
     node = null
-    jsonSchema = new JsonSchemaFile({});
+    jsonSchema = new JsonSchemaFile();
     xsd = null;
   });
 

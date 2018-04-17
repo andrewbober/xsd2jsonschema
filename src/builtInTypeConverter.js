@@ -94,10 +94,10 @@ const Options_NAME = Symbol();
 	 * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
 	 */
 	boolean(node, jsonSchema, xsd) {
-		var booleanSchema = new JsonSchemaFile({});
+		var booleanSchema = new JsonSchemaFile();
 		booleanSchema.type = JSON_SCHEMA_TYPES.BOOLEAN;
 
-		var integerSchema = new JsonSchemaFile({});
+		var integerSchema = new JsonSchemaFile();
 		integerSchema.type = JSON_SCHEMA_TYPES.INTEGER;
 		integerSchema.maximum = 1;
 		integerSchema.minimum = 0;
@@ -379,7 +379,7 @@ const Options_NAME = Symbol();
 
 	// 3.4.5 NMTOKENS: http://www.w3.org/TR/xmlschema11-2/#NMTOKENS
 	NMTOKENS(node, jsonSchema, xsd) {
-		var items = new JsonSchemaFile({});
+		var items = new JsonSchemaFile();
 
 		items.type = JSON_SCHEMA_TYPES.STRING
 		//items.description = 'TODO: This should have a regex applied to validate the NMTOKEN format.';
@@ -418,7 +418,7 @@ const Options_NAME = Symbol();
 
 	// 3.4.10 IDREFS: http://www.w3.org/TR/xmlschema11-2/#IDREFS
 	IDREFS(node, jsonSchema, xsd) {
-		var items = new JsonSchemaFile({});
+		var items = new JsonSchemaFile();
 
 		items.type = JSON_SCHEMA_TYPES.STRING
 		//items.description = 'TODO: This should have a regex applied to validate the IDREFS format.';
@@ -436,7 +436,7 @@ const Options_NAME = Symbol();
 
 	// 3.4.12 ENTITIES: http://www.w3.org/TR/xmlschema11-2/#ENTITIES
 	ENTITIES(node, jsonSchema, xsd) {
-		var items = new JsonSchemaFile({});
+		var items = new JsonSchemaFile();
 
 		items.type = JSON_SCHEMA_TYPES.STRING
 		//items.description = 'TODO: This should have a regex applied to validate the ENTITIES format.';

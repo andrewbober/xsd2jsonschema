@@ -224,7 +224,7 @@ class BaseSpecialCaseIdentifier {
         anyOf.required.length = 0;
 		Object.keys(anyOf.properties).forEach(function (prop, index, array) {
 			debug(prop + '=' + anyOf.properties[prop]);
-            const newAnyOf = new JsonSchemaFile({});
+            const newAnyOf = new JsonSchemaFile();
             newAnyOf.setProperty(prop, anyOf.properties[prop]);
             newAnyOf.addRequired(prop);
             jsonSchema.anyOf.push(newAnyOf);
@@ -251,10 +251,10 @@ class BaseSpecialCaseIdentifier {
     // 1) Push an empty schema onto anyOf.  Always passes validation, as if the empty schema {}
     fixOptionalChoiceTruthy(jsonSchema, node) {
 /*
-        var optionalChoiceSchema = new JsonSchemaFile({});
+        var optionalChoiceSchema = new JsonSchemaFile();
         this.workingJsonSchema.anyOf.push(optionalChoiceSchema);
         // Add an the optional part (empty schema)
-        var emptySchema = new JsonSchemaFile({});
+        var emptySchema = new JsonSchemaFile();
         this.workingJsonSchema.anyOf.push(emptySchema);
         parsingState.pushSchema(this.workingJsonSchema)
         this.workingJsonSchema = optionalChoiceSchema;
@@ -266,12 +266,12 @@ class BaseSpecialCaseIdentifier {
     // 2) create new 'optional' schema and also push it onto anyOf
     // 3) populate optional schema allOf with a 'not' for each member of the original oneOf
     fixOptionalChoiceNot(jsonSchema, node) {
-        const originalOneOf = new JsonSchemaFile({});
+        const originalOneOf = new JsonSchemaFile();
         originalOneOf.oneOf = Array.from(jsonSchema.oneOf);
         jsonSchema.anyOf.push(originalOneOf);
-        const theOptionalPart = new JsonSchemaFile({});
+        const theOptionalPart = new JsonSchemaFile();
         jsonSchema.oneOf.forEach(function(option, index, array) {
-            const notSchema = new JsonSchemaFile({});
+            const notSchema = new JsonSchemaFile();
             notSchema.not = option;
             theOptionalPart.allOf.push(notSchema);
         })
@@ -284,12 +284,12 @@ class BaseSpecialCaseIdentifier {
     // 2) create new 'optional' schema and also push it onto anyOf
     // 3) populate optional schema allOf with a 'not' for each member of the original oneOf
     fixOptionalChoicePropertyDependency(jsonSchema, node) {
-        const originalOneOf = new JsonSchemaFile({});
+        const originalOneOf = new JsonSchemaFile();
         originalOneOf.oneOf = Array.from(jsonSchema.oneOf);
         jsonSchema.anyOf.push(originalOneOf);
-        const theOptionalPart = new JsonSchemaFile({});
+        const theOptionalPart = new JsonSchemaFile();
         jsonSchema.oneOf.forEach(function(option, index, array) {
-            const dependencySchema = new JsonSchemaFile({});
+            const dependencySchema = new JsonSchemaFile();
             dependencySchema.not = option;
             theOptionalPart.addPropertyDependency[option.name] = option
             //theOptionalPart.allOf.push(notSchema);
