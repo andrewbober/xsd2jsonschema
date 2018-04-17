@@ -66,7 +66,6 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 		super(properties)
 
 		this.filename = undefined;
-//		this.resolvedFilename = undefined;
 		this.targetSchema = this;
 		this.targetNamespace = undefined;
 		this.ref = undefined;  // used to hold a JSON Pointer reference to this named type (Not used for anonymous types)
@@ -134,29 +133,30 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 
 		this.definitions = {};  // 5.5.7.1 MUST be an object. Each member value of this object MUST be a valid JSON Schema.
 
-		if (parms === undefined) {
-			throw new Error('Parameter \'parms\' is required');
+		if (parms !== undefined) {
+			if (parms.xsd !== undefined) {
+				const baseFilename = path.parse(parms.xsd.baseFilename).name;
+				const maskedFilename = (parms.mask === undefined) ? baseFilename : baseFilename.replace(parms.mask, '');
+				this.filename = maskedFilename + '.json';
+				this.id = new URI(parms.baseId).filename(this.filename).toString();
+				this.$schema = 'http://json-schema.org/draft-04/schema#';
+				this.targetNamespace = parms.xsd.targetNamespace;
+				this.title = 'This JSON Schema file was generated from ' + parms.xsd.baseFilename + ' on ' + new Date() + '.  For more information please see http://www.xsd2jsonschema.org';
+				this.type = jsonSchemaTypes.OBJECT;
+			}
+			if (parms.title !== undefined) {
+				this.title = parms.title;
+			}
+			// This needs to be documented
+			if (parms.ref !== undefined) {
+				this.ref = parms.ref;
+			}
+			// This needs to be documented
+			if (parms.$ref !== undefined) {
+				this.$ref = parms.$ref;
+			}
 		}
-		if (parms.xsd != undefined) {
-			const baseFilename = path.parse(parms.xsd.baseFilename).name;
-			const maskedFilename = (parms.mask === undefined) ? baseFilename : baseFilename.replace(parms.mask, '');
-			this.filename = maskedFilename + '.json';
-			this.id = new URI(parms.baseId).filename(this.filename).toString();
-			this.$schema = 'http://json-schema.org/draft-04/schema#';
-//			this.resolvedFilename = path.join(parms.resolveURI, this.filename);
-			this.targetNamespace = parms.xsd.targetNamespace;
-			this.title = 'This JSON Schema file was generated from ' + parms.xsd.baseFilename + ' on ' + new Date() + '.  For more information please see http://www.xsd2jsonschema.org';
-			this.type = jsonSchemaTypes.OBJECT;
-		}
-		// This needs to be documented
-		if (parms.ref !== undefined) {
-			this.ref = parms.ref;
-		}
-		// This needs to be documented
-		if (parms.$ref !== undefined) {
-			this.$ref = parms.$ref;
-		}
-		this.initializeSubschemas();
+	this.initializeSubschemas();
 	}
 
 	/**
@@ -167,7 +167,7 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	 */
 	createNestedSubschema(_subschemas, namespaces) {
 		var subschemaName = namespaces.shift();
-		_subschemas[subschemaName] = new JsonSchemaFileV4({});
+		_subschemas[subschemaName] = new JsonSchemaFileV4();
 		this.targetSchema = _subschemas[subschemaName];  // Track the innermost schema as the target
 		if (namespaces.length > 0) {
 			this.createNestedSubschema(_subschemas[subschemaName].subSchemas, namespaces);
@@ -374,14 +374,17 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	}
 
 	/**
-	 * Adds a subSchema to the targetSchema.
+	 * Adds a subSchema to the targetSchema.  The targetSchema is not updated because it represents the active XSD Namespace.
 	 * 
 	 * @param {String} schemaName - the name of the subschema.
 	 * @param {JsonSchemaFile} subSchema - a JsonSchemaFile representing the subschema.
+	 * 
+	 * @returns {JsonSchemaFile} subSchema - the subSchema parameter is returned for chaining or for use updating the targetSchema
+	 * if constructing a schema manually.
 	 */
 	addSubSchema(schemaName, subSchema) {
 		this.targetSchema.subSchemas[schemaName] = subSchema;
-		return this.targetSchema.subSchemas[schemaName];
+		return subSchema;
 	}
 
 	/**
@@ -426,7 +429,7 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	 */
 	getGlobalAttributesSchema() {
 		if(this.subSchemas[Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME] == undefined) {
-			this.subSchemas[Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME] = new JsonSchemaFileV4({});			
+			this.subSchemas[Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME] = new JsonSchemaFileV4();			
 		}
 		return this.subSchemas[Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME];
 	}
@@ -544,7 +547,11 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 
 		// 5.3.  Validation keywords for arrays
 		if (!this.isEmpty(this.additionalItems)) {
-			jsonSchema.additionalItems = this.additionalItems;
+			if (typeof (this.additionalItems) === 'boolean') {
+				jsonSchema.additionalItems = this.additionalItems;
+			} else {
+				jsonSchema.additionalItems = this.additionalItems.getJsonSchema();
+			}
 		}
 		if (!this.isEmpty(this.maxItems)) {
 			jsonSchema.maxItems = this.maxItems;
@@ -703,7 +710,7 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 			throw new Error('Required parameter "baseType" is undefined');
 		}
 		this.allOf.push(baseType.get$RefToSchema());
-		const extentionSchema = new JsonSchemaFileV4({});
+		const extentionSchema = new JsonSchemaFileV4();
 		if(extentionType != undefined) {
 			extentionSchema.type = extentionType;
 		}
@@ -749,7 +756,7 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 			throw new Error('Required parameter "type" is undefined');
 		}
 		if (this.getProperty(name) == undefined) {
-			var anyOfProp = new JsonSchemaFileV4({});
+			var anyOfProp = new JsonSchemaFileV4();
 			anyOfProp.addRequired(name);
 			this.anyOf.push(anyOfProp);
 			this.setProperty(name, type.get$RefToSchema());
