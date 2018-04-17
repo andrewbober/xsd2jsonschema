@@ -8,48 +8,10 @@ const jsonSchemaFormats = require('xsd2jsonschema').JsonSchemaFormats;
 describe('JsonSchemaFile Test -', function() {
     var testJsonSchema;
     var fullJsonSchema;
+
     beforeEach(function() {
-        testJsonSchema = new JsonSchemaFile({});
-        fullJsonSchema = new JsonSchemaFile({});
-        fullJsonSchema.filename = 'something';
-        fullJsonSchema.targetSchema = { something:'something' };
-        fullJsonSchema.targetNamespace = 'something';
-        fullJsonSchema.ref = { something:'something' };
-        fullJsonSchema.$ref = 'something';
-        fullJsonSchema.id = 'something';
-        fullJsonSchema.subSchemas = { something:'something' };
-        fullJsonSchema.$schema = 'something';
-        fullJsonSchema.title = 'something';
-        fullJsonSchema.description = 'something';
-        fullJsonSchema.default = { something:'something' };
-        fullJsonSchema.format = 'something';
-        fullJsonSchema.multipleOf = 2;
-        fullJsonSchema.maximum = 2;
-        fullJsonSchema.exclusiveMaximum = true;
-        fullJsonSchema.minimum = 2;
-        fullJsonSchema.exclusiveMinimum = true;
-        fullJsonSchema.maxLength = 2;
-        fullJsonSchema.minLength = 2;
-        fullJsonSchema.pattern = 'something';
-        fullJsonSchema.additionalItems = { something:'something' };
-        fullJsonSchema.items = { something:'something' };
-        fullJsonSchema.maxItems = 2;
-        fullJsonSchema.minItems = 2;
-        fullJsonSchema.uniqueItems = true;
-        fullJsonSchema.maxProperties = 2;
-        fullJsonSchema.minProperties = 2;
-        fullJsonSchema.required = [ { something:'something' } ];
-        fullJsonSchema.additionalProperties = 'something';
-        fullJsonSchema.properties = { something:'something' };
-        fullJsonSchema.patternProperties = { something:'something' };
-        fullJsonSchema.dependencies = { something:'something' };
-        fullJsonSchema.enum = [ { something:'something' } ];
-        fullJsonSchema.type = 'something';
-        fullJsonSchema.allOf = [ { something:'something' } ];
-        fullJsonSchema.anyOf = [ { something:'something' } ];
-        fullJsonSchema.oneOf = [ { something:'something' } ];
-        fullJsonSchema.not = { something:'something' };
-        fullJsonSchema.definitions = { something:'something' };
+        testJsonSchema = new JsonSchemaFile();
+        fullJsonSchema = this.buildEverythingJsonSchema();
     });
 
     afterEach(function() {});
@@ -94,11 +56,6 @@ describe('JsonSchemaFile Test -', function() {
         expect(testJsonSchema.oneOf).toEqual([]);
         expect(testJsonSchema.not).toEqual({});
         expect(testJsonSchema.definitions).toEqual({});
-
-        expect(function() {
-            const jsonSchemaError = new JsonSchemaFile();
-            throw new Error(jsonSchemaError);  // Won't be executed
-        }).toThrow(new Error('Parameter \'parms\' is required'));
     });
 
     it('should create a ref JsonSchemaFile instance', function() {
@@ -113,6 +70,7 @@ describe('JsonSchemaFile Test -', function() {
             $ref: 'somethingElse'
         });
         expect(jsonSchema$Ref.$ref).toEqual('somethingElse');
+        expect(jsonSchema$Ref.get$RefToSchema().$ref).toEqual('somethingElse');
     });
 
     it('should create a fully initialized JsonSchemaFile instance', function() {
@@ -133,66 +91,57 @@ describe('JsonSchemaFile Test -', function() {
 
     // createNestedSubschema
     it('should create all subschemas identified by an array of subschema names and initializes the targetSchema', function() {
-        const xsdFileMock = {
-            baseFilename: 'subschemaUnitTest',
-            targetNamespace: 'http://www.xsd2jsonschema.org/example/unit/test'
-        };
+        const jsonSchema = new JsonSchemaFile();
+        const subSchemaCheck = new JsonSchemaFile();
 
-        const jsonSchema = new JsonSchemaFile({
-            xsd: xsdFileMock,
-            baseId: 'musicOfTheNight',
-            mask: 'PhantomOfTheOpera'
-        });
+        jsonSchema.subSchemas['www.xsd2jsonschema.org'] = subSchemaCheck;
+        var subSchema = jsonSchema.subSchemas['www.xsd2jsonschema.org'];
+        expect(subSchema).toBe(subSchemaCheck);
 
-/*
-        //expect(jsonSchema.subSchemas).toBe(JsonSchemaFile);
-        const subSchemaCheck = new JsonSchemaFile({});
-        subSchemaCheck.subSchemas['www.xsd2jsonschema.org'] = subSchemaCheck;
-        expect(jsonSchema.subSchemas['www.xsd2jsonschema.org']).toEqual(subSchemaCheck);
+        const example = new JsonSchemaFile();
+        jsonSchema.subSchemas['www.xsd2jsonschema.org'].subSchemas.example = example;
+        expect(jsonSchema.subSchemas['www.xsd2jsonschema.org'].subSchemas.example).toBe(example);
 
-        const example = new JsonSchemaFile({});
-        subSchemaCheck.subSchemas['www.xsd2jsonschema.org'].subSchemas.example = example;
-        expect(jsonSchema.subSchemas['www.xsd2jsonschema.org'].subSchemas.example).toEqual(example);
+        const unit = new JsonSchemaFile();
+        jsonSchema.subSchemas['www.xsd2jsonschema.org'].subSchemas.example.subSchemas.unit = unit;
+        expect(jsonSchema.subSchemas['www.xsd2jsonschema.org'].subSchemas.example.subSchemas.unit).toBe(unit);
 
-        const unit = new JsonSchemaFile({});
-        subSchemaCheck.subSchemas['www.xsd2jsonschema.org'].subSchemas.example.subSchemas.unit = unit;
-        expect(jsonSchema.subSchemas['www.xsd2jsonschema.org'].subSchemas.example.subSchemas.unit).toEqual(unit);
+        const test = new JsonSchemaFile();
+        jsonSchema.subSchemas['www.xsd2jsonschema.org'].subSchemas.example.subSchemas.unit.subSchemas.test = test;
+        expect(jsonSchema.subSchemas['www.xsd2jsonschema.org'].subSchemas.example.subSchemas.unit.subSchemas.test).toBe(test);
+    });
 
-        const test = new JsonSchemaFile({});
-        subSchemaCheck.subSchemas['www.xsd2jsonschema.org'].subSchemas.example.subSchemas.unit.subSchemas.test = test;
-        expect(jsonSchema.subSchemas['www.xsd2jsonschema.org'].subSchemas.example.subSchemas.unit.subSchemas.test).toEqual(test);
+    // createNestedSubschema
+    it('should create all subschemas identified by an array of subschema names and initializes the targetSchema', function() {
+        const jsonSchema = new JsonSchemaFile();
+        const subSchemaCheck = new JsonSchemaFile();
 
-        jsonSchema.addSubSchema(subSchemaCheck);
-        expect(jsonSchema.subSchemas['www.xsd2jsonschema.org']).toEqual(subSchemaCheck);
-        expect(Object.keys(jsonSchema.subSchemas).length).toEqual(1);
-*/
-        const subSchemaCheck = new JsonSchemaFile({});
         subSchemaCheck
-            .addSubSchema('www.xsd2jsonschema.org', new JsonSchemaFile({}))
-            .addSubSchema('example', new JsonSchemaFile({}))
-            .addSubSchema('unit', new JsonSchemaFile({}))
-            .addSubSchema('test', new JsonSchemaFile({}));
+            .addSubSchema('example', new JsonSchemaFile())
+            .addSubSchema('unit', new JsonSchemaFile())
+            .addSubSchema('test', new JsonSchemaFile());
 
-            expect(jsonSchema).not.toEqual(new JsonSchemaFile({}));
-            expect(jsonSchema.subSchemas).toEqual(subSchemaCheck.subSchemas);
-            
-            expect(Object.keys(jsonSchema.subSchemas).length).toEqual(1);
-    /*
-        expect(jsonSchema.subSchemas).toEqual({
-                'www.xsd2jsonschema.org': {
-                'example': {
-                    'unit': {
-                        'test': {}
+        expect(Object.keys(subSchemaCheck.subSchemas).length).toEqual(1);
+        jsonSchema.addSubSchema('www.xsd2jsonschema.org', subSchemaCheck);
+        expect(Object.keys(jsonSchema.subSchemas).length).toEqual(1);
+        expect(jsonSchema.subSchemas['www.xsd2jsonschema.org']).toBe(subSchemaCheck);
+
+        var schemaStr = jsonSchema.getJsonSchema();
+        expect(schemaStr).toEqual({
+            'www.xsd2jsonschema.org': {
+                example: {
+                    unit: {
+                        test: {}
                     }
                 }
             }
         });
-*/
     });
 
     // initializeSubschemas
     it('should initialize subschemas representing the targetNamespace', function() {
-
+        expect(Object.keys(fullJsonSchema.subSchemas['www.xsd2jsonschema.org'].subSchemas.example.subSchemas.unit.subSchemas.test.subSchemas).length).toEqual(1);
+        expect(fullJsonSchema.subSchemas['www.xsd2jsonschema.org'].subSchemas.example.subSchemas.unit.subSchemas.test.subSchemas.everything.description).toEqual('something');
     });
 
     // isEmpty
@@ -208,176 +157,176 @@ describe('JsonSchemaFile Test -', function() {
     it('should return true if the all members of the JsonSchemaFile are empty as defined by isEmpty()', function() {
         expect(testJsonSchema.isBlank()).toBeTruthy();
 
-        let jsonSchemaBlank = new JsonSchemaFile({});
+        let jsonSchemaBlank = new JsonSchemaFile();
         jsonSchemaBlank.filename = 'something';
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
-        jsonSchemaBlank.targetSchema = { something:'something' };
+        jsonSchemaBlank = new JsonSchemaFile();
+        jsonSchemaBlank.targetSchema = { something: 'something' };
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
+        jsonSchemaBlank = new JsonSchemaFile();
         jsonSchemaBlank.targetNamespace = 'something';
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
-        jsonSchemaBlank.ref = { something:'something' };
+        jsonSchemaBlank = new JsonSchemaFile();
+        jsonSchemaBlank.ref = { something: 'something' };
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
+        jsonSchemaBlank = new JsonSchemaFile();
         jsonSchemaBlank.$ref = 'something';
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
+        jsonSchemaBlank = new JsonSchemaFile();
         jsonSchemaBlank.id = 'something';
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
-        jsonSchemaBlank.subSchemas = { something:'something' };
+        jsonSchemaBlank = new JsonSchemaFile();
+        jsonSchemaBlank.subSchemas = { something: 'something' };
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
+        jsonSchemaBlank = new JsonSchemaFile();
         jsonSchemaBlank.$schema = 'something';
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
+        jsonSchemaBlank = new JsonSchemaFile();
         jsonSchemaBlank.title = 'something';
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
+        jsonSchemaBlank = new JsonSchemaFile();
         jsonSchemaBlank.description = 'something';
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
-        jsonSchemaBlank.default = { something:'something' };
+        jsonSchemaBlank = new JsonSchemaFile();
+        jsonSchemaBlank.default = { something: 'something' };
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
+        jsonSchemaBlank = new JsonSchemaFile();
         jsonSchemaBlank.format = 'something';
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
+        jsonSchemaBlank = new JsonSchemaFile();
         jsonSchemaBlank.multipleOf = 2;
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
+        jsonSchemaBlank = new JsonSchemaFile();
         jsonSchemaBlank.maximum = 2;
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
+        jsonSchemaBlank = new JsonSchemaFile();
         jsonSchemaBlank.exclusiveMaximum = true;
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
+        jsonSchemaBlank = new JsonSchemaFile();
         jsonSchemaBlank.minimum = 2;
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
+        jsonSchemaBlank = new JsonSchemaFile();
         jsonSchemaBlank.exclusiveMinimum = true;
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
+        jsonSchemaBlank = new JsonSchemaFile();
         jsonSchemaBlank.maxLength = 2;
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
+        jsonSchemaBlank = new JsonSchemaFile();
         jsonSchemaBlank.minLength = 2;
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
+        jsonSchemaBlank = new JsonSchemaFile();
         jsonSchemaBlank.pattern = 'something';
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
-        jsonSchemaBlank.additionalItems = { something:'something' };
+        jsonSchemaBlank = new JsonSchemaFile();
+        jsonSchemaBlank.additionalItems = { something: 'something' };
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
-        jsonSchemaBlank.items = { something:'something' };
+        jsonSchemaBlank = new JsonSchemaFile();
+        jsonSchemaBlank.items = { something: 'something' };
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
+        jsonSchemaBlank = new JsonSchemaFile();
         jsonSchemaBlank.maxItems = 2;
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
+        jsonSchemaBlank = new JsonSchemaFile();
         jsonSchemaBlank.minItems = 2;
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
+        jsonSchemaBlank = new JsonSchemaFile();
         jsonSchemaBlank.uniqueItems = true;
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
+        jsonSchemaBlank = new JsonSchemaFile();
         jsonSchemaBlank.maxProperties = 2;
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
+        jsonSchemaBlank = new JsonSchemaFile();
         jsonSchemaBlank.minProperties = 2;
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
-        jsonSchemaBlank.required = [ { something:'something' } ];
+        jsonSchemaBlank = new JsonSchemaFile();
+        jsonSchemaBlank.required = [{ something: 'something' }];
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
+        jsonSchemaBlank = new JsonSchemaFile();
         jsonSchemaBlank.additionalProperties = 'something';
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
-        jsonSchemaBlank.properties = { something:'something' };
+        jsonSchemaBlank = new JsonSchemaFile();
+        jsonSchemaBlank.properties = { something: 'something' };
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
-        jsonSchemaBlank.patternProperties = { something:'something' };
+        jsonSchemaBlank = new JsonSchemaFile();
+        jsonSchemaBlank.patternProperties = { something: 'something' };
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
-        jsonSchemaBlank.dependencies = { something:'something' };
+        jsonSchemaBlank = new JsonSchemaFile();
+        jsonSchemaBlank.dependencies = { something: 'something' };
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
-        jsonSchemaBlank.enum = [ { something:'something' } ];
+        jsonSchemaBlank = new JsonSchemaFile();
+        jsonSchemaBlank.enum = [{ something: 'something' }];
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
+        jsonSchemaBlank = new JsonSchemaFile();
         jsonSchemaBlank.type = 'something';
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
-        jsonSchemaBlank.allOf = [ { something:'something' } ];
+        jsonSchemaBlank = new JsonSchemaFile();
+        jsonSchemaBlank.allOf = [{ something: 'something' }];
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
-        jsonSchemaBlank.anyOf = [ { something:'something' } ];
+        jsonSchemaBlank = new JsonSchemaFile();
+        jsonSchemaBlank.anyOf = [{ something: 'something' }];
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
-        jsonSchemaBlank.oneOf = [ { something:'something' } ];
+        jsonSchemaBlank = new JsonSchemaFile();
+        jsonSchemaBlank.oneOf = [{ something: 'something' }];
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
-        jsonSchemaBlank.not = { something:'something' };
+        jsonSchemaBlank = new JsonSchemaFile();
+        jsonSchemaBlank.not = { something: 'something' };
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
-        jsonSchemaBlank = new JsonSchemaFile({});
-        jsonSchemaBlank.definitions = { something:'something' };
+        jsonSchemaBlank = new JsonSchemaFile();
+        jsonSchemaBlank.definitions = { something: 'something' };
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
     });
 
     // addSubSchema
     it('should add a subSchema to the targetSchema', function() {
-        const jsonSchema = new JsonSchemaFile({});
-        const subSchema = new JsonSchemaFile({});
+        const jsonSchema = new JsonSchemaFile();
+        const subSchema = new JsonSchemaFile();
         jsonSchema.addSubSchema('testSubSchema', subSchema);
-        expect(Object.keys(jsonSchema.subSchemas).length).toEqual(1); 
+        expect(Object.keys(jsonSchema.subSchemas).length).toEqual(1);
     });
 
     // getSubschema
     it('should return a JsonSchemaFile representing the requested subschema if found', function() {
-        const outtereSchema = new JsonSchemaFile({});
-        const subSchema = new JsonSchemaFile({});
-        const innerSubSchema = new JsonSchemaFile({});
+        const outtereSchema = new JsonSchemaFile();
+        const subSchema = new JsonSchemaFile();
+        const innerSubSchema = new JsonSchemaFile();
         subSchema.addSubSchema('innerSubSchema', innerSubSchema);
         outtereSchema.addSubSchema('subSchema', subSchema);
         expect(outtereSchema.getSubschema('subSchema')).toEqual(subSchema);
@@ -397,26 +346,73 @@ describe('JsonSchemaFile Test -', function() {
 
     // getSubschemaStr
     it('should Returns a String representation of the targetNamespace, which is generally based on a URL, without the scheme, colon, or any parameters', function() {
-        const jsonSchema = new JsonSchemaFile({});
+        const jsonSchema = new JsonSchemaFile();
         jsonSchema.targetNamespace = 'http://www.xsd2jsonschema.org/example';
-        expect(jsonSchema.getSubschemaStr()).toEqual('/www.xsd2jsonschema.org/example')
+        expect(jsonSchema.getSubschemaStr()).toEqual('/www.xsd2jsonschema.org/example');
     });
 
     // getGlobalAttributesSchema
     it('should return the subschema used to track global attributes initiazing the subschema if needed', function() {
-        const jsonSchema = new JsonSchemaFile({});
-        const globalAttributesSchema = jsonSchema.getGlobalAttributesSchema()
-        expect(globalAttributesSchema).toEqual(new JsonSchemaFile({}));
+        const jsonSchema = new JsonSchemaFile();
+        const globalAttributesSchema = jsonSchema.getGlobalAttributesSchema();
+        expect(globalAttributesSchema).toEqual(new JsonSchemaFile());
     });
 
     // getJsonSchema
     it('should return a POJO of this jsonSchema', function() {
-        // THIS IS WIP
-        const jsonSchema = new JsonSchemaFile({});
-        Object.keys(jsonSchema).forEach((key) => {
-            console.log(key);
-        }, jsonSchema);
-        console.log(fullJsonSchema.getJsonSchema());
+        const pojo = fullJsonSchema.getJsonSchema();
+        expect(pojo).toEqual({
+            $schema: 'http://json-schema.org/draft-04/schema#',
+            id: 'http://musicOfTheNight/subschemaUnitTest.json',
+            title: 'A nice test',
+            type: 'object',
+            required: ['everything'],
+            properties: {
+                everything: {
+                    $ref: 'http://musicOfTheNight/subschemaUnitTest.json#/www.xsd2jsonschema.org/example/unit/test/everything'
+                }
+            },
+            'www.xsd2jsonschema.org': {
+                example: {
+                    unit: {
+                        test: {
+                            everything: {
+                                description: 'something',
+                                default: { something: {} },
+                                format: 'something',
+                                multipleOf: 2,
+                                maximum: 2,
+                                exclusiveMaximum: true,
+                                minimum: 2,
+                                exclusiveMinimum: true,
+                                maxLength: 2,
+                                minLength: 2,
+                                pattern: 'something',
+                                additionalItems: {},
+                                items: {},
+                                maxItems: 2,
+                                minItems: 2,
+                                uniqueItems: true,
+                                maxProperties: 2,
+                                minProperties: 2,
+                                required: ['something'],
+                                additionalProperties: true,
+                                properties: { something: {} },
+                                patternProperties: { something: {} },
+                                dependencies: { something: {} },
+                                enum: ['something'],
+                                type: 'object',
+                                allOf: [{}],
+                                anyOf: [{}],
+                                oneOf: [{}],
+                                not: {},
+                                definitions: { something: {} }
+                            }
+                        }
+                    }
+                }
+            }
+        });
     });
 
     // clone
@@ -430,14 +426,14 @@ describe('JsonSchemaFile Test -', function() {
     });
 
     // addEnum
-    it('should add a String value to the enume array', function() {
-        
-    });
+    it('should add a String value to the enum array', function() {});
 
     // addRequired
     it('should add a String value to the required array', function() {});
+
     // getProperty
     it('should return the JsonSchemaFile property that corresponds to the given propertyName value', function() {});
+
     // setProperty
     it('should set the value of the given propertyName to the jsonSchema provided in the type parameter', function() {});
 
