@@ -45,7 +45,7 @@
     "test": "jasmine --config=test/unit/jasmine.json",
     "functionalTestJ": "jasmine test/functional/functionalTestSpec.js",
     "functionalTest": "node test/functional/allFunctionalTests.js",
-    "cover": "istanbul cover jasmine test/unit/**/*Spec.js  test/functional/**/*Spec.js",
+    "cover": "istanbul cover jasmine test/unit/**/*.js  test/functional/**/*Spec.js",
     "update-coveralls": "cat coverage/lcov.info | coveralls",
     "example-convert": "node example/example.js convert",
     "example-validate": "node example/example.js validate",
