@@ -1,49 +1,64 @@
-'use strict'
+'use strict';
 
 const JsonSchemaFile = require('xsd2jsonschema').JsonSchemaFile;
 
-function buildJsonSchema(ref) {
-        var fullJsonSchema = new JsonSchemaFile({});
-        fullJsonSchema.filename = 'something';
-        fullJsonSchema.targetSchema = { something:'something' };
-        fullJsonSchema.targetNamespace = 'something';
-        fullJsonSchema.ref = { something:'something' };
-        fullJsonSchema.$ref = 'something';
-        fullJsonSchema.id = 'something';
-        fullJsonSchema.subSchemas = { something:'something' };
-        fullJsonSchema.$schema = 'something';
-        fullJsonSchema.title = 'something';
-        fullJsonSchema.description = 'something';
-        fullJsonSchema.default = { something:'something' };
-        fullJsonSchema.format = 'something';
-        fullJsonSchema.multipleOf = 2;
-        fullJsonSchema.maximum = 2;
-        fullJsonSchema.exclusiveMaximum = true;
-        fullJsonSchema.minimum = 2;
-        fullJsonSchema.exclusiveMinimum = true;
-        fullJsonSchema.maxLength = 2;
-        fullJsonSchema.minLength = 2;
-        fullJsonSchema.pattern = 'something';
-        fullJsonSchema.additionalItems = { something:'something' };
-        fullJsonSchema.items = { something:'something' };
-        fullJsonSchema.maxItems = 2;
-        fullJsonSchema.minItems = 2;
-        fullJsonSchema.uniqueItems = true;
-        fullJsonSchema.maxProperties = 2;
-        fullJsonSchema.minProperties = 2;
-        fullJsonSchema.required = [ { something:'something' } ];
-        fullJsonSchema.additionalProperties = 'something';
-        fullJsonSchema.properties = { something:'something' };
-        fullJsonSchema.patternProperties = { something:'something' };
-        fullJsonSchema.dependencies = { something:'something' };
-        fullJsonSchema.enum = [ { something:'something' } ];
-        fullJsonSchema.type = 'something';
-        fullJsonSchema.allOf = [ { something:'something' } ];
-        fullJsonSchema.anyOf = [ { something:'something' } ];
-        fullJsonSchema.oneOf = [ { something:'something' } ];
-        fullJsonSchema.not = { something:'something' };
-        fullJsonSchema.definitions = { something:'something' };
-        return fullJsonSchema;
-}
+beforeEach(function() {
+    this.buildEverythingJsonSchema = function(ref) {
+        //var fullJsonSchema = new JsonSchemaFile();
+        const xsdFileMock = {
+            baseFilename: 'subschemaUnitTest',
+            targetNamespace: 'http://www.xsd2jsonschema.org/example/unit/test'
+        };
 
-module.exports = buildJsonSchema;
+        const fullJsonSchema = new JsonSchemaFile({
+            xsd: xsdFileMock,
+            baseId: 'http://musicOfTheNight',
+            title: 'A nice test',
+            mask: 'PhantomOfTheOpera'
+        });
+
+//        fullJsonSchema.filename = 'something';
+//        fullJsonSchema.targetSchema = fullJsonSchema;
+//        fullJsonSchema.targetNamespace = 'something';
+//        fullJsonSchema.ref = '#/something';
+//        fullJsonSchema.$ref = 'something';
+//        fullJsonSchema.id = 'something';
+//        fullJsonSchema.subSchemas = [ new JsonSchemaFile() ];
+//        fullJsonSchema.$schema = 'something';
+//        fullJsonSchema.title = 'something';
+        fullJsonSchema.required = [ 'everything' ];
+        fullJsonSchema.properties.everything = new JsonSchemaFile({ $ref: 'http://musicOfTheNight/subschemaUnitTest.json#/www.xsd2jsonschema.org/example/unit/test/everything' });
+        const everything = fullJsonSchema.addSubSchema('everything', new JsonSchemaFile());
+        everything.description = 'something';
+        everything.default = { 'something': {} };
+        everything.format = 'something';
+        everything.multipleOf = 2;
+        everything.maximum = 2;
+        everything.exclusiveMaximum = true;
+        everything.minimum = 2;
+        everything.exclusiveMinimum = true;
+        everything.maxLength = 2;
+        everything.minLength = 2;
+        everything.pattern = 'something';
+        everything.additionalItems = new JsonSchemaFile();
+        everything.items = new JsonSchemaFile();
+        everything.maxItems = 2;
+        everything.minItems = 2;
+        everything.uniqueItems = true;
+        everything.maxProperties = 2;
+        everything.minProperties = 2;
+        everything.required = [ 'something' ];
+        everything.additionalProperties = true;
+        everything.properties = { 'something' : new JsonSchemaFile() };
+        everything.patternProperties = { 'something' : new JsonSchemaFile() };
+        everything.dependencies = { 'something' : new JsonSchemaFile() };
+        everything.enum = [ 'something' ];
+        everything.type = 'object';
+        everything.allOf = [ new JsonSchemaFile() ];
+        everything.anyOf = [ new JsonSchemaFile() ];
+        everything.oneOf = [ new JsonSchemaFile() ];
+        everything.not = new JsonSchemaFile();
+        everything.definitions = { 'something' : new JsonSchemaFile() };
+        return fullJsonSchema;
+    };
+});
