@@ -21,4 +21,5 @@
 			<xs:attribute name="localAttrBoolean" type="xs:boolean" />
 	</xs:complexType>
 	<xs:element name="AttributeTest" type="AttributeTestType"/>
+	<!-- This is a comment -->
 </xs:schema>

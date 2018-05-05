@@ -56,11 +56,12 @@ const workingJsonSchema_NAME = Symbol();
      * @see {@link BaseConverter#process|BaseConverter.process()}
 	 */
 	process(node, jsonSchema, xsd) {
-		if(debug.enabled === true && node.nodeType != XsdNodeTypes.TEXT_NODE) {
+		if(debug.enabled === true && node.nodeType) { //} != XsdNodeTypes.TEXT_NODE) {
 			this.parsingState.dumpStates(xsd.uri);
 			debug('***********************************************************************************\n' + 
 			XsdNodeTypes.getTypeName(node.nodeType) + '\n' + node + '\nJSONSCHEMA=\n' + jsonSchema);
 		}
+		return true;
 	}
 
 	/**

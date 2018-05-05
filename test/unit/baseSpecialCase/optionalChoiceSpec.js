@@ -19,18 +19,18 @@ describe('BaseSpecialCaseIdentifier Test', function () {
         });
 
 
-        // **** isOptionalChoice() ****
+        // **** isOptional() ****
         it('should identify a <choice> that as optional because it has the attribute \'minOccurs\' set to zero', function () {
             const nodes = optionalChoiceXsd.select('//xs:complexType[@name=\'optionalChoiceEverythingIsOptionalType\']/xs:sequence/xs:choice');
             nodes.forEach(function (node) {
-                expect(sci.isOptionalChoice(node, optionalChoiceXsd)).toBeTruthy();
+                expect(sci.isOptional(node, optionalChoiceXsd)).toBeTruthy();
             });
         });
 
         it('should identify a <choice> that as optional because it has the attribute \'minOccurs\' set to zero', function () {
             const nodes = optionalChoiceXsd.select('//xs:complexType[@name=\'optionalChoiceAllOptionsRequiredType\']/xs:sequence/xs:choice');
             nodes.forEach(function (node) {
-                expect(sci.isOptionalChoice(node, optionalChoiceXsd)).toBeTruthy();
+                expect(sci.isOptional(node, optionalChoiceXsd)).toBeTruthy();
             });
         });
 

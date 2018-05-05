@@ -142,6 +142,7 @@ class XsdFile {
             nodes = select(xpath, this.xmlDoc);
         } catch (error) {
             debug(error);
+            throw error;
         }
         return nodes
     }
@@ -153,6 +154,7 @@ class XsdFile {
             node = select(xpath, this.xmlDoc, true);
         } catch (error) {
             debug(error);
+            throw error;
         }
         return node;
     }
@@ -162,9 +164,9 @@ class XsdFile {
 `baseFilename=${this.baseFilename}
 uri=${this.uri}
 includeUris=${this.includeUris}
-namespaces=${JSON.stringify(this.namespaces, null, '\n')}
+namespaces=${JSON.stringify(this.namespaces, null, '\t')}
 xmlDoc=${this.xmlDoc}`
-return str;
+        return str;
     }
 
     /**
@@ -239,7 +241,7 @@ return str;
         debug('XML-Type= ' + node.nodeType);
         debug('XML-TAG-Name= ' + node.nodeName);
         debug('XML-TAG-NameSpace= ' + node.namespaceURI + '=' + node.namespaceURI);
-        var text = node.nodeValue;
+        var text = node.textContent;
         if (text != undefined && text.length != 0) {
             debug('XML-Text= [' + text + ']');
         }

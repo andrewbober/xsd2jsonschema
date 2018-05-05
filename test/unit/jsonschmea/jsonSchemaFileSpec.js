@@ -1,9 +1,10 @@
+'use strict'
+
 const JsonSchemaFile = require('xsd2jsonschema').JsonSchemaFile;
 const XsdFile = require('xsd2jsonschema').XsdFile;
-const jsonSchemaTypes = require('xsd2jsonschema').JsonSchemaTypes;
-const jsonSchemaFormats = require('xsd2jsonschema').JsonSchemaFormats;
-
-// const helpers = require('./test/unit/helpers/helpers');
+const XsdAttributeValues = require('xsd2jsonschema').XsdAttributeValues;
+const JsonSchemaTypes = require('xsd2jsonschema').JsonSchemaTypes;
+const JsonSchemaFormats = require('xsd2jsonschema').JsonSchemaFormats;
 
 describe('JsonSchemaFile Test -', function() {
     var testJsonSchema;
@@ -86,7 +87,7 @@ describe('JsonSchemaFile Test -', function() {
         expect(jsonSchemaPrimary.$schema).toEqual('http://json-schema.org/draft-04/schema#');
         expect(jsonSchemaPrimary.targetNamespace).toEqual('http://www.xsd2jsonschema.org/example');
         expect(jsonSchemaPrimary.title).toMatch('This JSON Schema file was generated from optionalChoice.xsd on.*\\.  For more information please see http://www.xsd2jsonschema.org');
-        expect(jsonSchemaPrimary.type).toEqual(jsonSchemaTypes.OBJECT);
+        expect(jsonSchemaPrimary.type).toEqual(JsonSchemaTypes.OBJECT);
     });
 
     // createNestedSubschema
@@ -182,7 +183,7 @@ describe('JsonSchemaFile Test -', function() {
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
         jsonSchemaBlank = new JsonSchemaFile();
-        jsonSchemaBlank.subSchemas = { something: 'something' };
+        jsonSchemaBlank.subSchemas = { something: new JsonSchemaFile() };
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
         jsonSchemaBlank = new JsonSchemaFile();
@@ -202,7 +203,7 @@ describe('JsonSchemaFile Test -', function() {
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
         jsonSchemaBlank = new JsonSchemaFile();
-        jsonSchemaBlank.format = 'something';
+        jsonSchemaBlank.format = JsonSchemaFormats.URI;
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
         jsonSchemaBlank = new JsonSchemaFile();
@@ -238,11 +239,11 @@ describe('JsonSchemaFile Test -', function() {
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
         jsonSchemaBlank = new JsonSchemaFile();
-        jsonSchemaBlank.additionalItems = { something: 'something' };
+        jsonSchemaBlank.additionalItems = new JsonSchemaFile();
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
         jsonSchemaBlank = new JsonSchemaFile();
-        jsonSchemaBlank.items = { something: 'something' };
+        jsonSchemaBlank.items = new JsonSchemaFile();
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
         jsonSchemaBlank = new JsonSchemaFile();
@@ -266,51 +267,51 @@ describe('JsonSchemaFile Test -', function() {
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
         jsonSchemaBlank = new JsonSchemaFile();
-        jsonSchemaBlank.required = [{ something: 'something' }];
+        jsonSchemaBlank.required = [ 'something' ];
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
         jsonSchemaBlank = new JsonSchemaFile();
-        jsonSchemaBlank.additionalProperties = 'something';
+        jsonSchemaBlank.additionalProperties = true;
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
         jsonSchemaBlank = new JsonSchemaFile();
-        jsonSchemaBlank.properties = { something: 'something' };
+        jsonSchemaBlank.properties = { something: new JsonSchemaFile() };
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
         jsonSchemaBlank = new JsonSchemaFile();
-        jsonSchemaBlank.patternProperties = { something: 'something' };
+        jsonSchemaBlank.patternProperties = { something: new JsonSchemaFile() };
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
         jsonSchemaBlank = new JsonSchemaFile();
-        jsonSchemaBlank.dependencies = { something: 'something' };
+        jsonSchemaBlank.dependencies = { something: new JsonSchemaFile() };
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
         jsonSchemaBlank = new JsonSchemaFile();
-        jsonSchemaBlank.enum = [{ something: 'something' }];
+        jsonSchemaBlank.enum = [ 'something' ];
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
         jsonSchemaBlank = new JsonSchemaFile();
-        jsonSchemaBlank.type = 'something';
+        jsonSchemaBlank.type = JsonSchemaTypes.INTEGER;
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
         jsonSchemaBlank = new JsonSchemaFile();
-        jsonSchemaBlank.allOf = [{ something: 'something' }];
+        jsonSchemaBlank.allOf = [ new JsonSchemaFile() ];
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
         jsonSchemaBlank = new JsonSchemaFile();
-        jsonSchemaBlank.anyOf = [{ something: 'something' }];
+        jsonSchemaBlank.anyOf = [ new JsonSchemaFile() ];
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
         jsonSchemaBlank = new JsonSchemaFile();
-        jsonSchemaBlank.oneOf = [{ something: 'something' }];
+        jsonSchemaBlank.oneOf = [ new JsonSchemaFile() ];
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
         jsonSchemaBlank = new JsonSchemaFile();
-        jsonSchemaBlank.not = { something: 'something' };
+        jsonSchemaBlank.not = new JsonSchemaFile();
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
 
         jsonSchemaBlank = new JsonSchemaFile();
-        jsonSchemaBlank.definitions = { something: 'something' };
+        jsonSchemaBlank.definitions = { something: new JsonSchemaFile() };
         expect(jsonSchemaBlank.isBlank()).toBeFalsy();
     });
 
@@ -363,13 +364,13 @@ describe('JsonSchemaFile Test -', function() {
         const pojo = fullJsonSchema.getJsonSchema();
         expect(pojo).toEqual({
             $schema: 'http://json-schema.org/draft-04/schema#',
-            id: 'http://musicOfTheNight/subschemaUnitTest.json',
+            id: 'http://musicOfTheNight/unitTestSchema.json',
             title: 'A nice test',
-            type: 'object',
+            type: JsonSchemaTypes.OBJECT,
             required: ['everything'],
             properties: {
                 everything: {
-                    $ref: 'http://musicOfTheNight/subschemaUnitTest.json#/www.xsd2jsonschema.org/example/unit/test/everything'
+                    $ref: 'http://musicOfTheNight/unitTestSchema.json#/www.xsd2jsonschema.org/example/unit/test/everything'
                 }
             },
             'www.xsd2jsonschema.org': {
@@ -379,7 +380,7 @@ describe('JsonSchemaFile Test -', function() {
                             everything: {
                                 description: 'something',
                                 default: { something: {} },
-                                format: 'something',
+                                format: JsonSchemaFormats.URI,
                                 multipleOf: 2,
                                 maximum: 2,
                                 exclusiveMaximum: true,
@@ -415,6 +416,77 @@ describe('JsonSchemaFile Test -', function() {
         });
     });
 
+    // getJsonSchema
+    it('should return a POJO of this jsonSchema', function() {
+        const schema = fullJsonSchema.getSubschema('everything');
+        schema.additionalItems = false;
+        schema.items = [ new JsonSchemaFile() ];
+        schema.dependencies = {
+            dependency: [ 'something' ]
+        }
+        const pojo = fullJsonSchema.getJsonSchema();
+        expect(pojo).toEqual({
+            $schema: 'http://json-schema.org/draft-04/schema#',
+            id: 'http://musicOfTheNight/unitTestSchema.json',
+            title: 'A nice test',
+            type: JsonSchemaTypes.OBJECT,
+            required: ['everything'],
+            properties: {
+                everything: {
+                    $ref: 'http://musicOfTheNight/unitTestSchema.json#/www.xsd2jsonschema.org/example/unit/test/everything'
+                }
+            },
+            'www.xsd2jsonschema.org': {
+                example: {
+                    unit: {
+                        test: {
+                            everything: {
+                                description: 'something',
+                                default: { something: {} },
+                                format: JsonSchemaFormats.URI,
+                                multipleOf: 2,
+                                maximum: 2,
+                                exclusiveMaximum: true,
+                                minimum: 2,
+                                exclusiveMinimum: true,
+                                maxLength: 2,
+                                minLength: 2,
+                                pattern: 'something',
+                                additionalItems: false,
+                                items: [{}],
+                                maxItems: 2,
+                                minItems: 2,
+                                uniqueItems: true,
+                                maxProperties: 2,
+                                minProperties: 2,
+                                required: ['something'],
+                                additionalProperties: true,
+                                properties: { something: {} },
+                                patternProperties: { something: {} },
+                                dependencies: { dependency: [ 'something' ] },
+                                enum: ['something'],
+                                type: 'object',
+                                allOf: [{}],
+                                anyOf: [{}],
+                                oneOf: [{}],
+                                not: {},
+                                definitions: { something: {} }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+
+    // getJsonSchema
+    it('should fail trying to return a POJO of this jsonSchema', function() {
+        fullJsonSchema.addSubSchema('invalid', {});
+        expect(function() {
+            fullJsonSchema.getJsonSchema()
+        }).toThrow(TypeError('this.subSchemas[subschemaName].getJsonSchema is not a function'));
+    });
+
     // clone
     it('should return a deep copy of a JsonSchemaFile', function() {
         const secondSchema = new JsonSchemaFile({
@@ -426,7 +498,13 @@ describe('JsonSchemaFile Test -', function() {
     });
 
     // addEnum
-    it('should add a String value to the enum array', function() {});
+    it('should add a String value to the enum array', function() {
+        const ENUM_VALUE = 'ENUM_VALUE';
+        expect(fullJsonSchema.enum.indexOf(ENUM_VALUE)).toEqual(-1);
+        fullJsonSchema.addEnum(ENUM_VALUE);
+        expect(fullJsonSchema.enum.indexOf(ENUM_VALUE)).toEqual(0);
+        expect(fullJsonSchema.enum.pop()).toEqual('ENUM_VALUE');
+    });
 
     // addRequired
     it('should add a String value to the required array', function() {});
@@ -437,30 +515,119 @@ describe('JsonSchemaFile Test -', function() {
     // setProperty
     it('should set the value of the given propertyName to the jsonSchema provided in the type parameter', function() {});
 
-    // writeFile
-    it('should write out this JsonSchemaFile to the given directory with the provided formatting option', function() {});
-
     // extend
-    it('should extend onvert QName tags to JSON Schema string type with a JSON Schema pattern', function() {});
+    it('should add given base type to allOf, add a newly allocated extension schema to allOf, and return the empty extension schema', function() {
+        expect(fullJsonSchema.extend).toThrow(Error('Required parameter "baseType" is undefined'));
+        const size = fullJsonSchema.allOf.length;
+        const extensionSchema = fullJsonSchema.extend(testJsonSchema);
+        expect(fullJsonSchema.allOf.length).toEqual(size + 2);
+        expect(extensionSchema.isBlank()).toBeTruthy();
+    });
+
+    it('should add given base type to allOf, add a newly allocated extension schema to allOf, and return the extension schema with the given type applied', function() {
+        expect(fullJsonSchema.extend).toThrow(Error('Required parameter "baseType" is undefined'));
+        const size = fullJsonSchema.allOf.length;
+        const extensionSchema = fullJsonSchema.extend(testJsonSchema, JsonSchemaTypes.STRING);
+        expect(fullJsonSchema.allOf.length).toEqual(size + 2);
+        expect(extensionSchema.isBlank()).toBeFalsy();
+        expect(extensionSchema.type).toEqual(JsonSchemaTypes.STRING);
+    });
 
     // addAttributeProperty
-    it('should create a property with a name prefixed by the @sign to represet an XML attribute', function() {});
+    it('should create a property with a name prefixed by the @sign to represent an XML attribute', function() {
+        const optionalPropertyName = "sing";
+        expect(fullJsonSchema.addAttributeProperty).toThrow(Error('Required parameter "propertyName" is undefined'));
+        expect(function() { 
+            fullJsonSchema.addAttributeProperty(optionalPropertyName);
+        }).toThrow(Error('Required parameter "customType" is undefined'));
+        fullJsonSchema.addAttributeProperty(optionalPropertyName, testJsonSchema);
+        expect(fullJsonSchema.getProperty('@' + optionalPropertyName)).toEqual(testJsonSchema);
+        expect(fullJsonSchema.getProperty('@' + optionalPropertyName)).toBe(testJsonSchema);
+        expect(fullJsonSchema.required.indexOf('@' + optionalPropertyName)).toEqual(-1);
+    });
+
+    // addAttributeProperty
+    it('should create a property with a name prefixed by the @sign to represent an XML attribute and add it to the required array', function() {
+        const requiredPropertyName = "opera";
+        expect(fullJsonSchema.addAttributeProperty).toThrow(Error('Required parameter "propertyName" is undefined'));
+        expect(function() { 
+            fullJsonSchema.addAttributeProperty(requiredPropertyName);
+        }).toThrow(Error('Required parameter "customType" is undefined'));
+        fullJsonSchema.addAttributeProperty(requiredPropertyName, testJsonSchema, XsdAttributeValues.REQUIRED);
+        expect(fullJsonSchema.getProperty('@' + requiredPropertyName)).toEqual(testJsonSchema);
+        expect(fullJsonSchema.getProperty('@' + requiredPropertyName)).toBe(testJsonSchema);
+        expect(fullJsonSchema.required.indexOf('@' + requiredPropertyName)).toEqual(1);
+    });
 
     // addRequiredAnyOfPropertyByReference
-    it('should add the given property and lists it in the anyOf array as a required', function() {});
+    it('should add the given property and lists it in the anyOf array as a required', function() {
+        const propertyName = 'phantom';
+        expect(fullJsonSchema.addRequiredAnyOfPropertyByReference).toThrow(Error('Required parameter "name" is undefined'));
+        expect(function() {
+            fullJsonSchema.addRequiredAnyOfPropertyByReference(propertyName);
+        }).toThrow(Error('Required parameter "type" is undefined'));
+        fullJsonSchema.addRequiredAnyOfPropertyByReference(propertyName, testJsonSchema);
+        expect(fullJsonSchema.getProperty(propertyName)).toBe(testJsonSchema);
+        expect(function() {
+            fullJsonSchema.addRequiredAnyOfPropertyByReference(propertyName, testJsonSchema);
+        }).toThrow(Error('Unable to add required anyOf property by reference because [phantom] is already defined as [{}]  Not adding [{}]'));
+    });
 
     // isPropertyDependencyDefined
-    it('should returns true if the propertyName parameter represents a defined property dependency.', function() {});
+    it('should return true if the propertyName parameter represents a defined property dependency.', function() {
+        const propertyName = 'mask';
+        expect(fullJsonSchema.isPropertyDependencyDefined).toThrow(Error('Required parameter "propertyName" is undefined'));
+        expect(fullJsonSchema.isPropertyDependencyDefined(propertyName)).toBeFalsy();
+        fullJsonSchema.dependencies[propertyName] = [];
+        fullJsonSchema.dependencies[propertyName].push(testJsonSchema);
+        expect(fullJsonSchema.isPropertyDependencyDefined(propertyName)).toBeTruthy();
+    });
 
     // addPropertyDependency
-    it('should add a property dependency allocating the dependencies array if needed', function() {});
+    it('should add a property dependency allocating the dependencies array if needed', function() {
+        const propertyName = 'art';
+        expect(fullJsonSchema.addPropertyDependency).toThrow(Error('Required parameter "propertyname" is undefined'));
+        expect(function() {
+            fullJsonSchema.addPropertyDependency(propertyName);
+        }).toThrow(Error('Required parameter "dependencyProperty" is undefined'));
+        fullJsonSchema.addPropertyDependency(propertyName, 'name');
+        expect(fullJsonSchema.isPropertyDependencyDefined(propertyName)).toBeTruthy();
+        expect(function() {
+            fullJsonSchema.addPropertyDependency(propertyName, 'name');
+        }).toThrow(Error('Property dependency already defined. "art"'));
+    });
 
     // addSchemaDependency
-    it('should add a property dependency allocating the dependencies array if needed', function() {});
+    it('should add a property dependency allocating the dependencies array if needed', function() {
+        const propertyName = 'stage';
+        expect(fullJsonSchema.addSchemaDependency).toThrow(Error('Required parameter "propertyname" is undefined'));
+        expect(function() {
+            fullJsonSchema.addSchemaDependency(propertyName);
+        }).toThrow(Error('Required parameter "dependencySchema" is undefined'));
+        fullJsonSchema.addSchemaDependency(propertyName, testJsonSchema);
+        expect(fullJsonSchema.dependencies[propertyName]).toBe(testJsonSchema);
+        expect(function() {
+            fullJsonSchema.addSchemaDependency(propertyName, testJsonSchema);
+        }).toThrow(Error('Unable to add schema dependency because [stage] is already defined as [{}]  Not adding [{}]'));
+    });
 
-    // removeEmptySchemaFromArray
-    it('should remove any empty JsonSchemaFile entries from the given Array', function() {});
+    // removeEmptySchemasFromArray
+    it('should remove any empty JsonSchemaFile entries from the given Array', function() {
+        const array = [ new JsonSchemaFile(), new JsonSchemaFile(), new JsonSchemaFile() ];
+        expect(fullJsonSchema.removeEmptySchemasFromArray).toThrow(Error('Required parameter "array" is undefined'));
+        fullJsonSchema.removeEmptySchemasFromArray(array);
+        expect(array.length).toEqual(0);
+    });
 
     // removeEmptySchemas
-    it('should remove empty schemas from this jsonSchemas array properties', function() {});
+    it('should remove empty schemas from this jsonSchemas array properties', function() {
+        const everything = fullJsonSchema.getSubschema('everything');
+        expect(everything.allOf.length).toEqual(1);
+        expect(everything.anyOf.length).toEqual(1);
+        expect(everything.oneOf.length).toEqual(1);
+        everything.removeEmptySchemas();
+        expect(everything.allOf.length).toEqual(0);
+        expect(everything.anyOf.length).toEqual(0);
+        expect(everything.oneOf.length).toEqual(0);
+    });
 });

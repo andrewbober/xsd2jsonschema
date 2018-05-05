@@ -14,15 +14,15 @@ const xmlSchemaNamespace_NAME = Symbol();
 const builtInTypeConverter_NAME = Symbol();
 
 /**
- * Class responsible for managaging namespaced and types within those namespaces, which are defined as 
- * XML Schema aggregates that have been converted to JSON Schema.  Types are arranged by their XML 
+ * Class responsible for managaging namespaces and types within those namespaces, which are defined as 
+ * XML Schema aggregates that have been converted to JSON Schema.  Types are arranged by XML 
  * Namespaces.  Types can be added and retrieved as needed.
  * 
  * This module also manages global attributes.  As a reminder global attributes are global accross all XML
  * Schema files being considered.  This includes schemas that are brought in by an *&lt;include&gt;* tag
  * or by an *&lt;import&gt;* tag.
  * 
- * An obect is used to manage any number of XML Namespaces including a specialized namespace for global
+ * An object is used to manage any number of XML Namespaces including a specialized namespace for global
  * attributes.  Namespaces are themselves JSON objects with one property named types.  Initially,
  * the collection of namespaces contains only the globalAttributes specialized namespace.  Additional 
  * namespaces will be added to the collection as they are encountered.
@@ -37,14 +37,22 @@ const builtInTypeConverter_NAME = Symbol();
  */
 
  class NamespaceManager {
-	constructor() {
+	constructor(options) {
 		this.namespaces = {
 			globalAttributes: { 
 				types: {}
 			}
 		};
-		this.XML_SCHEMA_NAMESPACE = 'http://www.w3.org/2001/XMLSchema';
-		this.builtInTypeConverter = new BuiltInTypeConverter();
+		this.namespaces = {};
+		this.namespaces[Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME] = {
+			types: {}
+		}
+			this.XML_SCHEMA_NAMESPACE = 'http://www.w3.org/2001/XMLSchema';
+		if (options != undefined) {
+			this.builtInTypeConverter = options.builtInTypeConverter != undefined ? options.builtInTypeConverter : new BuiltInTypeConverter();
+		} else {
+			this.builtInTypeConverter = new BuiltInTypeConverter();
+		}
 	}
 
 	// Getters/Setters
@@ -101,7 +109,7 @@ const builtInTypeConverter_NAME = Symbol();
 		return this.namespaces[namespace];
 	}
 
-	isBuiltXmlNamespace(namespace) {
+	isWellKnownXmlNamespace(namespace) {
 		return namespace === this.XML_SCHEMA_NAMESPACE;	
 	}
 
@@ -140,7 +148,7 @@ const builtInTypeConverter_NAME = Symbol();
 		const namespaceQname = new Qname(fullTypeName);
 		const namespace = xsd.resolveNamespace(namespaceQname.getPrefix());
 		const typeName = namespaceQname.getLocal();
-		if (this.isBuiltXmlNamespace(namespace)) {
+		if (this.isWellKnownXmlNamespace(namespace)) {
 			return this.getBuiltInType(typeName);
 		}
 		var type = this.namespaces[namespace].types[typeName];
@@ -162,13 +170,13 @@ const builtInTypeConverter_NAME = Symbol();
 	}
 
 	/**
-	 * This method inserts a entry into the given namespace by reference name rather than by type name.
+	 * This method inserts an entry into the given namespace by reference name rather than by type name.
 	 * This way it can be looked up by type name or by reference.
 	 * 
-	 * @param {String} fullTypeName The name of the custom type to be used for references.   The format of this
+	 * @param {String} fullTypeName - The name of the custom type to be used for references.   The format of this
 	 * parameter is 'prefix:localName' where localName is require and the prefix and separating colon are optional. 
-	 * @param {JsonSchemaFile} The type to be referenced by its name.
-	 * @param {JsonSchemaFile} baseJsonSchema The JsonShemaFile being created as a result of converting an XML
+	 * @param {JsonSchemaFile} type - The type to be referenced by its name.
+	 * @param {JsonSchemaFile} baseJsonSchema - The JsonShemaFile being created as a result of converting an XML
 	 * Schema file to JSON Schema.
 	 * @param {XsdFile} xsd - the XML schema file currently being processed.
 	 */
@@ -207,7 +215,7 @@ const builtInTypeConverter_NAME = Symbol();
 	}
 
 	toString() {
-		return JSON.stringify(this.namespaces, null, '\n');
+		//return JSON.stringify(this.namespaces, null, '\n');
 	}
 }
 

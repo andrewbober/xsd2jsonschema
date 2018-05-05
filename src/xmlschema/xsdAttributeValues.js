@@ -9,5 +9,8 @@
 module.exports = {
     UNBOUNDED: 'unbounded',
     ZERO: '0',
-    XMLNS: 'xmlns'
+    XMLNS: 'xmlns',
+    OPTIONAL: 'optional',
+    PROHIBITED: 'prohibited',
+    REQUIRED: 'required'
 }

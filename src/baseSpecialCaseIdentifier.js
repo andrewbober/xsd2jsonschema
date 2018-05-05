@@ -1,6 +1,6 @@
 'use strict';
 
-const debug = require('debug')('xsd2jsonschema:BaseSpecialCaseIdentifier')
+const debug = require('debug')('xsd2jsonschema:BaseSpecialCaseIdentifier');
 
 const XsdFile = require('./xmlschema/xsdFileXmlDom');
 const XsdAttributes = require('./xmlschema/xsdAttributes');
@@ -9,13 +9,12 @@ const XsdNodeTypes = require('./xmlschema/xsdNodeTypes');
 const XsdElements = require('./xmlschema/xsdElements');
 const JsonSchemaFile = require('./jsonschema/jsonSchemaFile');
 
-
 const specialCases_NAME = Symbol();
 
 /**
  * Class representing a collection of logic to identify special cases in XML Schema that cannot be immediately
  * converted to JSON Schmea without inspecting the contents of the tag or the tag's siblings.  Examples:
- * 
+ *
  * 1. A <choice> where the goal is really anyOf.  For example:
  * 			<xs:choice>
  *				<xs:sequence>
@@ -50,45 +49,35 @@ const specialCases_NAME = Symbol();
  */
 
 class BaseSpecialCaseIdentifier {
-
     constructor() {
         this.specialCases = [];
     }
 
-	// Getters/Setters
+    // Getters/Setters
 
-	get specialCases() {
-		return this[specialCases_NAME];
-	}
-	set specialCases(newSpecialCase) {
-		this[specialCases_NAME] = newSpecialCase;
-	}
+    get specialCases() {
+        return this[specialCases_NAME];
+    }
+    set specialCases(newSpecialCase) {
+        this[specialCases_NAME] = newSpecialCase;
+    }
 
     addSpecialCase(specialCase, jsonschema, node) {
         this.specialCases.push({
-            'specialCase': specialCase,
-            'jsonSchema': jsonschema,
-            'node': node
+            specialCase: specialCase,
+            jsonSchema: jsonschema,
+            node: node
         });
     }
 
-    isOptional(minOccursAttr) {
-        return (minOccursAttr !== undefined && minOccursAttr == 0);
-    }
-
-    isOptionalChoice(node, xsd, minOccursAttr) {
+    isOptional(node, xsd, minOccursAttr) {
         var minOccurs;
         if (minOccursAttr == undefined) {
             minOccurs = XsdFile.getAttrValue(node, XsdAttributes.MIN_OCCURS);
         } else {
             minOccurs = minOccursAttr;
         }
-        var retval = this.isOptional(minOccurs);
-        return retval;
-    }
-
-    isOptionalSequence(node, xsd, minOccursAttr) {
-        return this.isOptionalChoice(node, xsd, minOccursAttr);
+        return minOccurs !== undefined && minOccurs == 0;
     }
 
     isSiblingChoice(node, xsd) {
@@ -100,7 +89,8 @@ class BaseSpecialCaseIdentifier {
         var count = 0;
 
         for (let i = 0; i < nodelist.length; i++) {
-            if (nodelist.item(i).nodeType != 3) {
+            if (nodelist.item(i).nodeType != XsdNodeTypes.TEXT_NODE) {
+                debug('NodeType=' + XsdNodeTypes.getTypeName(nodelist.item(i).nodeType));
                 count++;
             }
         }
@@ -114,12 +104,11 @@ class BaseSpecialCaseIdentifier {
                 const name = XsdFile.getAttrValue(node, XsdAttributes.NAME);
                 const type = XsdFile.getAttrValue(node, XsdAttributes.TYPE);
                 const minOccurs = XsdFile.getAttrValue(node, XsdAttributes.MIN_OCCURS);
-                if (nameTypes[nt].name != name &&
-                    minOccurs == undefined) {
+                if (nameTypes[nt].name != name && minOccurs == undefined) {
                     return {
-                        'name': name,
-                        'type': type
-                    }
+                        name: name,
+                        type: type
+                    };
                 }
             }
         }
@@ -134,9 +123,7 @@ class BaseSpecialCaseIdentifier {
                 const name = XsdFile.getAttrValue(node, XsdAttributes.NAME);
                 const type = XsdFile.getAttrValue(node, XsdAttributes.TYPE);
                 const minOccurs = XsdFile.getAttrValue(node, XsdAttributes.MIN_OCCURS);
-                if (nameTypes[nt].name === name &&
-                    nameTypes[nt].type === type &&
-                    minOccurs === XsdAttributeValues.ZERO) {
+                if (nameTypes[nt].name === name && nameTypes[nt].type === type && minOccurs === XsdAttributeValues.ZERO) {
                     optionalPriorNameTypeFound = true;
                 }
             }
@@ -152,7 +139,7 @@ class BaseSpecialCaseIdentifier {
         const children = this.nodeListToArray(nextChoiceOption.childNodes);
         const actualChildCount = children.length;
         if (actualChildCount == expectedChildCount && this.verifyPriorChoices(nameTypes, children)) {
-            retval = this.locateNewNameType(nameTypes, children)
+            retval = this.locateNewNameType(nameTypes, children);
         }
         return retval;
     }
@@ -190,22 +177,22 @@ class BaseSpecialCaseIdentifier {
                 var aNodeCount = 0;
                 var bNodeCount = 0;
                 if (aHasNodes) {
-                    aNodeCount = a.childNodes.length
+                    aNodeCount = a.childNodes.length;
                 }
                 if (bHasNodes) {
-                    bNodeCount = b.childNodes.length
+                    bNodeCount = b.childNodes.length;
                 }
                 if (aNodeCount < bNodeCount) {
                     return -1;
                 } else if (aNodeCount > bNodeCount) {
                     return 1;
                 } else {
-                    return 0
+                    return 0;
                 }
             });
             const firstChild = sortedChildren[0];
             if (XsdFile.hasAttribute(firstChild, XsdAttributes.NAME) && XsdFile.hasAttribute(firstChild, XsdAttributes.TYPE)) {
-                var nameTypes = [ {} ];
+                var nameTypes = [{}];
                 nameTypes[0].name = XsdFile.getAttrValue(firstChild, XsdAttributes.NAME);
                 nameTypes[0].type = XsdFile.getAttrValue(firstChild, XsdAttributes.TYPE);
                 retval = this.isOptionallyIncremental(nameTypes, sortedChildren, 1);
@@ -222,28 +209,28 @@ class BaseSpecialCaseIdentifier {
 
         var anyOf = jsonSchema.oneOf[0];
         anyOf.required.length = 0;
-		Object.keys(anyOf.properties).forEach(function (prop, index, array) {
-			debug(prop + '=' + anyOf.properties[prop]);
+        Object.keys(anyOf.properties).forEach(function(prop, index, array) {
+            debug(prop + '=' + anyOf.properties[prop]);
             const newAnyOf = new JsonSchemaFile();
             newAnyOf.setProperty(prop, anyOf.properties[prop]);
             newAnyOf.addRequired(prop);
             jsonSchema.anyOf.push(newAnyOf);
-		});
-        jsonSchema.oneOf.length = 0;
+        });
+        jsonSchema.oneOf = [];
 
         debug('AFTER Generating anyOfChoice\n' + jsonSchema);
     }
 
     fixAnyOfChoice(jsonSchema, node) {
-        if(jsonSchema.allOf.length != 0) {
+        if (jsonSchema.allOf.length != 0) {
             // A sibling choice will have the siblings in the allOf array.
-            jsonSchema.allOf.forEach(function (choiceSchema, index, array) {
-                if(choiceSchema.isAnyOfChoice === true) {
+            jsonSchema.allOf.forEach(function(choiceSchema, index, array) {
+                if (choiceSchema.isAnyOfChoice === true) {
                     this.generateAnyOfChoice(choiceSchema);
                 }
             }, this);
         } else {
-             this.generateAnyOfChoice(jsonSchema);
+            this.generateAnyOfChoice(jsonSchema);
         }
     }
 
@@ -267,14 +254,14 @@ class BaseSpecialCaseIdentifier {
     // 3) populate optional schema allOf with a 'not' for each member of the original oneOf
     fixOptionalChoiceNot(jsonSchema, node) {
         const originalOneOf = new JsonSchemaFile();
-        originalOneOf.oneOf = Array.from(jsonSchema.oneOf);
+        originalOneOf.oneOf = jsonSchema.oneOf.slice(0);
         jsonSchema.anyOf.push(originalOneOf);
         const theOptionalPart = new JsonSchemaFile();
         jsonSchema.oneOf.forEach(function(option, index, array) {
             const notSchema = new JsonSchemaFile();
             notSchema.not = option;
             theOptionalPart.allOf.push(notSchema);
-        })
+        });
         jsonSchema.anyOf.push(theOptionalPart);
         jsonSchema.oneOf = [];
     }
@@ -291,19 +278,18 @@ class BaseSpecialCaseIdentifier {
         jsonSchema.oneOf.forEach(function(option, index, array) {
             const dependencySchema = new JsonSchemaFile();
             dependencySchema.not = option;
-            theOptionalPart.addPropertyDependency[option.name] = option
+            theOptionalPart.addPropertyDependency[option.name] = option;
             //theOptionalPart.allOf.push(notSchema);
-        })
+        });
         jsonSchema.anyOf.push(theOptionalPart);
         jsonSchema.oneOf = [];
     }
 
-    fixOptionalChoice(jsonSchema, node) { 
+    fixOptionalChoice(jsonSchema, node) {
         // switch (options)
         //this.fixOptionalChoiceTruthy(jsonSchema, node)
-        return; 
+        return;
     }
-
 }
 
 module.exports = BaseSpecialCaseIdentifier;

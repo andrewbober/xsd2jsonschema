@@ -1,7 +1,10 @@
-var BuiltInTypeConverter = require("xsd2jsonschema").BuiltInTypeConverter;
-var JsonSchemaFile = require("xsd2jsonschema").JsonSchemaFile;
-var jsonSchemaTypes = require("xsd2jsonschema").JsonSchemaTypes;
-var jsonSchemaFormats = require("xsd2jsonschema").JsonSchemaFormats;
+'use strict'
+
+const BuiltInTypeConverter = require("xsd2jsonschema").BuiltInTypeConverter;
+const JsonSchemaFile = require("xsd2jsonschema").JsonSchemaFile;
+const jsonSchemaTypes = require("xsd2jsonschema").JsonSchemaTypes;
+const jsonSchemaFormats = require("xsd2jsonschema").JsonSchemaFormats;
+const Constants = require("xsd2jsonschema").Constants;
 
 describe("BuiltInTypeConverter Test -", function() {
     var rc = new BuiltInTypeConverter();
@@ -21,6 +24,15 @@ describe("BuiltInTypeConverter Test -", function() {
     xsd = null;
   });
 
+// constructor
+    it('should initialize uri from parameters', function() {
+        expect(rc.options.uri).toEqual(Constants.RFC_3986);
+
+        var btc = new BuiltInTypeConverter({
+            uri: Constants.RFC_2396
+        })
+        expect(btc.options.uri).toEqual(Constants.RFC_2396);
+    })
 
 // string
     it("should convert string tags to JSON Schema string type", function() {
@@ -131,11 +143,31 @@ describe("BuiltInTypeConverter Test -", function() {
         expect(jsonSchema.pattern).not.toBeNull();
     });
 
-// anyURI
+// anyURI RFC_3986
     it("should convert anyURI tags to JSON Schema string type with a JSON Schema format", function() {
+        expect(rc.options.uri).toEqual(Constants.RFC_3986);
         rc.anyURI(node, jsonSchema, xsd);
         expect(jsonSchema.type).toEqual(jsonSchemaTypes.STRING);
         expect(jsonSchema.pattern).not.toBeNull();
+    });
+
+// anyURI RFC_2396
+    it("should convert anyURI tags to JSON Schema string type with a JSON Schema format", function() {
+        var btc = new BuiltInTypeConverter({
+            uri: Constants.RFC_2396
+        })
+        expect(btc.options.uri).toEqual(Constants.RFC_2396);
+        btc.anyURI(node, jsonSchema, xsd);
+        expect(jsonSchema.type).toEqual(jsonSchemaTypes.STRING);
+        expect(jsonSchema.pattern).not.toBeNull();
+    });
+
+// anyURI RFC_2396
+    it("should convert anyURI tags to JSON Schema string type with a JSON Schema format", function() {
+        var btc = new BuiltInTypeConverter({
+            uri: '???'
+        })
+        expect(btc.anyURI(node, jsonSchema, xsd)).toBeFalsy();
     });
 
 // QName

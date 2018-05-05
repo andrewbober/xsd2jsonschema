@@ -37,11 +37,17 @@ const NamespaceManager_NAME = Symbol();
 	 * Constructs an instance of BaseConverter.
 	 * @constructor
 	 */
-	constructor() {
+	constructor(options) {
 		super();
-		this.builtInTypeConverter = new BuiltInTypeConverter();
-		this.specialCaseIdentifier = new BaseSpecialCaseIdentifier();
-		this.namespaceManager = new NamespaceManager();
+		if (options != undefined) {
+			this.builtInTypeConverter = options.builtInTypeConverter != undefined ? options.builtInTypeConverter : new BuiltInTypeConverter();
+			this.specialCaseIdentifier = options.specialCaseIdentifier != undefined ? options.specialCaseIdentifier : new BaseSpecialCaseIdentifier();
+			this.namespaceManager = options.namespaceManager != undefined ? options.NamespaceManager : new NamespaceManager();
+		} else {
+			this.builtInTypeConverter = new BuiltInTypeConverter();
+			this.specialCaseIdentifier = new BaseSpecialCaseIdentifier();
+			this.namespaceManager = new NamespaceManager();
+		}
 		// The working schema is initilized as needed through XML Handlers
 	}
 
@@ -288,7 +294,7 @@ const NamespaceManager_NAME = Symbol();
 		if (isArray) {
 			return this.handleChoiceArray(node, jsonSchema, xsd);
 		}
-		const isOptional = this.specialCaseIdentifier.isOptionalChoice(node, xsd, minOccursAttr);
+		const isOptional = this.specialCaseIdentifier.isOptional(node, xsd, minOccursAttr);
 		const allChildrenAreOptional = this.allChildrenAreOptional(node);
 		const isSiblingChoice = this.specialCaseIdentifier.isSiblingChoice(node, xsd);
 		var state = this.parsingState.getCurrentState();
@@ -430,7 +436,7 @@ const NamespaceManager_NAME = Symbol();
 	}
 
 	addProperty(targetSchema, propertyName, customType, minOccursAttr) {
-		if (minOccursAttr === undefined || minOccursAttr === 'required' || minOccursAttr > 0) {
+		if (minOccursAttr === undefined || minOccursAttr === XsdAttributeValues.REQUIRED || minOccursAttr > 0) {
 			targetSchema.addRequired(propertyName);
 		}
 		targetSchema.setProperty(propertyName, customType);
@@ -486,7 +492,7 @@ const NamespaceManager_NAME = Symbol();
 		var state = this.parsingState.getCurrentState();
 		switch (state.name) {
 			case XsdElements.CHOICE:
-				if (this.specialCaseIdentifier.isOptionalChoice(node.parentNode, xsd) || this.allChildrenAreOptional(node.parentNode)) {
+				if (this.specialCaseIdentifier.isOptional(node.parentNode, xsd) || this.allChildrenAreOptional(node.parentNode)) {
 					if (isArray) {
 						this.addPropertyAsArray(this.workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
 					} else {
@@ -529,7 +535,7 @@ const NamespaceManager_NAME = Symbol();
 		var state = this.parsingState.getCurrentState();
 		switch (state.name) {
 			case XsdElements.CHOICE:
-				if (this.specialCaseIdentifier.isOptionalChoice(node.parentNode, xsd) || this.allChildrenAreOptional(node.parentNode)) {
+				if (this.specialCaseIdentifier.isOptional(node.parentNode, xsd) || this.allChildrenAreOptional(node.parentNode)) {
 					if (isArray) {
 						this.addPropertyAsArray(this.workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
 					} else {

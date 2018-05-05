@@ -1,7 +1,8 @@
 'use strict';
 
-const BaseConvertionVisitor = require('./baseConversionVisitor');
+const debug = require('debug')('xsd2jsonschema:XmlUsageVisitorSum');
 
+const BaseConvertionVisitor = require('./baseConversionVisitor');
 const XsdAttributes = require('./../xmlschema/xsdAttributes');
 const XsdFile = require('./../xmlschema/xsdFileXmlDom');
 
@@ -74,15 +75,15 @@ class XmlUsageVisitorSum extends BaseConvertionVisitor {
 	}
 
 	dump() {
-		console.log('----------------------------');
-		console.log('Overall XML Schema Tag Usage');
-		console.log('----------------------------');
-		console.log(Object.keys(this.uris));
-		console.log('----------------------------');
+		debug('----------------------------');
+		debug('Overall XML Schema Tag Usage');
+		debug('----------------------------');
+		debug(Object.keys(this.uris));
+		debug('----------------------------');
 		Object.keys(this.tagCounts).sort().forEach(function (xmlTag, index, array) {
-			console.log(xmlTag + ' = ' + this.tagCounts[xmlTag]);
+			debug(xmlTag + ' = ' + this.tagCounts[xmlTag]);
 		}, this)
-		console.log();
+		debug();
 	}
 }
 

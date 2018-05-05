@@ -3,13 +3,13 @@
 const debug = require('debug')('xsd2jsonschema:JsonSchemaFileV4');
 
 const path = require('path');
-const fs = require('fs');
 const URI = require('urijs');
 const clone = require('clone');
 const utils = require('../utils');
 const Constants = require('../constants');
 const PropertyDefinable = require('../propertyDefinable');
 const jsonSchemaTypes = require('./jsonSchemaTypes');
+const XsdAttributeValues = require('../xmlschema/xsdAttributeValues');
 
 
 const properties = [
@@ -63,7 +63,9 @@ const properties = [
 
 class JsonSchemaFileV4 extends PropertyDefinable {
 	constructor(parms) {
-		super(properties)
+		super({
+			propertyNames:properties
+		});
 
 		this.filename = undefined;
 		this.targetSchema = this;
@@ -84,7 +86,7 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 		this.description = undefined;  // Might need to initialize to '' for concatDescription()
 
 		// 6.2 Default
-		this.default = undefined;
+		this.default = undefined;  // There are no restrictions placed on the value of this keyword.
 
 		// 7 Semantic validation with 'format'
 		this.format = undefined;
@@ -623,6 +625,7 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 				} catch (err) {
 					debug(err);
 					debug(this.subSchemas);
+					throw err;
 				}
 			}, this);
 		}
@@ -678,44 +681,24 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	}
 
 	/**
-	 * Writes out this JsonSchemaFile to the given directory with the provided formatting option.
-	 * 
-	 * @param {String} directory - target directory to write this JsonSchemaFile to.
-	 * @param {String} spacing - Adds indentation, white space, and line break characters to the JSON file written to disk.  The 
-	 * default value is '\t'.  This is used as the last parameter to JSON.stringify().
-	 */
-	writeFile(directory, spacing) {
-		var dir = directory;
-		var space = spacing
-		if(directory == undefined) {
-			dir = __dirname;
-		}
-		if(spacing == undefined) {
-			space = '\t';
-		}
-		const data = JSON.stringify(this.getJsonSchema(), null, space);
-		fs.writeFileSync(path.join(dir, this.filename), data);
-	}
-
-	/**
 	 *  The notion of extending a base schema is implemented in JSON Schema using allOf with schemas.  The base
 	 *  type is added to the allOf array as well as a new schema.  The new schema is returned to be built out
 	 *  as the working schema.
 	 * 
 	 * @param {JsonSchemaFile} baseType - JSON Schema of the base type.
-	 * @param {JsonSchemaFile} [extentionType] - One of the seven core JSON Schema types.
+	 * @param {JsonSchemaFile} [extensionType] - One of the seven core JSON Schema types.
 	 */
-	extend(baseType, extentionType) {
+	extend(baseType, extensionType) {
 		if(baseType == undefined) {
 			throw new Error('Required parameter "baseType" is undefined');
 		}
 		this.allOf.push(baseType.get$RefToSchema());
-		const extentionSchema = new JsonSchemaFileV4();
-		if(extentionType != undefined) {
-			extentionSchema.type = extentionType;
+		const extensionSchema = new JsonSchemaFileV4();
+		if(extensionType != undefined) {
+			extensionSchema.type = extensionType;
 		}
-		this.allOf.push(extentionSchema);
-		return extentionSchema;
+		this.allOf.push(extensionSchema);
+		return extensionSchema;
 	}
 
 	/**
@@ -734,7 +717,7 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 			throw new Error('Required parameter "customType" is undefined');
 		}
 		const name = '@' + propertyName;
-		if (minOccursAttr === 'required') {
+		if (minOccursAttr === XsdAttributeValues.REQUIRED) {
 			this.addRequired(name);
 		}
 		this.setProperty(name, customType);
@@ -798,7 +781,7 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 		if(dependencyProperty == undefined) {
 			throw new Error('Required parameter "dependencyProperty" is undefined');			
 		}
-		if(!this.isPropertyDependencyDefined(propertyName)) {
+		if(this.isPropertyDependencyDefined(propertyName)) {
 			throw new Error('Property dependency already defined. "' + propertyName + '"');			
 		}
 		if(this.dependencies[propertyName] == undefined) {
@@ -808,7 +791,7 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	}
 
 	/**
-	 * Adds a jsonSchema as a schema dependency wit the given name
+	 * Adds a jsonSchema as a schema dependency with the given name
 	 * @param {String} propertyName - the name of the property that will have a new dependency added.
 	 * @param {JsonSchemaFile} dependencySchema - the jsonSchema representing the schema dependecy 
 	 * as defined in 5.4.5 above. 
@@ -823,7 +806,7 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 		if(this.dependencies[propertyName] == undefined) {
 			this.dependencies[propertyName] = dependencySchema;
 		} else {
-			debug('Unable to add schema dependency because [' + propertyName + '] is already defined as [' + this.dependencies[propertyName] + ']  Not adding [' + dependencySchema + ']');
+			throw new Error('Unable to add schema dependency because [' + propertyName + '] is already defined as [' + this.dependencies[propertyName] + ']  Not adding [' + dependencySchema + ']');
 		}
 	}
 
@@ -833,15 +816,16 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	 * @param {Array} array - Array from which emtpy JsonSchemas will be removed.
 	 * @see {@link BaseConversionVisitor#exitState|BaseConversionVisitor.exitState()}
 	 */
-	removeEmptySchemaFromArray(array) {
+	removeEmptySchemasFromArray(array) {
 		if(array == undefined) {
 			throw new Error('Required parameter "array" is undefined');
 		}
-		array.forEach(function (schema, index, array) {
-			if(schema.isBlank()) {
-				array.splice(index, 1);
+		// Run throught the array back to front removing any blank schemas.
+		for(let pos=array.length-1; pos>=0; pos--) {
+			if (array[pos].isBlank()) {
+				array.splice(pos, 1);
 			}
-		});
+		}
 	}
 
 	/**
@@ -850,14 +834,14 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	 * @see {@link BaseConversionVisitor#exitState|BaseConversionVisitor.exitState()}
 	 */
 	removeEmptySchemas() {
-		this.removeEmptySchemaFromArray(this.allOf);
-		this.removeEmptySchemaFromArray(this.anyOf);
-		this.removeEmptySchemaFromArray(this.oneOf);
+		this.removeEmptySchemasFromArray(this.allOf);
+		this.removeEmptySchemasFromArray(this.anyOf);
+		this.removeEmptySchemasFromArray(this.oneOf);
 	}
 
-//	toString() {
-//		return JSON.stringify(this.getJsonSchema(), null, '\t');
-//	}
+	toString() {
+		return JSON.stringify(this.getJsonSchema(), null, '\t');
+	}
 }
 
 module.exports = JsonSchemaFileV4;

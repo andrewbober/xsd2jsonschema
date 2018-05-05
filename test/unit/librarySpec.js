@@ -1,6 +1,7 @@
 'use strict';
 
 const XsdAttributes = require('xsd2jsonschema').XsdAttributes;
+const XsdAttributeValues = require('xsd2jsonschema').XsdAttributeValues;
 const XsdElements = require('xsd2jsonschema').XsdElements;
 const XsdFile = require('xsd2jsonschema').XsdFile;
 
@@ -9,7 +10,7 @@ const JsonSchemaFormats = require('xsd2jsonschema').JsonSchemaFormats;
 const JsonSchemaFile = require('xsd2jsonschema').JsonSchemaFile;
 
 const DefaultConversionVisitor = require('xsd2jsonschema').DefaultConversionVisitor;
-const BaseConvertionVisitor = require('xsd2jsonschema').BaseConvertionVisitor;
+const BaseConversionVisitor = require('xsd2jsonschema').BaseConversionVisitor;
 const XmlUsageVisitor = require('xsd2jsonschema').XmlUsageVisitor;
 const XmlUsageVisitorSum = require('xsd2jsonschema').XmlUsageVisitorSum;
 
@@ -19,32 +20,39 @@ const BaseConverter = require('xsd2jsonschema').BaseConverter;
 const BaseSpecialCaseIdentifier = require('xsd2jsonschema').BaseSpecialCaseIdentifier;
 const BuiltInTypeConverter = require('xsd2jsonschema').BuiltInTypeConverter;
 const NamespaceManager = require('xsd2jsonschema').NamespaceManager;
-
+const PropertyDefinable = require('xsd2jsonschema').PropertyDefinable;
+const DepthFirstTraversal = require('xsd2jsonschema').DepthFirstTraversal;
+const ParsingState = require('xsd2jsonschema').ParsingState;
 
 // Library
-//const CheckXsdAttributes = require('../../../src/xmlschema/xsdAttributes');
-//const CheckXsdElements = require('../../../src/xmlschema/xsdElements');
-const CheckXsdFile = require('../../../src/xmlschema/xsdFileXmlDom');
+//const CheckXsdAttributes = require('../../src/xmlschema/xsdAttributes');
+//const CheckXsdAttributeValues = require('../../src/xmlschema/xsdAttributeValues');
+//const CheckXsdElements = require('../../src/xmlschema/xsdElements');
+const CheckXsdFile = require('../../src/xmlschema/xsdFileXmlDom');
 
-//const CheckJsonSchemaTypes = require('../../../src/jsonschema/jsonSchemaTypes');
-//const CheckJsonSchemaFormats = require('../../../src/jsonschema/jsonSchemaFormats');
-const checkJsonSchemaFile = require('../../../src/jsonschema/jsonSchemaFile');
+//const CheckJsonSchemaTypes = require('../../src/jsonschema/jsonSchemaTypes');
+//const CheckJsonSchemaFormats = require('../../src/jsonschema/jsonSchemaFormats');
+const checkJsonSchemaFile = require('../../src/jsonschema/jsonSchemaFile');
 
-const CheckDefaultConversionVisitor = require('../../../src/visitors/defaultConversionVisitor');
-const CheckBaseConvertionVisitor = require('../../../src/visitors/baseConversionVisitor');
-const CheckXmlUsageVisitor = require('../../../src/visitors/xmlUsageVisitor');
-const CheckXmlUsageVisitorSum = require('../../../src/visitors/xmlUsageVisitorSum');
+const CheckDefaultConversionVisitor = require('../../src/visitors/defaultConversionVisitor');
+const CheckBaseConversionVisitor = require('../../src/visitors/baseConversionVisitor');
+const CheckXmlUsageVisitor = require('../../src/visitors/xmlUsageVisitor');
+const CheckXmlUsageVisitorSum = require('../../src/visitors/xmlUsageVisitorSum');
 
-const CheckXsd2JsonSchema = require('../../../src/xsd2JsonSchema');
-const CheckProcessor = require('../../../src/processor');
-const CheckBaseConverter = require('../../../src/baseConverter');
-const CheckBaseSpecialCaseIdentifier = require('../../../src/baseSpecialCaseIdentifier');
-const CheckBuiltInTypeConverter = require('../../../src/builtInTypeConverter');
-const CheckNamespaceManager = require('../../../src/namespaceManager');
+const CheckXsd2JsonSchema = require('../../src/xsd2JsonSchema');
+const CheckProcessor = require('../../src/processor');
+const CheckBaseConverter = require('../../src/baseConverter');
+const CheckBaseSpecialCaseIdentifier = require('../../src/baseSpecialCaseIdentifier');
+const CheckBuiltInTypeConverter = require('../../src/builtInTypeConverter');
+const CheckNamespaceManager = require('../../src/namespaceManager');
+const CheckPropertyDefinable = require('../../src/propertyDefinable');
+const CheckDepthFirstTraversal = require('../../src/depthFirstTraversal');
+const CheckParsingState = require('../../src/parsingState');
 
 describe('The Library Test -', function() {
 
     //const xsdAttributes = new XsdAttributes();
+    //const xsdAttributeValues = new XsdAttributeValues();
     //const xsdElements = new XsdElements();
     const xsdFile = new XsdFile({
         uri: 'test/xmlSchemas/unit/attributes.xsd'
@@ -55,7 +63,7 @@ describe('The Library Test -', function() {
     const jsonSchemaFile = new JsonSchemaFile();
     
     const defaultConversionVisitor = new DefaultConversionVisitor();
-    const baseConvertionVisitor = new BaseConvertionVisitor();
+    const baseConversionVisitor = new BaseConversionVisitor();
     const xmlUsageVisitor = new XmlUsageVisitor();
     const xmlUsageVisitorSum = new XmlUsageVisitorSum();
     
@@ -71,8 +79,10 @@ describe('The Library Test -', function() {
     const baseSpecialCaseIdentifier = new BaseSpecialCaseIdentifier();
     const builtInTypeConverter = new BuiltInTypeConverter();
     const namespaceManager = new NamespaceManager();
+    const propertyDefinable = new PropertyDefinable();
+    const depthFirstTraversal = new DepthFirstTraversal();
+    const parsingState = new ParsingState();
 
-    
     it('xsdFile should be an instantOf the XsdFile class', function() {
         expect(xsdFile instanceof CheckXsdFile).toBeTruthy();
         expect(xsdFile).toEqual(jasmine.any(CheckXsdFile));
@@ -89,8 +99,8 @@ describe('The Library Test -', function() {
     });
 
     it('baseConvertionVisitor should be an instantOf the BaseConvertionVisitor class', function() {
-        expect(baseConvertionVisitor instanceof CheckBaseConvertionVisitor).toBeTruthy();
-        expect(baseConvertionVisitor).toEqual(jasmine.any(CheckBaseConvertionVisitor));
+        expect(baseConversionVisitor instanceof CheckBaseConversionVisitor).toBeTruthy();
+        expect(baseConversionVisitor).toEqual(jasmine.any(CheckBaseConversionVisitor));
     });
 
     it('xmlUsageVisitor should be an instantOf the XmlUsageVisitor class', function() {
@@ -131,6 +141,21 @@ describe('The Library Test -', function() {
     it('namespaceManager should be an instantOf the NamespaceManager class', function() {
         expect(namespaceManager instanceof CheckNamespaceManager).toBeTruthy();
         expect(namespaceManager).toEqual(jasmine.any(CheckNamespaceManager));
+    });
+
+    it('propertyDefinalble should be an instantOf the PropertyDefinable class', function() {
+        expect(propertyDefinable instanceof PropertyDefinable).toBeTruthy();
+        expect(propertyDefinable).toEqual(jasmine.any(CheckPropertyDefinable));
+    });
+
+    it('depthFirstTraversal should be an instantOf the depthFirstTraversal class', function() {
+        expect(depthFirstTraversal instanceof DepthFirstTraversal).toBeTruthy();
+        expect(depthFirstTraversal).toEqual(jasmine.any(CheckDepthFirstTraversal));
+    });
+
+    it('parsingState should be an instantOf the parsingState class', function() {
+        expect(parsingState instanceof ParsingState).toBeTruthy();
+        expect(parsingState).toEqual(jasmine.any(CheckParsingState));
     });
 
 })

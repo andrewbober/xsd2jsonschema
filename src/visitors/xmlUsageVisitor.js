@@ -1,5 +1,7 @@
 'use strict';
 
+const debug = require('debug')('xsd2jsonschema:XmlUsageVisitorSum');
+
 const BaseConvertionVisitor = require('./baseConversionVisitor');
 const XsdAttributes = require('./../xmlschema/xsdAttributes');
 const XsdFile = require('./../xmlschema/xsdFileXmlDom');
@@ -82,12 +84,12 @@ class XmlUsageVisitor extends BaseConvertionVisitor {
 
 	dump() {
 		Object.keys(this.uris).sort().forEach(function (uri, index, array) {
-			console.log(uri);
-			console.log('-----------------');
+			debug(uri);
+			debug('-----------------');
 			Object.keys(this.uris[uri].tagCounts).sort().forEach(function (xmlTag, index, array) {
-				console.log(xmlTag + ' = ' + this.uris[uri].tagCounts[xmlTag]);
+				debug(xmlTag + ' = ' + this.uris[uri].tagCounts[xmlTag]);
 			}, this)
-			console.log();
+			debug();
 		}, this);
 	}
 

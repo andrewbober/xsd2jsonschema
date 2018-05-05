@@ -155,6 +155,30 @@ const xmlSchemas_NAME = Symbol();
         return this.jsonSchemas;
     }
 
+	/**
+	 * Writes out this JsonSchemaFile to the given directory with the provided formatting option.
+	 * 
+     * @param {JsonSchemaFile} jsonSchema - the jsonSchema to be writen out to a file.
+	 * @param {String} directory - target directory to write this JsonSchemaFile to. The default valuye is the current directory.
+	 * @param {String} spacing - Adds indentation, white space, and line break characters to the JSON file written to disk.  The 
+	 * default value is '\t'.  This is used as the last parameter to JSON.stringify().
+	 */
+	writeFile(jsonSchema, directory, spacing) {
+		var dir = directory;
+        var space = spacing
+        if(jsonSchema == undefined) {
+            throw new Error('The parameter jsonSchema is required');
+        }
+		if(directory == undefined) {
+			dir = '.';
+		}
+		if(spacing == undefined) {
+			space = '\t';
+		}
+		const data = JSON.stringify(jsonSchema.getJsonSchema(), null, space);
+		fs.writeFileSync(path.join(dir, jsonSchema.filename), data);
+	}
+
     writeFiles() {
         try {
             fs.ensureDirSync(this.outputDir);
@@ -162,7 +186,7 @@ const xmlSchemas_NAME = Symbol();
             debug(err);
         }
         Object.keys(this.jsonSchemas).forEach(function(uri, index, array) {
-            this.jsonSchemas[uri].writeFile(this.outputDir, '  ');
+            this.writeFile(this.jsonSchemas[uri], this.outputDir, '  ');
         }, this);
     }
 

@@ -1,12 +1,14 @@
 'use strict';
 
 const JsonSchemaFile = require('xsd2jsonschema').JsonSchemaFile;
+const JsonSchemaTypes = require('xsd2jsonschema').JsonSchemaTypes;
+const JsonSchemaFormats = require('xsd2jsonschema').JsonSchemaFormats;
 
 beforeEach(function() {
     this.buildEverythingJsonSchema = function(ref) {
         //var fullJsonSchema = new JsonSchemaFile();
         const xsdFileMock = {
-            baseFilename: 'subschemaUnitTest',
+            baseFilename: 'unitTestSchema',
             targetNamespace: 'http://www.xsd2jsonschema.org/example/unit/test'
         };
 
@@ -27,11 +29,11 @@ beforeEach(function() {
 //        fullJsonSchema.$schema = 'something';
 //        fullJsonSchema.title = 'something';
         fullJsonSchema.required = [ 'everything' ];
-        fullJsonSchema.properties.everything = new JsonSchemaFile({ $ref: 'http://musicOfTheNight/subschemaUnitTest.json#/www.xsd2jsonschema.org/example/unit/test/everything' });
+        fullJsonSchema.properties.everything = new JsonSchemaFile({ $ref: 'http://musicOfTheNight/unitTestSchema.json#/www.xsd2jsonschema.org/example/unit/test/everything' });
         const everything = fullJsonSchema.addSubSchema('everything', new JsonSchemaFile());
         everything.description = 'something';
         everything.default = { 'something': {} };
-        everything.format = 'something';
+        everything.format = JsonSchemaFormats.URI;
         everything.multipleOf = 2;
         everything.maximum = 2;
         everything.exclusiveMaximum = true;
@@ -53,7 +55,7 @@ beforeEach(function() {
         everything.patternProperties = { 'something' : new JsonSchemaFile() };
         everything.dependencies = { 'something' : new JsonSchemaFile() };
         everything.enum = [ 'something' ];
-        everything.type = 'object';
+        everything.type = JsonSchemaTypes.OBJECT;
         everything.allOf = [ new JsonSchemaFile() ];
         everything.anyOf = [ new JsonSchemaFile() ];
         everything.oneOf = [ new JsonSchemaFile() ];

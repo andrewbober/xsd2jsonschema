@@ -54,7 +54,7 @@ const XsdElements = require('./../xmlschema/xsdElements');
 		/**
 		 * <simpleType> tags that take advantage of <restriction> tags are converted to JsonSchema utilizing allOf.  It is
 		 * possible a <simpleType> doesn't contain anything meaningful other than the restriction.  In this case the conversion
-		 * will end of with an empty JsonSchema in the simpleType's allOf array.  To correct this empty JsonSchema's are removed
+		 * will end with an empty JsonSchema in the simpleType's allOf array.  To correct this empty JsonSchema's are removed
 		 * from a sympleType's allOf array.  Example:
 		 * <xs:simpleType name='SomeSimpleType'>
 		 * 		<xs:annotation>
