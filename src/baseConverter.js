@@ -87,8 +87,8 @@ const NamespaceManager_NAME = Symbol();
 	/**
 	 * This method is called for each node in the XML Schema file being processed.  It first processes an ID attribute if present and 
 	 * then calls the appropriate XML Handler method.
-	 * @param {Node} node - the current element in xsd being converted.
-	 * @param {JsonSchemaFile} jsonSchema - the JSON Schema representing the current XML Schema file {@link XsdFile|xsd} being converted.
+	 * @param {Node} node - the current {@link https://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/core.html#ID-745549614 element} in xsd being converted.
+	 * @param {JsonSchemaFileV4} jsonSchema - the JSON Schema representing the current XML Schema file {@link XsdFile|xsd} being converted.
 	 * @param {XsdFile} xsd - the XML schema file currently being converted.
 	 * 
 	 * @returns {Boolean} - handler methods can return false to cancel traversal of {@link XsdFile|xsd}.  An XML Schema handler method
