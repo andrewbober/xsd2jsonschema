@@ -15,7 +15,8 @@ describe('BaseConverter Test -', function () {
             uri: 'test/xmlSchemas/functional/optionalChoice.xsd'
         });
         jsonSchema = new JsonSchemaFile({
-            xsd : xsd,
+            baseFilename: xsd.baseFilename,
+            targetNamespace: xsd.targetNamespace,
             baseId : "http://www.xsd2jsonschema.org/unittests/"
         });
     });

@@ -13,8 +13,9 @@ beforeEach(function() {
         };
 
         const fullJsonSchema = new JsonSchemaFile({
-            xsd: xsdFileMock,
             baseId: 'http://musicOfTheNight',
+            baseFilename: xsdFileMock.baseFilename,
+            targetNamespace: xsdFileMock.targetNamespace,
             title: 'A nice test',
             mask: 'PhantomOfTheOpera'
         });

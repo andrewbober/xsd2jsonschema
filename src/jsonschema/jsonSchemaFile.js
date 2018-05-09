@@ -62,61 +62,71 @@ const properties = [
  */
 
 class JsonSchemaFileV4 extends PropertyDefinable {
-	constructor(parms) {
+	/**
+	 * 
+	 * @param {Object} options - And object used to override default options.
+	 * @param {string} options.baseFilename - The directory from which xml schema's should be loaded.  The default value is the current directory.
+	 * @param {string} options.id - The directory from which xml schema's should be loaded.  The default value is the current directory.
+	 * @param {string} options.targetNamespace - The directory from which xml schema's should be loaded.  The default value is the current directory.
+	 * @param {string} options.title - The directory from which xml schema's should be loaded.  The default value is the current directory.
+	 * @param {string} options.ref - The directory from which xml schema's should be loaded.  The default value is the current directory.
+	 * @param {string} options.$ref - The directory from which xml schema's should be loaded.  The default value is the current directory.
+	 */
+	constructor(options) {
 		super({
-			propertyNames:properties
+			propertyNames: properties
 		});
 
 		this.filename = undefined;
 		this.targetSchema = this;
 		this.targetNamespace = undefined;
-		this.ref = undefined;  // used to hold a JSON Pointer reference to this named type (Not used for anonymous types)
+		this.ref = undefined; // used to hold a JSON Pointer reference to this named type (Not used for anonymous types)
 		this.$ref = undefined; // used when this schema is an instance of a reference
 
 		// JSON Schema draft v4 (core definitions and terminology referenced)
 		// 7.2 URI resolution scope alteration with the 'id'
-		this.id = undefined;  // uri
+		this.id = undefined; // uri
 		// 3.4 Root schema, subschema  (7.2.2 Usage)
 		this.subSchemas = {};
-		this.$schema = undefined;  // uri
+		this.$schema = undefined; // uri
 
 		// JSON Schema Validation specification sections referenced unless otherwise noted
 		// 6.1 Metadata keywords 'title' and 'description'
 		this.title = undefined;
-		this.description = undefined;  // Might need to initialize to '' for concatDescription()
+		this.description = undefined; // Might need to initialize to '' for concatDescription()
 
 		// 6.2 Default
-		this.default = undefined;  // There are no restrictions placed on the value of this keyword.
+		this.default = undefined; // There are no restrictions placed on the value of this keyword.
 
 		// 7 Semantic validation with 'format'
 		this.format = undefined;
 
 		// 5.1.  Validation keywords for numeric instances (number and integer)
-		this.multipleOf = undefined;  // multiple of 2 is 2, 4, 8, etc. 
+		this.multipleOf = undefined; // multiple of 2 is 2, 4, 8, etc. 
 		this.maximum = undefined;
-		this.exclusiveMaximum = false;  // 5.1.2.3
+		this.exclusiveMaximum = false; // 5.1.2.3
 		this.minimum = undefined;
-		this.exclusiveMinimum = false;  // 5.1. 3.3
+		this.exclusiveMinimum = false; // 5.1. 3.3
 
 		// 5.2.  Validation keywords for strings
 		this.maxLength = undefined;
-		this.minLength = 0;  // 5.2.2.3
-		this.pattern = undefined;  // 5.2.3.1 ECMA 262 regular expression dialect
+		this.minLength = 0; // 5.2.2.3
+		this.pattern = undefined; // 5.2.3.1 ECMA 262 regular expression dialect
 
 		// 5.3.  Validation keywords for arrays
-		this.additionalItems = {};  // 5.3.1.1 boolean or a schema
-		this.items = {};  // 5.3.1.4 schema or an array of schemas but the default value is an empty schema
+		this.additionalItems = {}; // 5.3.1.1 boolean or a schema
+		this.items = {}; // 5.3.1.4 schema or an array of schemas but the default value is an empty schema
 		this.maxItems = undefined;
-		this.minItems = 0;  // 5.3.3.3
-		this.uniqueItems = false;  // 5.3.4.3
+		this.minItems = 0; // 5.3.3.3
+		this.uniqueItems = false; // 5.3.4.3
 
 		// 5.4.  Validation keywords for objects
 		this.maxProperties = undefined;
-		this.minProperties = 0;  // 5.4.2.3
-		this.required = [];  // 5.4.3.1 string array - must have unique values and minimum length=1
-		this.additionalProperties = undefined;  // boolean or a schema
-		this.properties = {};  // 5.4.4.1 MUST be an object. Each property of this object MUST be a valid JSON Schema.
-		this.patternProperties = {};  // 5.4.4.1 MUST be an object. Each property name of this object SHOULD be a valid regular expression, according to the ECMA 262 regular expression dialect. Each property value of this object MUST be a valid JSON Schema.
+		this.minProperties = 0; // 5.4.2.3
+		this.required = []; // 5.4.3.1 string array - must have unique values and minimum length=1
+		this.additionalProperties = undefined; // boolean or a schema
+		this.properties = {}; // 5.4.4.1 MUST be an object. Each property of this object MUST be a valid JSON Schema.
+		this.patternProperties = {}; // 5.4.4.1 MUST be an object. Each property name of this object SHOULD be a valid regular expression, according to the ECMA 262 regular expression dialect. Each property value of this object MUST be a valid JSON Schema.
 
 		// 5.4.5.  Dependencies
 		// This keyword's value MUST be an object. Each value of this object MUST be either an object or an array.
@@ -125,52 +135,52 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 		this.dependencies = {};
 
 		// 5.5.  Validation keywords for any instance type
-		this.enum = [];  // 5.5.1.1 Elements in the array MUST be unique.
-		this.type = undefined;  // string or string array limited to the seven primitive types (simpleTypes)
+		this.enum = []; // 5.5.1.1 Elements in the array MUST be unique.
+		this.type = undefined; // string or string array limited to the seven primitive types (simpleTypes)
 
-		this.allOf = [];  // 5.5.3.1 Elements of the array MUST be objects. Each object MUST be a valid JSON Schema.
-		this.anyOf = [];  // 5.5.4.1 Elements of the array MUST be objects. Each object MUST be a valid JSON Schema.
-		this.oneOf = [];  // 5.5.5.1 Elements of the array MUST be objects. Each object MUST be a valid JSON Schema.
-		this.not = {};  // 5.5.6.1 This object MUST be a valid JSON Schema.
+		this.allOf = []; // 5.5.3.1 Elements of the array MUST be objects. Each object MUST be a valid JSON Schema.
+		this.anyOf = []; // 5.5.4.1 Elements of the array MUST be objects. Each object MUST be a valid JSON Schema.
+		this.oneOf = []; // 5.5.5.1 Elements of the array MUST be objects. Each object MUST be a valid JSON Schema.
+		this.not = {}; // 5.5.6.1 This object MUST be a valid JSON Schema.
 
-		this.definitions = {};  // 5.5.7.1 MUST be an object. Each member value of this object MUST be a valid JSON Schema.
+		this.definitions = {}; // 5.5.7.1 MUST be an object. Each member value of this object MUST be a valid JSON Schema.
 
-		if (parms !== undefined) {
-			if (parms.xsd !== undefined) {
-				const baseFilename = path.parse(parms.xsd.baseFilename).name;
-				const maskedFilename = (parms.mask === undefined) ? baseFilename : baseFilename.replace(parms.mask, '');
-				this.filename = maskedFilename + '.json';
-				this.id = new URI(parms.baseId).filename(this.filename).toString();
+		if (options !== undefined) {
+			if (options.baseFilename !== undefined) {
+				const baseFilename = path.parse(options.baseFilename).name;
+				this.filename = baseFilename + '.json';
+				this.id = new URI(options.baseId).filename(this.filename).toString();
+				this.targetNamespace = options.targetNamespace;
 				this.$schema = 'http://json-schema.org/draft-04/schema#';
-				this.targetNamespace = parms.xsd.targetNamespace;
-				this.title = 'This JSON Schema file was generated from ' + parms.xsd.baseFilename + ' on ' + new Date() + '.  For more information please see http://www.xsd2jsonschema.org';
+				this.title = `This JSON Schema file was generated from ${options.baseFilename} on ${new Date()}.  For more information please see http://www.xsd2jsonschema.org`;
 				this.type = jsonSchemaTypes.OBJECT;
 			}
-			if (parms.title !== undefined) {
-				this.title = parms.title;
+			if (options.title !== undefined) {
+				this.title = options.title;
 			}
 			// This needs to be documented
-			if (parms.ref !== undefined) {
-				this.ref = parms.ref;
+			if (options.ref !== undefined) {
+				this.ref = options.ref;
 			}
 			// This needs to be documented
-			if (parms.$ref !== undefined) {
-				this.$ref = parms.$ref;
+			if (options.$ref !== undefined) {
+				this.$ref = options.$ref;
 			}
 		}
-	this.initializeSubschemas();
+		this.initializeSubschemas();
 	}
 
 	/**
 	 * Creates all subschemas identified by an array of subschema names and initializes the targetSchema to the inner-most subschema.
 	 * 
-	 * @param {Object} _subschemas - an object who's properties are all JsonSchemaFile instances.
-	 * @param {Array} namespaces - an array of String values representing the components of a URL without the scheme.
+	 * @param {Object} _subschemas - An object who's properties are all JsonSchemaFile instances.
+	 * @param {Array} namespaces - An array of String values representing the components of a URL without the scheme.
+	 * @returns {void}
 	 */
 	createNestedSubschema(_subschemas, namespaces) {
 		var subschemaName = namespaces.shift();
 		_subschemas[subschemaName] = new JsonSchemaFileV4();
-		this.targetSchema = _subschemas[subschemaName];  // Track the innermost schema as the target
+		this.targetSchema = _subschemas[subschemaName]; // Track the innermost schema as the target
 		if (namespaces.length > 0) {
 			this.createNestedSubschema(_subschemas[subschemaName].subSchemas, namespaces);
 		}
@@ -179,6 +189,8 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	/**
 	 * Initializes the subschemas for this JsonSchemaFile from the previously initialized targetNamespace member.  The targetNamespace is
 	 * generally represented by a URL.  This URL is broken down into its constituent parts and each part becomes a subschema.
+	 * 
+	 * @returns {void}
 	 */
 	initializeSubschemas() {
 		if (this.targetNamespace === undefined) {
@@ -195,10 +207,10 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	}
 
 	/**
-	 * Returns true if the given value is: null, undefined, a zero length string, a zero length array, or an object with no properties.
+	 * Returns true if the val is: null, undefined, a zero length string, a zero length array, or an object with no properties.
 	 * 
-	 * @param {Object|String|Array} val 
-	 * @returns {Boolean}
+	 * @param {Object|String|Array} val - The value to determine whether or not is empty.
+	 * @returns {Boolean} - Returns true if val is empty.
 	 */
 	isEmpty(val) {
 		if (typeof val == 'undefined' || val == 'undefined' || val == null) {
@@ -224,13 +236,13 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	/**
 	 * Returns true if the all members of the JsonSchemaFile are empty as defined by isEmpty().
 	 * 
-	 * @returns {Boolean}
+	 * @returns {Boolean} - Returns true if the all members of the JsonSchemaFile are empty.
 	 */
 	isBlank() {
 		if (!this.isEmpty(this.filename)) {
 			return false;
 		}
-		if (!this.isEmpty(this.targetSchema) && this.targetSchema !== this ) {
+		if (!this.isEmpty(this.targetSchema) && this.targetSchema !== this) {
 			return false;
 		}
 		if (!this.isEmpty(this.targetNamespace)) {
@@ -390,10 +402,11 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	}
 
 	/**
-	 * Returns a JsonSchemaFile representing the requested subschema if found.
+	 * Performs a recursive search through all subschemas for a schema with the given name.
 	 * 
-	 *  @returns {JsonSchemaFile}
-	 */ 
+	 * @param {String} searchName - The name of the subschema to return.
+	 * @returns {JsonSchemaFile} - Returns a JsonSchemaFile representing the requested subschema if found.
+	 */
 	getSubschema(searchName) {
 		var retval;
 		if (this.subSchemas[searchName] != undefined) {
@@ -411,14 +424,16 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	 * @returns {JsonSchemaFile} - a JsonSchemaFile representing a $ref to itself.
 	 */
 	get$RefToSchema() {
-		return this.ref == undefined ? this : new JsonSchemaFileV4({ $ref: this.ref });
+		return this.ref == undefined ? this : new JsonSchemaFileV4({
+			$ref: this.ref
+		});
 	}
 
 	/**
 	 * Returns a String representation of the targetNamespace, which is generally based on a URL, 
 	 * without the protocol, colon, or any parameters.
 	 * 
-	 * @returns {String}
+	 * @returns {String} - String representation of the targetNamespace.
 	 */
 	getSubschemaStr() {
 		return utils.getSafeNamespace(this.targetNamespace);
@@ -427,11 +442,11 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	/**
 	 * Returns the subschema used to track global attributes initiazing the subschema if needed.
 	 * 
-	 * @returns {JsonSchemaFile}
+	 * @returns {JsonSchemaFile} - The subschema used to track global attributes.
 	 */
 	getGlobalAttributesSchema() {
-		if(this.subSchemas[Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME] == undefined) {
-			this.subSchemas[Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME] = new JsonSchemaFileV4();			
+		if (this.subSchemas[Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME] == undefined) {
+			this.subSchemas[Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME] = new JsonSchemaFileV4();
 		}
 		return this.subSchemas[Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME];
 	}
@@ -439,7 +454,7 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	/**
 	 * Returns a POJO of this jsonSchema.  Items are added in the order we wouild like them to appear in the resutling JsonSchema.
 	 * 
-	 * @returns {Object}
+	 * @returns {Object} - POJO of this jsonSchema.
 	 */
 	getJsonSchema() {
 		const jsonSchema = {};
@@ -538,10 +553,10 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 			const propKeys = Object.keys(this.dependencies);
 			propKeys.forEach(function (key, index, array) {
 				if (Array.isArray(this.dependencies[key])) {
-					jsonSchema.dependencies[key] = this.dependencies[key];  // property dependency
+					jsonSchema.dependencies[key] = this.dependencies[key]; // property dependency
 				} else {
 					if (this.dependencies[key] !== undefined) {
-						jsonSchema.dependencies[key] = this.dependencies[key].getJsonSchema();  // schema dependency
+						jsonSchema.dependencies[key] = this.dependencies[key].getJsonSchema(); // schema dependency
 					}
 				}
 			}, this);
@@ -636,7 +651,7 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	/**
 	 * Returns a deep copy of this JsonSchemaFile.
 	 * 
-	 * @returns {JsonSchemaFile} 
+	 * @returns {JsonSchemaFile} - A deep copy of this JsonSchemaFile.
 	 */
 	clone() {
 		return clone(this);
@@ -645,7 +660,8 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	/**
 	 * Adds a String value to the enum array.
 	 * 
-	 * @param {String} val 
+	 * @param {String} val - The string value to add to the enum array.
+	 * @returns {void}
 	 */
 	addEnum(val) {
 		this.enum.push(val);
@@ -654,7 +670,8 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	/**
 	 * Adds a String value to the required array.
 	 * 
-	 * @param {String} _required 
+	 * @param {String} _required - String value to be added to the required array.
+	 * @returns {void}
 	 */
 	addRequired(_required) {
 		this.required.push(_required);
@@ -663,8 +680,8 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	/**
 	 * Returns the JsonSchemaFile property that corresponds to the given propertyName value.
 	 * 
-	 * @param {String} propertyName 
-	 * @returns {JsonSchemaFile} 
+	 * @param {String} propertyName - The name of the property to return.
+	 * @returns {JsonSchemaFile} - The JsonSchemaFile property that corresponds to the given propertyName value.
 	 */
 	getProperty(propertyName) {
 		return this.properties[propertyName];
@@ -673,8 +690,9 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	/**
 	 * Sets the value of the given propertyName to the jsonSchema provided in the type parameter.
 	 * 
-	 * @param {String} propertyName - the name of the property
-	 * @param {JsonSchemaFile} type - the jsonSchema for the given propertyName
+	 * @param {String} propertyName - The name of the property
+	 * @param {JsonSchemaFile} type - The jsonSchema for the given propertyName
+	 * @returns {void}
 	 */
 	setProperty(propertyName, type) {
 		this.properties[propertyName] = type;
@@ -687,14 +705,15 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	 * 
 	 * @param {JsonSchemaFile} baseType - JSON Schema of the base type.
 	 * @param {JsonSchemaFile} [extensionType] - One of the seven core JSON Schema types.
+	 * @returns {void}
 	 */
 	extend(baseType, extensionType) {
-		if(baseType == undefined) {
+		if (baseType == undefined) {
 			throw new Error('Required parameter "baseType" is undefined');
 		}
 		this.allOf.push(baseType.get$RefToSchema());
 		const extensionSchema = new JsonSchemaFileV4();
-		if(extensionType != undefined) {
+		if (extensionType != undefined) {
 			extensionSchema.type = extensionType;
 		}
 		this.allOf.push(extensionSchema);
@@ -704,16 +723,17 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	/**
 	 * Creates a property with a name prefixed by the @sign to represet an XML attribute.
 	 * 
-	 * @param {String} propertyName - name of the new property.
-	 * @param {JsonSchemaFile} customType - jsonSchema governing the new property.
-	 * @param {String} minOccursAttr - if this optional parameter equals 'required' the new property will
+	 * @param {String} propertyName - Name of the new property.
+	 * @param {JsonSchemaFile} customType - JsonSchema governing the new property.
+	 * @param {String} minOccursAttr - If this optional parameter equals 'required' the new property will
 	 * be added to the jsonSchema's required array.
+	 * @returns {void}
 	 */
 	addAttributeProperty(propertyName, customType, minOccursAttr) {
-		if(propertyName == undefined) {
+		if (propertyName == undefined) {
 			throw new Error('Required parameter "propertyName" is undefined');
 		}
-		if(customType == undefined) {
+		if (customType == undefined) {
 			throw new Error('Required parameter "customType" is undefined');
 		}
 		const name = '@' + propertyName;
@@ -722,20 +742,21 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 		}
 		this.setProperty(name, customType);
 	}
-	
+
 	/**
 	 * Adds the given property and lists it in the anyOf array as a singular required property.  This is used to
 	 * expose a type from a subschema so it can be used in validation.
 	 * 
-	 * @param {String} name 
-	 * @param {JsonSchema} type 
 	 * @see {@link NamespaceManager#getType|NamespaceManager.getType()}
- 	 */
+	 * @param {String} name - The name of the property to be added.
+	 * @param {JsonSchema} type - The property to be added.
+	 * @returns {void}
+	 */
 	addRequiredAnyOfPropertyByReference(name, type) {
-		if(name == undefined) {
+		if (name == undefined) {
 			throw new Error('Required parameter "name" is undefined');
 		}
-		if(type == undefined) {
+		if (type == undefined) {
 			throw new Error('Required parameter "type" is undefined');
 		}
 		if (this.getProperty(name) == undefined) {
@@ -754,15 +775,15 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	 * Returns true if the propertyName parameter represents a defined property dependency.  A 
 	 * dependency is considered a defined property dependency if it is defined as an array. 
 	 * 
-	 * @param {String} propertyName - name of the property that may represent a property dependency
+	 * @param {String} propertyName - The Name of the property that may represent a property dependency
 	 * as defined in 5.4.5 above. 
-	 * @returns {Boolean}
+	 * @returns {Boolean} - True if the propertyName parameter represents a defined property dependency.
 	 */
 	isPropertyDependencyDefined(propertyName) {
-		if(propertyName == undefined) {
+		if (propertyName == undefined) {
 			throw new Error('Required parameter "propertyName" is undefined');
 		}
-		if(this.dependencies[propertyName] != undefined && Array.isArray(this.dependencies[propertyName])) {
+		if (this.dependencies[propertyName] != undefined && Array.isArray(this.dependencies[propertyName])) {
 			return true;
 		}
 		return false;
@@ -771,39 +792,42 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	/**
 	 * Adds a property dependency allocating the dependency's array if needed.
 	 * 
-	 * @param {String} propertyName - the name of the property that will have a new dependency added.
-	 * @param {String} propertyDependency - the name of the property that propertyName is dependent on.
+	 * @param {String} propertyName - The name of the property that will have a new dependency added.
+	 * @param {String} dependencyProperty - The name of the property that propertyName is dependent on.
+	 * @returns {void}
 	 */
 	addPropertyDependency(propertyName, dependencyProperty) {
-		if(propertyName == undefined) {
+		if (propertyName == undefined) {
 			throw new Error('Required parameter "propertyname" is undefined');
 		}
-		if(dependencyProperty == undefined) {
-			throw new Error('Required parameter "dependencyProperty" is undefined');			
+		if (dependencyProperty == undefined) {
+			throw new Error('Required parameter "dependencyProperty" is undefined');
 		}
-		if(this.isPropertyDependencyDefined(propertyName)) {
-			throw new Error('Property dependency already defined. "' + propertyName + '"');			
+		if (this.isPropertyDependencyDefined(propertyName)) {
+			throw new Error('Property dependency already defined. "' + propertyName + '"');
 		}
-		if(this.dependencies[propertyName] == undefined) {
+		if (this.dependencies[propertyName] == undefined) {
 			this.dependencies[propertyName] = [];
 		}
 		this.dependencies[propertyName].push(dependencyProperty);
 	}
 
 	/**
-	 * Adds a jsonSchema as a schema dependency with the given name
-	 * @param {String} propertyName - the name of the property that will have a new dependency added.
-	 * @param {JsonSchemaFile} dependencySchema - the jsonSchema representing the schema dependecy 
+	 * Adds a jsonSchema as a schema dependency with the given name.
+	 * 
+	 * @param {String} propertyName - The name of the property that will have a new dependency added.
+	 * @param {JsonSchemaFile} dependencySchema - The jsonSchema representing the schema dependecy 
 	 * as defined in 5.4.5 above. 
+	 * @returns {void}
 	 */
 	addSchemaDependency(propertyName, dependencySchema) {
-		if(propertyName == undefined) {
+		if (propertyName == undefined) {
 			throw new Error('Required parameter "propertyname" is undefined');
 		}
-		if(dependencySchema == undefined) {
-			throw new Error('Required parameter "dependencySchema" is undefined');			
+		if (dependencySchema == undefined) {
+			throw new Error('Required parameter "dependencySchema" is undefined');
 		}
-		if(this.dependencies[propertyName] == undefined) {
+		if (this.dependencies[propertyName] == undefined) {
 			this.dependencies[propertyName] = dependencySchema;
 		} else {
 			throw new Error('Unable to add schema dependency because [' + propertyName + '] is already defined as [' + this.dependencies[propertyName] + ']  Not adding [' + dependencySchema + ']');
@@ -813,15 +837,16 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	/**
 	 * Removes any empty JsonSchemaFile entries from the given Array.
 	 * 
-	 * @param {Array} array - Array from which emtpy JsonSchemas will be removed.
 	 * @see {@link BaseConversionVisitor#exitState|BaseConversionVisitor.exitState()}
+	 * @param {Array} array - Array from which emtpy JsonSchemas will be removed.
+	 * @returns {void}
 	 */
 	removeEmptySchemasFromArray(array) {
-		if(array == undefined) {
+		if (array == undefined) {
 			throw new Error('Required parameter "array" is undefined');
 		}
 		// Run throught the array back to front removing any blank schemas.
-		for(let pos=array.length-1; pos>=0; pos--) {
+		for (let pos = array.length - 1; pos >= 0; pos--) {
 			if (array[pos].isBlank()) {
 				array.splice(pos, 1);
 			}
@@ -832,6 +857,7 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	 * Remove empty schema's from this jsonSchema's array properties.
 	 * 
 	 * @see {@link BaseConversionVisitor#exitState|BaseConversionVisitor.exitState()}
+	 * @returns {void}
 	 */
 	removeEmptySchemas() {
 		this.removeEmptySchemasFromArray(this.allOf);

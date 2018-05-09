@@ -47,8 +47,9 @@ describe("BaseConverter <choice>", function() {
             xml: xml
         });
         jsonSchema = new JsonSchemaFile({
-            xsd : xsd,
-            baseId : "http://www.xsd2jsonschema.org/unittests/"
+            baseFilename : xsd.baseFilename,
+            baseId : "http://www.xsd2jsonschema.org/unittests/",
+            targetNamespace: xsd.targetNamespace
         });
     });
 

@@ -13,12 +13,19 @@ const fs = require("fs-extra");
 
 
 const xsdBaseDir_NAME = Symbol();
-const baseId_NAME = Symbol();
-const jsonSchema_NAME = Symbol();
-const mask_NAME = Symbol();
 const outputDir_NAME = Symbol();
+const baseId_NAME = Symbol();
+const mask_NAME = Symbol();
 const visitor_NAME = Symbol();
 const xmlSchemas_NAME = Symbol();
+const jsonSchema_NAME = Symbol();
+
+const defaultXsd2JsonSchemaOptions = {
+    xsdBaseDir: '.',
+    outputDir: '.',
+    baseId: 'http://www.xsd2jsonschema.org/defaultBaseId',
+    mask: undefined
+}
 
 /**
  * Class prepresenting an instance of the Xsd2JsonSchema library.  This needs to be refactored to
@@ -30,22 +37,37 @@ const xmlSchemas_NAME = Symbol();
  * The current implementation is really only usable as a cli.
  * 
  * TODO: Set defaults for all options and make the 'options' parameter optional.
+ * 
  */
 
- class Xsd2JsonSchema {
+class Xsd2JsonSchema {
+     /**
+      * 
+      * @param {Object} options - An object used to override default options.
+      * @param {string} options.xsdBaseDir - The directory from which xml schema's should be loaded.  The default value is the current directory.
+      * @param {string} options.outputDir - The destination directory for generated JSON Schema files.  The default value is the current directory.
+      * @param {string} options.baseId - The base value for the 'id' in any generated JSON Schema files.  The default value is 'http://www.xsd2jsonschema.org/defaultBaseId.
+      * @param {string} options.mask - A regular expression used to reduce generated JSON Schema filenames as needed.  The default value is 'undefined'.
+      * @param {string} options.converter - A subclass of {@link BaseConverter|BaseConverter}.  This is convenience parameter and equal to poviding the visitor parameter where options.visiter = new {@link BaseConversionVisitor|BaseConversionVisitor}(options.converter).
+      * @param {string} options.visitor - A subclass of {@link BaseConversionVisitor|BaseConversionVisitor}.
+      */
     constructor(options) {
-        this.xsdBaseDir = options.xsdBaseDir;
-        this.baseId = options.baseId;
-        this.mask = options.mask;
-        this.outputDir = options.outputDir;
-        if (options.converter == undefined) {
-            if (options.visitor == undefined) {
-                this.visitor = new DefaultConversionVisitor();
+        if (options != undefined) {
+            this.xsdBaseDir = options.xsdBaseDir != undefined ? options.xsdBaseDir : defaultXsd2JsonSchemaOptions.xsdBaseDir;
+            this.outputDir = options.outputDir != undefined ? options.outputDir : defaultXsd2JsonSchemaOptions.outputDir;
+            this.baseId = options.baseId != undefined ? options.baseId : defaultXsd2JsonSchemaOptions.baseId;
+            this.mask = options.mask != undefined ? options.mask : defaultXsd2JsonSchemaOptions.mask;
+            if (options.converter != undefined) {
+                this.visitor = new BaseConversionVisitor(options.converter);
             } else {
-                this.visitor = options.visitor;
+                this.visitor = options.visitor != undefined ? options.visitor : defaultXsd2JsonSchemaOptions.visitor;
             }
         } else {
-            this.visitor = new BaseConversionVisitor(options.converter);
+            this.xsdBaseDir = defaultXsd2JsonSchemaOptions.xsdBaseDir;
+            this.outputDir = defaultXsd2JsonSchemaOptions.outputDir;
+            this.baseId = defaultXsd2JsonSchemaOptions.baseId;
+            this.mask = defaultXsd2JsonSchemaOptions.mask;
+            this.visitor = new DefaultConversionVisitor();
         }
         this.xmlSchemas = {};
         this.jsonSchema = {};
@@ -128,9 +150,9 @@ const xmlSchemas_NAME = Symbol();
         if (this.jsonSchemas[uri] === undefined) {
             var traversal = new DepthFirstTraversal();
             this.jsonSchemas[uri] = new JsonSchemaFile({
-                xsd: xsd,
-                baseId: this.baseId,
-                mask: this.mask
+                baseFilename: xsd.baseFilename,
+                targetNamespace: xsd.targetNamespace,
+                baseId: this.baseId
             });
             traversal.traverse(this.visitor, this.jsonSchemas[uri], xsd);
         }
@@ -156,12 +178,13 @@ const xmlSchemas_NAME = Symbol();
     }
 
 	/**
-	 * Writes out this JsonSchemaFile to the given directory with the provided formatting option.
+	 * Writes out a JsonSchemaFile to the given directory with the provided formatting option.
 	 * 
-     * @param {JsonSchemaFile} jsonSchema - the jsonSchema to be writen out to a file.
-	 * @param {String} directory - target directory to write this JsonSchemaFile to. The default valuye is the current directory.
+     * @param {JsonSchemaFile} jsonSchema - The jsonSchema to be writen out to a file.
+	 * @param {String} directory - Target directory to write this JsonSchemaFile to. The default valuye is the current directory.
 	 * @param {String} spacing - Adds indentation, white space, and line break characters to the JSON file written to disk.  The 
 	 * default value is '\t'.  This is used as the last parameter to JSON.stringify().
+     * @returns {void}
 	 */
 	writeFile(jsonSchema, directory, spacing) {
 		var dir = directory;
@@ -176,7 +199,8 @@ const xmlSchemas_NAME = Symbol();
 			space = '\t';
 		}
 		const data = JSON.stringify(jsonSchema.getJsonSchema(), null, space);
-		fs.writeFileSync(path.join(dir, jsonSchema.filename), data);
+        const maskedFilename = (this.mask === undefined) ? jsonSchema.filename : jsonSchema.filename.replace(this.mask, '');
+		fs.writeFileSync(path.join(dir, maskedFilename), data);
 	}
 
     writeFiles() {
