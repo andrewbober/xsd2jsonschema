@@ -154,9 +154,9 @@ const builtInTypeConverter_NAME = Symbol();
 		var type = this.namespaces[namespace].types[typeName];
 		if (type === undefined) {
 			// Create the type, which will be filled out later as the XSD is processed, and add it to the namespace.
-			const parms = {};
-			parms.ref = baseJsonSchema.id + '#' + baseJsonSchema.getSubschemaStr() + '/' + typeName;
-			this.namespaces[namespace].types[typeName] = new JsonSchemaFile(parms);
+			this.namespaces[namespace].types[typeName] = new JsonSchemaFile({
+				ref : baseJsonSchema.id + '#' + baseJsonSchema.getSubschemaStr() + '/' + typeName
+			});
 			type = this.namespaces[namespace].types[typeName];
 
 			// Add the type type to the an anyOf in baseJsonSchema so it can be used directly for validation.
@@ -207,9 +207,9 @@ const builtInTypeConverter_NAME = Symbol();
 		}
 		var globalAttributesNamespace = this.namespaces.globalAttributes;
 		if (globalAttributesNamespace.types[name] === undefined) {
-			var parms = {};
-			parms.ref = baseJsonSchema.id + '#/' + Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME + '/' + name;
-			globalAttributesNamespace.types[name] = new JsonSchemaFile(parms);
+			globalAttributesNamespace.types[name] = new JsonSchemaFile({
+				ref : baseJsonSchema.id + '#/' + Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME + '/' + name
+			});
 		}
 		return globalAttributesNamespace.types[name];
 	}
