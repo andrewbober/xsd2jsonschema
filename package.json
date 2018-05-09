@@ -1,7 +1,7 @@
 {
   "name": "xsd2jsonschema",
   "description": "A tool to convert XML Schema to JSON Schema.",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "homepage": "http://www.xsd2jsonschema.org",
   "license": "Apache-2.0",
   "author": {
