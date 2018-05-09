@@ -23,4 +23,45 @@ const NamespaceManager = require('xsd2jsonschema').NamespaceManager;
 
 describe('Xsd2JsonSchema Test -', function() {
 
-})
+    it('should create a xsd2JsonSchema instance with default values', function() {
+        const xsd2JsonSchema = new Xsd2JsonSchema();
+        expect(xsd2JsonSchema.xsdBaseDir).toEqual('.');
+        expect(xsd2JsonSchema.outputDir).toEqual('.');
+        expect(xsd2JsonSchema.baseId).toEqual('http://www.xsd2jsonschema.org/defaultBaseId');
+        expect(xsd2JsonSchema.mask).toBeUndefined();
+        expect(xsd2JsonSchema.visitor).toEqual(new DefaultConversionVisitor());
+    });
+
+    it('should create a xsd2JsonSchema instance with the given parameters', function() {
+        const xsdBaseDir = 'testBaseDir';
+        const outputDir = 'testOutputDir';
+        const baseId = 'testBaseId';
+        const mask = 'testMask';
+        const xsd2JsonSchema = new Xsd2JsonSchema({
+            xsdBaseDir: xsdBaseDir,
+            outputDir: outputDir,
+            baseId: baseId,
+            mask: mask
+        });
+        expect(xsd2JsonSchema.xsdBaseDir).toEqual(xsdBaseDir);
+        expect(xsd2JsonSchema.outputDir).toEqual(outputDir);
+        expect(xsd2JsonSchema.baseId).toEqual(baseId);
+        expect(xsd2JsonSchema.mask).toEqual(mask);
+    });
+
+    it('should create a xsd2JsonSchema instance with the given converter', function() {
+        const baseConverter = new BaseConverter();
+        const xsd2jsonschema = new Xsd2JsonSchema({
+            converter : baseConverter
+        });
+        expect(xsd2jsonschema.visitor.processor).toBe(baseConverter);
+    });
+
+    it('should create a xsd2JsonSchema instance with the given visitor', function() {
+        const visitor = new DefaultConversionVisitor();
+        const xsd2jsonschema = new Xsd2JsonSchema({
+            visitor : visitor
+        });
+        expect(xsd2jsonschema.visitor).toBe(visitor);
+    });
+});
