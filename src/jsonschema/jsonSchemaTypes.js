@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  * Defines constants for the JSON Schema primitive types.  For more information please see
@@ -11,29 +11,29 @@ module.exports = {
 	/**
 	 * Indicates a JSON Schema array type.
 	 */
-	ARRAY: "array",
+	ARRAY: 'array',
 	/**
 	 * Indicates a JSON Schema boolean type.
 	 */
-	BOOLEAN: "boolean",
+	BOOLEAN: 'boolean',
 	/**
 	 * Indicates a JSON Schema integer type.
 	 */
-	INTEGER: "integer",
+	INTEGER: 'integer',
 	/**
 	 * Indicates a JSON Schema number type.
 	 */
-	NUMBER: "number",
+	NUMBER: 'number',
 	/**
 	 * Indicates a JSON Schema null type.
 	 */
-	NULL: "null",
+	NULL: 'null',
 	/**
 	 * Indicates a JSON Schema object type.
 	 */
-	OBJECT: "object",
+	OBJECT: 'object',
 	/**
 	 * Indicates a JSON Schema string type.
 	 */
-	STRING: "string"
+	STRING: 'string'
 }

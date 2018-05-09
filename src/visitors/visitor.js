@@ -1,16 +1,47 @@
+'use strict'
+
+const debug = require('debug')('xsd2jsonschema:Visitor');
+
+const Processor = require('./../processor');
+const XsdFile = require('./../xmlschema/xsdFileXmlDom');
+
+
+const processor_NAME = Symbol();
+
 /**
- * Abstract class representing a visitor.  Vistors are utilized by {@link DepthFirstTraversal} to process each node within an XML 
- * Schema file.  This base implmention simply calls the processor member's process() method to facilitate conversion
- * from XMLSchema to JSON Schema.
+ * Class representing a visitor.  Vistors are utilized by {@link DepthFirstTraversal} to process each node within an XML 
+ * Schema file.  This base implmention simply calls the processor member's {@link Processor#process|Processor.process()}
+ * method to facilitate conversion of the XML node being visited from XMLSchema to JSON Schema.
  * 
- * This class should be subclassesed and a concrete implementation of {@link Visitor#visit|Visitor.visit()} provided.
+ * @module Visitor
+ * @see {@link BaseConversionVisitor} 
+ * @see {@link XmlUsageVisitor} 
+ * @see {@link XmlUsageVisitorSum} 
+ * @see {@link Processor} 
  */
+
 class Visitor {
 	/**
-	 * Constructs an instance of Processor.
+	 * Constructs an instance of Visitor.
+	 * 
 	 * @constructor
+	 * @param {Processor} processor - {@link Processor} or subclass of {@link Processor}.
 	 */
-	Visitor() {
+	constructor(processor) {
+		if (processor != undefined) {
+			this.processor = processor;
+		} else {
+			this.processor = new Processor();
+		}
+	}
+
+	// Getters/Setters
+
+	get processor() {
+		return this[processor_NAME];
+	}
+	set processor(newProcessor) {
+		this[processor_NAME] = newProcessor;
 	}
 
 	/**
@@ -24,7 +55,15 @@ class Visitor {
 	 * @returns {Boolean} - False if an error occurs to cancel traversal of {@link XsdFile|xsd}.  Otherwise, the return value of {@link BaseConverter#process|BaseConverter.process()}
 	 */
 	visit(node, jsonSchema, xsd) {
-        throw new Error("Please implement this method.  Visitor.visit()");
+		try {
+			return this.processor.process(node, jsonSchema, xsd);
+		} catch (err) {
+			debug(err.stack);
+			this.processor.parsingState.dumpStates(xsd.baseFilename);
+			XsdFile.dumpNode(node);
+			//return false;
+			throw err;
+		}
 	}
 }
 

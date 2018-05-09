@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  * Defines constants for XML Schema Node Types.  Please see {@link https://www.w3.org/TR/DOM-Level-2-Core/core.html | Document Object Model Core}
@@ -18,5 +18,9 @@ module.exports = {
     DOCUMENT_NODE               : 9,
     DOCUMENT_TYPE_NODE          : 10,
     DOCUMENT_FRAGMENT_NODE      : 11,
-    NOTATION_NODE               : 12
+    NOTATION_NODE               : 12,
+    getTypeName(value) {
+        const obj=this;
+        return Object.keys(obj).find((key) => obj[key] === value);
+    }
 }

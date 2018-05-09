@@ -84,3 +84,12 @@ Temporary Items
 ### Typings ###
 ## Ignore downloaded typings
 typings
+
+### XML Schema Test Suite ###
+xmlschema-test-suite
+example/generated_jsonschema/*
+test/generated_jsonschema/*
+
+### build/test intermediates
+out
+coverage

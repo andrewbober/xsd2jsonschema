@@ -1,29 +1,46 @@
+'use strict';
+
+const debug = require('debug')('xsd2jsonschema:Processor');
+const XsdNodeTypes = require('./xmlschema/xsdNodeTypes');
+const XsdFile = require('./xmlschema/xsdFileXmlDom');
+const ParsingState = require('./parsingState');
+
+
+const parsingState_NAME = Symbol();
+const workingJsonSchema_NAME = Symbol();
+
 /**
- * Abstract class representing an XML processor. XML Processof XML Handler methods for converting XML Schema elements to JSON
+ * Class representing an XML processor. XML Processof XML Handler methods for converting XML Schema elements to JSON
  * Schema.  XML handler methods are methods used to convert an element of the corresponding name an equiviant JSON Schema 
  * representation.  An XML Handler method has a common footprint shown by the process() 
  * {@link Processor#process|Processor.process()} method and a name that corresponds to one of the XML Schema element names
  * found in {@link module:XsdElements}.  For example, the choice handler method:\
  * <pre><code>choice(node, jsonSchema, xsd)</code></pre>
- * 
- * This class should be subclassesed and a concrete implementation of {@link Processor#process|Processor.process()} provided to
- * do useful XML processing.
  */
-class Processor {
+
+ class Processor {
 	/**
 	 * Constructs an instance of Processor.
 	 * @constructor
 	 */
 	constructor() {
+		this.parsingState = new ParsingState();
 	}
 
-	/**
-	 * Creates a namespace for the given namespace.  This method is called once for ea ch XML Schema supplying the
-	 * targetNamespace attribute.
-	 * 
-     * @see {@link CustomTypes#createNamespace|CustomTypes.createNamespace()}
-	 */
-	initializeNamespace(namespace) {
+	// getters/setters
+
+	get parsingState() {
+		return this[parsingState_NAME];
+	}
+	set parsingState(newParsingState) {
+		this[parsingState_NAME] = newParsingState;
+	}
+
+	get workingJsonSchema() {
+		return this[workingJsonSchema_NAME];
+	}
+	set workingJsonSchema(newWorkingSchema) {
+		this[workingJsonSchema_NAME] = newWorkingSchema;
 	}
 
 	/**
@@ -39,7 +56,12 @@ class Processor {
      * @see {@link BaseConverter#process|BaseConverter.process()}
 	 */
 	process(node, jsonSchema, xsd) {
-		//throw new Error("Please implement this method.  Processor.process()");
+		if(debug.enabled === true && node.nodeType) { //} != XsdNodeTypes.TEXT_NODE) {
+			this.parsingState.dumpStates(xsd.uri);
+			debug('***********************************************************************************\n' + 
+			XsdNodeTypes.getTypeName(node.nodeType) + '\n' + node + '\nJSONSCHEMA=\n' + jsonSchema);
+		}
+		return true;
 	}
 
 	/**
@@ -49,7 +71,7 @@ class Processor {
      * @see {@link BaseConverter#processSpecialCases|BaseConverter.processSpecialCases()}
 	 */
 	processSpecialCases() {
-		//throw new Error("Please implement this method.  Processor.processSpecialCases()");
+		//throw new Error('Please implement this method.  Processor.processSpecialCases()');
 	}
 }
 

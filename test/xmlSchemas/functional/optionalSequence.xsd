@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://www.xsd2jsonschema.org/example" version="1.1.0" 
+	xmlns="http://www.xsd2jsonschema.org/example" 
+	xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:annotation>
+		<xs:documentation>Optional sequence test data.</xs:documentation>
+	</xs:annotation>
+	<xs:complexType name="optionalSequenceEverythingIsOptionalType">
+		<xs:sequence>
+			<xs:element name="Option6" type="xs:string" minOccurs="0"/>
+			<xs:element name="Option5" type="xs:string" minOccurs="0"/>
+			<xs:element name="Option4" type="xs:string" minOccurs="0"/>
+			<xs:element name="Option3" type="xs:string" minOccurs="0"/>
+			<xs:sequence minOccurs="0">
+				<xs:element name="Option2" type="xs:string" minOccurs="0"/>
+				<xs:element name="Option1" type="xs:string" minOccurs="0"/>
+			</xs:sequence>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="optionalSequenceAllOptionsRequiredType">
+		<xs:sequence>
+			<xs:element name="Option5" type="xs:string"/>
+			<xs:element name="Option4" type="xs:string"/>
+			<xs:sequence minOccurs="0">
+				<xs:element name="Option3" type="xs:string"/>
+				<xs:element name="Option2" type="xs:string"/>
+			</xs:sequence>
+			<xs:element name="Option1" type="xs:string"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="optionalSequenceOneRequiredOptionType">
+		<xs:sequence>
+			<xs:element name="Option2" type="xs:boolean"/>
+			<xs:sequence minOccurs="0">
+				<xs:element name="Option1" type="xs:string"/>
+			</xs:sequence>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="optionalSequenceOneRequiredOptionAndOneOptionalType">
+		<xs:sequence>
+			<xs:element name="Option3" type="xs:boolean"/>
+			<xs:sequence minOccurs="0">
+				<xs:element name="Option2" type="xs:string"/>
+				<xs:element name="Option1" type="xs:string" minOccurs="0"/>
+			</xs:sequence>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="optionalSequenceTwoRequiredOptionAndOneOptionalType">
+		<xs:sequence>
+			<xs:element name="Option4" type="xs:boolean"/>
+			<xs:sequence minOccurs="0">
+				<xs:element name="Option3" type="xs:string"/>
+				<xs:element name="Option2" type="xs:string"/>
+				<xs:element name="Option1" type="xs:string" minOccurs="0"/>
+			</xs:sequence>
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>

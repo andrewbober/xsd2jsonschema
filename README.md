@@ -7,12 +7,13 @@
 [![npm version](https://badge.fury.io/js/xsd2jsonschema.svg)](https://badge.fury.io/js/xsd2jsonschema)
 
 ## Features:
-1. A pure Javascript library for converting XML Schema to JSON Schema.  Xsd2JsonSchema was designed to be readily customizable.  The classes in Xsd2JsonSchema can be readily subclassed to change the conversion logic and create the conversion your project requires.
-2. Multiple namespaces - XML Schemas can utilize any number of namespaces; and Xsd2JsonSchema leverages JSON Schema's sub-schema idiom to implement this feature.
-3. \<Include\> tag - Many XML Schemas are broken up into multiple files to promote reuse.  Others are combined from disperate sources using different namespaces.
-4. \<Import\> tag - Future feature!
-5. Preserves the original file organization in the resulting schema conversion: If the author of an XML Schema organized it into three files, the resulting JSON Schema conversion should follow the same file organization and grouping of types.
-6. Supports XML attributes.
+1. A pure Javascript library for converting XML Schema to JSON Schema.  
+2. Xsd2JsonSchema was designed to be readily customizable.  The classes in Xsd2JsonSchema can be subclassed to adapt conversion logic and create the conversion your project requires.
+3. Multiple namespaces - XML Schemas can utilize any number of namespaces; and Xsd2JsonSchema leverages JSON Schema's sub-schema idiom to implement this feature.
+4. \<Include\> tag - Many XML Schemas are broken up into multiple files to promote reuse.  Others are combined from disperate sources using different namespaces.
+5. \<Import\> tag - Future feature!
+6. Preserves the original file organization in the resulting schema conversion: If the author of an XML Schema organized it into three files, the resulting JSON Schema conversion should follow the same file organization and grouping of types.
+7. Supports XML attributes.
 
 ## JSON Schema Support
 Currently JSON Schema draft v4 is supported.  (http://json-schema.org/draft-04/schema#)

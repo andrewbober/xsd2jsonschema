@@ -1,7 +1,7 @@
-"use strict";
+'use strict';
 
-var BaseConverter = require("./../baseConverter");
-var BaseConvertionVisitor = require("./baseConversionVisitor");
+var BaseConverter = require('./../baseConverter');
+var BaseConvertionVisitor = require('./baseConversionVisitor');
 
 /**
  * Class representing minimial use of the {@link BaseConversionVisitor#visit|BaseConversionVisitor} class to convert XML Schema
