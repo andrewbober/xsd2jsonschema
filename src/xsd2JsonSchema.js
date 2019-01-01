@@ -12,7 +12,6 @@ const BaseConverter = require("./baseConverter")
 const path = require("path");
 const fs = require("fs-extra");
 
-
 const xsdBaseDir_NAME = Symbol();
 const outputDir_NAME = Symbol();
 const baseId_NAME = Symbol();
