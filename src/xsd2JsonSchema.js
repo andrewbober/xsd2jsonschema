@@ -8,9 +8,9 @@ const JsonSchemaFile = require("./jsonschema/jsonSchemaFile");
 const DepthFirstTraversal = require("./depthFirstTraversal");
 const DefaultConversionVisitor = require("./visitors/defaultConversionVisitor");
 const BaseConversionVisitor = require("./visitors/baseConversionVisitor");
+const BaseConverter = require("./baseConverter")
 const path = require("path");
 const fs = require("fs-extra");
-
 
 const xsdBaseDir_NAME = Symbol();
 const outputDir_NAME = Symbol();
@@ -24,7 +24,8 @@ const defaultXsd2JsonSchemaOptions = {
     xsdBaseDir: '.',
     outputDir: '.',
     baseId: 'http://www.xsd2jsonschema.org/defaultBaseId',
-    mask: undefined
+    mask: undefined,
+    visitor : new BaseConversionVisitor(new BaseConverter())
 }
 
 /**
