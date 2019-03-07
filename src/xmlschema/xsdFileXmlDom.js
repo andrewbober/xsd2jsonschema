@@ -1,10 +1,9 @@
 'use strict';
 
-const debug = require('debug')('xsd2jsonSchema:XsdFile');
+const debug = require('debug')('xsd2jsonschema:XsdFile');
 
 const DOMParser = require('xmldom').DOMParser;
 const fs = require('fs');
-//const path = require('path');
 const xpathProcessor = require('xpath');
 const URI = require('urijs');
 const XsdAttributes = require('./xsdAttributes');
@@ -13,43 +12,39 @@ const XsdAttributeValues = require('./xsdAttributeValues');
 const XsdNodeTypes = require('./xsdNodeTypes');
 
 
-const baseFilename_NAME = Symbol();
 const uri_NAME = Symbol();
 const xmlDoc_NAME = Symbol();
 const includeUris_NAME = Symbol();
+const importUris_NAME = Symbol();
 const namespaces_NAME = Symbol();
+const imports_NAME = Symbol();
 
 /**
  * XML Schema file operations
+ * https://www.w3.org/2001/xml.xsd
  * TBD (xmldom)
  */
 class XsdFile {
     constructor(options) {
-        if (options == undefined) {
+        if (options == undefined || typeof options !== 'object') {
             throw new Error("Parameter 'options' is required")
         }
         if (options.uri == undefined) {
             throw new Error("'options.uri' is required");
         }
         this.uri = new URI(options.uri);
-        this.baseFilename = this.uri.filename();
         if (options.xml == undefined) {
             options.xml = fs.readFileSync(this.uri.toString()).toString();
         }
         this.xmlDoc = new DOMParser().parseFromString(options.xml, 'text/xml');
         this.namespaces = {};
+        this.imports = {};
         this.initilizeNamespaces();
         this.initializeIncludes();
+        this.initializeImports();
     }
 
 	// Getters/Setters
-
-    get baseFilename() {
-        return this[baseFilename_NAME];
-    }
-    set baseFilename(newBaseFilename) {
-        this[baseFilename_NAME] = newBaseFilename
-    }
 
     get uri() {
         return this[uri_NAME];
@@ -72,6 +67,13 @@ class XsdFile {
         this[includeUris_NAME] = newIncludeUris;
     }
 
+    get importUris() {
+        return this[importUris_NAME];
+    }
+    set importUris(newIncludeUris) {
+        this[importUris_NAME] = newIncludeUris;
+    }
+
     get namespaces() {
         return this[namespaces_NAME];
     }
@@ -79,7 +81,23 @@ class XsdFile {
         this[namespaces_NAME] = newNamespaces;
     }
 
+    get imports() {
+        return this[imports_NAME];
+    }
+    set imports(newImports) {
+        this[imports_NAME] = newImports;
+    }
+
     // read-only properties
+
+    get filename() {
+        return this.uri.filename();
+    }
+
+    get directory() {
+        return this.uri.directory();
+    }
+
     get schemaElement() {
         return this.xmlDoc.documentElement;
     }
@@ -115,12 +133,16 @@ class XsdFile {
         }, this);
     }
 
-    resolveNamespace(namespace) {
-        return this.namespaces[namespace];
+    resolveNamespace(namespaceName) {
+        return this.namespaces[namespaceName];
     }
 
     hasIncludes() {
         return this.includeUris.length > 0;
+    }
+
+    hasImports() {
+        return this.importUris.length > 0;
     }
 
     initializeIncludes() {
@@ -133,6 +155,18 @@ class XsdFile {
             }
         }
         return this.includeUris;
+    }
+
+    initializeImports() {
+        if (this.importUris === undefined) {
+            var importNodes = this.schemaElement.getElementsByTagName(this.schemaElement.prefix + ':import');
+            this.importUris = [];
+            for (let i = 0; i < importNodes.length; i++) {
+                const importNode = importNodes.item(i);
+                this.importUris.push(importNode.getAttribute(XsdAttributes.SCHEMA_LOCATION));
+            }
+        }
+        return this.importUris;
     }
 
     select(xpath, ns, namespace) {
@@ -161,7 +195,7 @@ class XsdFile {
 
     toString() {
         const str = 
-`baseFilename=${this.baseFilename}
+`baseFilename=${this.filename}
 uri=${this.uri}
 includeUris=${this.includeUris}
 namespaces=${JSON.stringify(this.namespaces, null, '\t')}
@@ -187,6 +221,19 @@ xmlDoc=${this.xmlDoc}`
      * 13) getAttributes
      */
     /* *********************************************************************************** */
+
+    static nodeQuickDumpStr(node) {
+        var retval= XsdFile.getNodeName(node) + ' [';
+        var attrs = node.attributes;
+        if (attrs != undefined) {
+            Object.keys(attrs).forEach(function (attr, index, array) {
+                if (attrs[attr].nodeType === XsdNodeTypes.ATTRIBUTE_NODE) {  // 2
+                    retval += attrs[attr].localName + '=' + attrs[attr].value + ' ';
+                }
+            }, this);
+        }
+        return retval.trim() + ']';
+    }
 
     static dumpAttrs(node) {
         var attrs = node.attributes;
@@ -216,11 +263,18 @@ xmlDoc=${this.xmlDoc}`
         }
     }
 
+    static getNameAttrValue(node) {
+        return this.getAttrValue(node, XsdAttributes.NAME);
+    }
+
     static getValueAttr(node) {
         return this.getAttrValue(node, XsdAttributes.VALUE);
     }
 
     static getNumberValueAttr(node) {
+        if (node == XsdAttributeValues.UNBOUNDED) {
+            return undefined;
+        }
         var retval = Number(this.getAttrValue(node, XsdAttributes.VALUE));
         if (isNaN(retval)) {
             throw new Error('Unable create a Number from [' + this.getAttrValue(node, XsdAttributes.VALUE) + ']');
@@ -237,16 +291,16 @@ xmlDoc=${this.xmlDoc}`
     }
 
     static dumpNode(node) {
-        debug('__________________________________________');
-        debug('XML-Type= ' + node.nodeType);
+        debug('XML-Type= ' + XsdNodeTypes.getTypeName(node.nodeType));
         debug('XML-TAG-Name= ' + node.nodeName);
         debug('XML-TAG-NameSpace= ' + node.namespaceURI + '=' + node.namespaceURI);
         var text = node.textContent;
-        if (text != undefined && text.length != 0) {
-            debug('XML-Text= [' + text + ']');
+        if (text != undefined) {
+            const trimmed=text.trim();
+            debug('XML-Text= [' + (trimmed.length > 0 ? trimmed : 'it was all whitespace') + ']');
         }
         this.dumpAttrs(node);
-        debug('_______________________');
+        debug('__________________________________________');
     }
 
     static getNodeName(node) {
@@ -270,6 +324,10 @@ xmlDoc=${this.xmlDoc}`
 
     static isReference(node) {
         return this.hasAttribute(node, XsdAttributes.REF);
+    }
+
+    static isEmpty(node) {
+        return this.getChildNodes(node).length == 0;
     }
 
     static countChildren(node, tagName) {
@@ -303,6 +361,18 @@ xmlDoc=${this.xmlDoc}`
 
     static getAttributes(node) {
         return node.attributes;
+    }
+
+    static getFirstParentWithNameAttribute(node) {
+        if (!this.hasAttribute(node.parentNode, XsdAttributes.NAME)) {
+            return this.getFirstParentWithNameAttribute(node.parentNode);
+        }
+        return node.parentNode
+    }
+
+    static getNameOfFirstParentWithNameAttribute(node) {
+        const firstParentWithName = this.getFirstParentWithNameAttribute(node);
+        return this.getAttrValue(firstParentWithName, XsdAttributes.NAME);
     }
 }
 

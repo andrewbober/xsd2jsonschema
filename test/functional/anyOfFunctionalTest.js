@@ -6,7 +6,7 @@ const BaseFunctionalTest = require("./baseFunctionalTest");
 class AnyOfChoiceFunctionalTest extends BaseFunctionalTest {
     constructor() {
         super({
-            xsdPath: "xmlSchemas/functional/",
+            xsdPath: "test/xmlschemas/functional/",
             xsdFilename: "anyOfChoice.xsd",
             testInstances: [
                 {

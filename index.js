@@ -7,6 +7,7 @@ const XsdFile = require('./src/xmlschema/xsdFileXmlDom');
 const JsonSchemaTypes = require('./src/jsonschema/jsonSchemaTypes');
 const JsonSchemaFormats = require('./src/jsonschema/jsonSchemaFormats');
 const JsonSchemaFile = require('./src/jsonschema/jsonSchemaFile');
+const JsonSchemaRef = require('./src/jsonschema/jsonSchemaRef');
 
 const DefaultConversionVisitor = require('./src/visitors/defaultConversionVisitor');
 const BaseConversionVisitor = require('./src/visitors/baseConversionVisitor');
@@ -22,7 +23,9 @@ const NamespaceManager = require('./src/namespaceManager');
 const PropertyDefinable = require('./src/propertyDefinable');
 const DepthFirstTraversal = require('./src/depthFirstTraversal');
 const Constants = require('./src/constants');
-const ParsingState = require('./src/parsingState');
+const ParsingState = require('./src/parsingState').ParsingState;
+const State = require('./src/parsingState').State;
+const ForwardReference = require('./src/forwardReference');
 
 
 // XML Schema modules
@@ -36,6 +39,7 @@ module.exports.XsdFile = XsdFile;
 module.exports.JsonSchemaTypes = JsonSchemaTypes;
 module.exports.JsonSchemaFormats = JsonSchemaFormats;
 module.exports.JsonSchemaFile = JsonSchemaFile;
+module.exports.JsonSchemaRef = JsonSchemaRef;
 
 // Visitors
 module.exports.DefaultConversionVisitor = DefaultConversionVisitor;
@@ -54,3 +58,5 @@ module.exports.PropertyDefinable = PropertyDefinable;
 module.exports.DepthFirstTraversal = DepthFirstTraversal;
 module.exports.Constants = Constants;
 module.exports.ParsingState = ParsingState;
+module.exports.State = State;
+module.exports.ForwardReference = ForwardReference;

@@ -3,9 +3,14 @@
 const debug = require('debug')('xsd2jsonschema:ParsingState');
 
 const XsdElements = require('./xmlschema/xsdElements');
+const XsdFile = require('./xmlschema/xsdFileXmlDom');
+const XsdNodeTypes = require('./xmlschema/xsdNodeTypes');
 
 
 const states_NAME = Symbol();
+const node_NAME = Symbol();
+const workingJsonSchema_NAME = Symbol();
+const attribute_NAME = Symbol();
 
 /**
  * This class is used to track the current depth of parsing an XML Schema file.  The current state is defined as the
@@ -29,6 +34,46 @@ const states_NAME = Symbol();
  * @module ParsingState
  * @see {@link BaseConverter#attribute|BaseConverter.attribute()}
  */
+
+class State {
+	constructor(values) {
+			if (values == undefined) {
+			throw new Error('values is required for a new State');
+		}
+		if (values.node == undefined) {
+			throw new Error('node is required for a new State');
+		}
+		this.node = values.node;
+		this.workingJsonSchema = values.workingJsonSchema;
+		this.attribute = values.attribute;
+	}
+
+	get node() {
+		return this[node_NAME];
+	}
+	set node(newNode) {
+		this[node_NAME] = newNode;
+	}
+	get workingJsonSchema() {
+		return this[workingJsonSchema_NAME];
+	}
+	set workingJsonSchema(newWorkingJsonSchema) {
+		this[workingJsonSchema_NAME] = newWorkingJsonSchema;
+	}
+	get attribute() {
+		return this[attribute_NAME];
+	}
+	set attribute(newAttribute) {
+		this[attribute_NAME] = newAttribute;
+	}
+	get name() {
+		return XsdFile.getNodeName(this.node);
+	}
+
+	get typeName() {
+		return XsdFile.getNameAttrValue(this.node);
+	}
+}
 
 class ParsingState {
 	constructor() {
@@ -134,13 +179,18 @@ class ParsingState {
 	 * Dumps the stack of states to the console for error reporting or debugging purposes.
 	 */
 	dumpStates(filename) {
-		debug('________________________________________________________________________________________');
-		debug('\nCurrent parsing state within [' + filename + ']:');
-		for (let i = 0; i < this.states.length; i++) {
-			var schema = this.states[i].workingJsonSchema == undefined ? '': ' [' + this.states[i].workingJsonSchema + ']'
-			debug(i + ') ' + this.states[i].name + schema);
+		if (debug.enabled === true) {
+			debug('Current parsing state within [' + filename + ']:');
+			const maxLen = 0
+			for (let i = 0; i < this.states.length; i++) {
+				var schema = this.states[i].workingJsonSchema == undefined ? '': ' ' + this.states[i].workingJsonSchema
+				schema = schema.length > maxLen ? schema.substring(0, maxLen) + '\n...TRUNCATED to ' + maxLen + ' characters' : schema
+				debug(i + ') ' + XsdFile.nodeQuickDumpStr(this.states[i].node) + ' ' + schema);
+			}
+			debug('________________________________________________________________________________________');
 		}
 	}
 }
 
-module.exports = ParsingState;
+module.exports.ParsingState = ParsingState;
+module.exports.State = State;

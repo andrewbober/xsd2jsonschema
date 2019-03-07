@@ -3,8 +3,8 @@
 const debug = require('debug')('xsd2jsonschema:BaseConversionVisitor');
 
 const Visitor = require('./visitor');
-const XsdFile = require('./../xmlschema/xsdFileXmlDom');
 const XsdElements = require('./../xmlschema/xsdElements');
+const State = require('./../parsingState').State;
 
 /**
  * Class representing a visitor.  Vistors are utilized by {@link DepthFirstTraversal} to process each node within an XML 
@@ -31,10 +31,9 @@ const XsdElements = require('./../xmlschema/xsdElements');
 	 * @param {XsdFile} xsd - The XML schema file currently being converted.
 	 */
 	enterState(node, jsonSchema, xsd) {
-		var state = {
-			name: XsdFile.getNodeName(node),
-			workingJsonSchema: undefined
-		}
+		var state = new State({
+			node: node
+		});
 		this.processor.parsingState.enterState(state);
 	}
 
@@ -71,7 +70,8 @@ const XsdElements = require('./../xmlschema/xsdElements');
 	/**
 	 * This method is called before conversion of {@link XsdFile|xsd} is started.  Subclasss can override this method to implement class 
 	 * specific pre-processing behavior.  The default implementation initializes a namespace for the XML Schema file's targetNamespace
-	 * and returns true to allow conversion to start.
+	 * and returns true to allow conversion to start.  And initializes the processor so it can identify the need to resolve forward
+	 * references with another pass over the xml schema.
 	 * 
 	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema file that will represent converted XML Schema file {@link XsdFile|xsd}.
 	 * @param {XsdFile} xsd - The XML schema file about to be processed.
@@ -84,6 +84,9 @@ const XsdElements = require('./../xmlschema/xsdElements');
 				console.log('Converting ' + xsd.getBaseFilename());
 				console.log('****************************************************************************************************\n');
 		*/
+		// Initialize anotherPassNeeded so it can be used to identify the need to resolve forward
+		// references with another pass over the xml schema.
+		this.processor.anotherPassNeeded = false;
 		return true;
 	}
 
@@ -93,9 +96,12 @@ const XsdElements = require('./../xmlschema/xsdElements');
 	 * 
 	 * @param {JsonSchemaFile} jsonSchema - The resulting JSON Schema file from the conversion.
 	 * @param {XsdFile} xsd - The XML Schema file {@link XsdFile|xsd} that was just converted.
+	 * 
+	 * @returns {Boolean} - Returns true if the xml schema file needs to be reprocessed due to forward references or otherwise.
 	 */
 	onEnd(jsonSchema, xsd) {
 		this.processor.processSpecialCases();
+		return this.processor.anotherPassNeeded
 	}
 
 }

@@ -15,7 +15,7 @@ const specialCases_NAME = Symbol();
  * Class representing a collection of logic to identify special cases in XML Schema that cannot be immediately
  * converted to JSON Schmea without inspecting the contents of the tag or the tag's siblings.  Examples:
  *
- * 1. A <choice> where the goal is really anyOf.  For example:
+ * 1. A choice where the goal is really anyOf.  For example:
  * 			<xs:choice>
  *				<xs:sequence>
  *					<xs:element name='DemandingPartyInfo' type='DemandingPartyInfoType'/>
@@ -28,8 +28,8 @@ const specialCases_NAME = Symbol();
  *				</xs:sequence>
  *				<xs:element name='ArbitrationDecisionInfo' type='DemandingPartyInfoType'/>
  *			</xs:choice>
- *
- * 2. Sibling <choice>.  For example:
+ * 
+ * 2. Sibling choice tag.  For example:
  *		<xs:complexType name='SiblingChoince'>
  *			<xs:sequence>
  *				<xs:choice>
@@ -44,7 +44,11 @@ const specialCases_NAME = Symbol();
  *			</xs:sequence>
  *		</xs:complexType>
  *
- * 3. Need a solution for optional <sequence>, <choice>, etc.  Currently just using an empty schema {} as an option.
+ * 3. Optional sequence and/or choice tags.  For example:
+ *			<xs:choice minOccurs="0">
+ *				<xs:element name="Option2" type="xs:string" minOccurs="0"/>
+ *				<xs:element name="Option1" type="xs:string" minOccurs="0"/>
+ *			</xs:choice>
  *
  */
 
@@ -211,7 +215,7 @@ class BaseSpecialCaseIdentifier {
         anyOf.required.length = 0;
         Object.keys(anyOf.properties).forEach(function(prop, index, array) {
             debug(prop + '=' + anyOf.properties[prop]);
-            const newAnyOf = new JsonSchemaFile();
+            const newAnyOf = jsonSchema.newJsonSchemaFile();
             newAnyOf.setProperty(prop, anyOf.properties[prop]);
             newAnyOf.addRequired(prop);
             jsonSchema.anyOf.push(newAnyOf);
@@ -237,15 +241,14 @@ class BaseSpecialCaseIdentifier {
     // The "Everything else is valid" SOLUTION
     // 1) Push an empty schema onto anyOf.  Always passes validation, as if the empty schema {}
     fixOptionalChoiceTruthy(jsonSchema, node) {
-/*
-        var optionalChoiceSchema = new JsonSchemaFile();
-        this.workingJsonSchema.anyOf.push(optionalChoiceSchema);
+        debug('Fixing optional ' + XsdFile.nodeQuickDumpStr(node) + ' using a Truthy schema.');
+        debug('Optional choice: ' + jsonSchema.toString());
+
         // Add an the optional part (empty schema)
-        var emptySchema = new JsonSchemaFile();
-        this.workingJsonSchema.anyOf.push(emptySchema);
-        parsingState.pushSchema(this.workingJsonSchema)
-        this.workingJsonSchema = optionalChoiceSchema;
- */
+    	var emptySchema = jsonSchema.newJsonSchemaFile();
+		emptySchema.description = "This truthy schema is what makes an optional <choice> optional."
+		jsonSchema.parent.anyOf.push(emptySchema);
+		debug('Parent: ' + jsonSchema.parent.toString());
     }
 
     // The "Not" SOLUTION - elimiated because allows ANYTHING not listed in the dependent properties.
@@ -253,42 +256,66 @@ class BaseSpecialCaseIdentifier {
     // 2) create new 'optional' schema and also push it onto anyOf
     // 3) populate optional schema allOf with a 'not' for each member of the original oneOf
     fixOptionalChoiceNot(jsonSchema, node) {
-        const originalOneOf = new JsonSchemaFile();
+        debug('Fixing optional choice ' + XsdFile.nodeQuickDumpStr(node) + ' using the Not solution.');
+        debug('Optional choice: ' + jsonSchema.toString());
+        const originalOneOf = jsonSchema.newJsonSchemaFile();
         originalOneOf.oneOf = jsonSchema.oneOf.slice(0);
+        originalOneOf.description = 'originalOneOf';
         jsonSchema.anyOf.push(originalOneOf);
-        const theOptionalPart = new JsonSchemaFile();
+        const theOptionalPart = jsonSchema.newJsonSchemaFile();
+        theOptionalPart.description = 'theOptionalPart';
         jsonSchema.oneOf.forEach(function(option, index, array) {
-            const notSchema = new JsonSchemaFile();
+//            const theOptionalPart = jsonSchema.newJsonSchemaFile();
+            const notSchema = theOptionalPart.newJsonSchemaFile();
             notSchema.not = option;
+            debug('Pushing not schema');
             theOptionalPart.allOf.push(notSchema);
         });
         jsonSchema.anyOf.push(theOptionalPart);
         jsonSchema.oneOf = [];
+        jsonSchema.description = 'This is the NOT solution';
+        debug('Parent: ' + jsonSchema.parent.toString());
     }
 
-    // The "Property Depenency" SOLUTION
+    // The "Property Dependency" SOLUTION
     // 1) push oneOf onto anyOf and create new empty oneOf array
     // 2) create new 'optional' schema and also push it onto anyOf
     // 3) populate optional schema allOf with a 'not' for each member of the original oneOf
     fixOptionalChoicePropertyDependency(jsonSchema, node) {
-        const originalOneOf = new JsonSchemaFile();
+        debug('Fixing optional choice ' + XsdFile.nodeQuickDumpStr(node) + ' using the Property Dependency solution.');
+        debug('Optional choice: ' + jsonSchema.toString());
+        const originalOneOf = jsonSchema.newJsonSchemaFile();
         originalOneOf.oneOf = Array.from(jsonSchema.oneOf);
         jsonSchema.anyOf.push(originalOneOf);
-        const theOptionalPart = new JsonSchemaFile();
+        const theOptionalPart = jsonSchema.newJsonSchemaFile();
         jsonSchema.oneOf.forEach(function(option, index, array) {
-            const dependencySchema = new JsonSchemaFile();
+            const dependencySchema = theOptionalPart.newJsonSchemaFile();
             dependencySchema.not = option;
-            theOptionalPart.addPropertyDependency[option.name] = option;
+            theOptionalPart.addPropertyDependency(option.name, option); // This needs to be checked/finished
             //theOptionalPart.allOf.push(notSchema);
         });
         jsonSchema.anyOf.push(theOptionalPart);
         jsonSchema.oneOf = [];
+        debug('Parent: ' + jsonSchema.parent.toString());
     }
 
     fixOptionalChoice(jsonSchema, node) {
         // switch (options)
-        //this.fixOptionalChoiceTruthy(jsonSchema, node)
+        this.fixOptionalChoiceTruthy(jsonSchema, node)
+        //this.fixOptionalChoiceNot(jsonSchema, node)
         return;
+    }
+
+    fixOptionalSequence(jsonSchema, node) {
+        debug("NOT IMPLEMENTED")
+        return;
+    }
+
+    processSpecialCases() {
+        while (this.specialCases.length > 0) {
+            const sc = this.specialCases.pop()
+            this[sc.specialCase](sc.jsonSchema, sc.node);
+        }
     }
 }
 

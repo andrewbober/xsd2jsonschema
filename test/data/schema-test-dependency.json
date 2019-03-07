@@ -1,0 +1,35 @@
+{
+    "$id": "http://www.xsd2jsonschema.org",
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "type": "object",
+    "properties": {
+        "Age": {
+            "type": "number"
+        },
+        "FirstName": {
+            "type": "string"
+        },
+        "LastName": {
+            "type": "string"
+        }
+},
+    "required": [
+        "Age"
+    ],
+    "dependencies": {
+        "FirstName": {
+            "not": {
+                "required": [
+                    "LastName"
+                ]
+            }
+        },
+        "LastName": {
+            "not": {
+                "required": [
+                    "FirstName"
+                ]
+            }
+        }
+    }
+}

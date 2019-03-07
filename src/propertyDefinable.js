@@ -15,14 +15,16 @@
 	 * {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty | Object.defineProperty()}
 	 */
 	constructor(options) {
-		if (options != undefined) {
-			if(options.propertyNames != undefined) {
-				this.definePropertiesFromArray(options.propertyNames, options.enumerable);
-			} else {
-				this.definePropertiesFromObject(options)
-			}
+		if (options == undefined) {
+			return;
 		}
-	}
+		if(options.propertyNames != undefined) {
+			this.definePropertiesFromArray(options.propertyNames, options.enumerable);
+		}
+		if(options.properties != undefined) {
+			this.definePropertiesFromObject(options.properties)
+		}
+}
 
 	/**
 	 * Creates a set of accessor properties with the provided names and enumerable property.

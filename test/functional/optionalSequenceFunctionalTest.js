@@ -6,7 +6,7 @@ const BaseFunctionalTest = require('./baseFunctionalTest');
 class OptionalSequenceFunctionalTest extends BaseFunctionalTest {
 	constructor() {
 		super({
-			xsdPath: 'xmlSchemas/functional/',
+			xsdPath: 'test/xmlschemas/functional/',
 			xsdFilename: 'optionalSequence.xsd',
 			testInstances: [
 				{

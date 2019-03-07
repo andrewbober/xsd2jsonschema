@@ -3,6 +3,7 @@
 const XsdFile = require('xsd2jsonschema').XsdFile;
 const JsonSchemaFile = require('xsd2jsonschema').JsonSchemaFile;
 const BaseConverter = require('xsd2jsonschema').BaseConverter;
+const Constants = require('xsd2jsonschema').Constants;
 
 describe('BaseConverter Test -', function () {
     var bc;
@@ -26,12 +27,13 @@ describe('BaseConverter Test -', function () {
     })
 
     it('should confirm a newly allocated BaseConverter was properly initiialized', function () {
-		const blank_namespaces = {
-            globalAttributes: { types: {} }
-        };
+        const blankNamespaces = {};
+        blankNamespaces[Constants.XML_SCHEMA_NAMESPACE] =  { types: {} }
+        blankNamespaces[Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME] =  { types: {} }
+
         expect(bc.builtInTypeConverter).not.toBeUndefined();
         expect(bc.specialCaseIdentifier).not.toBeUndefined();
-        expect(bc.namespaceManager.namespaces).toEqual(blank_namespaces);
+        expect(bc.namespaceManager.namespaces).toEqual(blankNamespaces);
     });
 
 });

@@ -72,7 +72,7 @@ const Options_NAME = Symbol();
 		/ **
 		 * XML handler method to convert a {@link http://www.w3.org/TR/xmlschema11-2/#boolean |XML Schema Boolean} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema Boolean}.
 		 * 
-		 * @param {Node} node - The current element in xsd being converted.
+		 * @param {Node} node - The current element in xsd beingjsonSchema.minimum converted.
 		 * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current type from the XML schema file {@link XsdFile|xsd}.
 		 * @param {XsdFile} xsd - The XML schema file currently being converted.
 		 * 
@@ -94,10 +94,10 @@ const Options_NAME = Symbol();
 	 * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
 	 */
 	boolean(node, jsonSchema, xsd) {
-		var booleanSchema = new JsonSchemaFile();
+		var booleanSchema = jsonSchema.newJsonSchemaFile();
 		booleanSchema.type = JSON_SCHEMA_TYPES.BOOLEAN;
 
-		var integerSchema = new JsonSchemaFile();
+		var integerSchema = jsonSchema.newJsonSchemaFile();
 		integerSchema.type = JSON_SCHEMA_TYPES.INTEGER;
 		integerSchema.maximum = 1;
 		integerSchema.minimum = 0;
@@ -170,10 +170,10 @@ const Options_NAME = Symbol();
 	 */
 	duration(node, jsonSchema, xsd) {
 		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		jsonSchema.pattern = '^[-]?P(?!$)(?:\\d+Y)?(?:\\d+M)?(?:\\d+D)?(?:T(?!$)(?:\\d+H)?(?:\\d+M)?(?:\\d+(?:\\.\\d+)?S)?)?$';
+		//jsonSchema.pattern = '^[-]?P(?!$)(?:\\d+Y)?(?:\\d+M)?(?:\\d+D)?(?:T(?!$)(?:\\d+H)?(?:\\d+M)?(?:\\d+(?:\\.\\d+)?S)?)?$';
 		// jsonSchema.description = 'Matches the XSD schema duration built in type as defined by http://www.w3.org/TR/xmlschema-2/#duration.  Source: http://www.regexlib.com/REDetails.aspx?regexp_id=1219';
 
-		//jsonSchema.pattern = '-?P((( [0-9]+Y([0-9]+M)?([0-9]+D)?|([0-9]+M)([0-9]+D)?|([0-9]+D))(T(([0-9]+H)([0-9]+M)?([0-9]+(\\.[0-9]+)?S)?|([0-9]+M)([0-9]+(\\.[0-9]+)?S)?|([0-9]+(\\.[0-9]+)?S)))?)|(T(([0-9]+H)([0-9]+M)?([0-9]+(\\.[0-9]+)?S)?|([0-9]+M)([0-9]+(\\.[0-9]+)?S)?|([0-9]+(\\.[0-9]+)?S))))';
+		jsonSchema.pattern = '-?P((( [0-9]+Y([0-9]+M)?([0-9]+D)?|([0-9]+M)([0-9]+D)?|([0-9]+D))(T(([0-9]+H)([0-9]+M)?([0-9]+(\\.[0-9]+)?S)?|([0-9]+M)([0-9]+(\\.[0-9]+)?S)?|([0-9]+(\\.[0-9]+)?S)))?)|(T(([0-9]+H)([0-9]+M)?([0-9]+(\\.[0-9]+)?S)?|([0-9]+M)([0-9]+(\\.[0-9]+)?S)?|([0-9]+(\\.[0-9]+)?S))))';
 		// jsonSchema.description = 'Source:  http://www.w3.org/TR/xmlschema-2/#duration';
 		return true;
 	}
@@ -379,7 +379,7 @@ const Options_NAME = Symbol();
 
 	// 3.4.5 NMTOKENS: http://www.w3.org/TR/xmlschema11-2/#NMTOKENS
 	NMTOKENS(node, jsonSchema, xsd) {
-		var items = new JsonSchemaFile();
+		var items = jsonSchema.newJsonSchemaFile();
 
 		items.type = JSON_SCHEMA_TYPES.STRING
 		//items.description = 'TODO: This should have a regex applied to validate the NMTOKEN format.';
@@ -418,7 +418,7 @@ const Options_NAME = Symbol();
 
 	// 3.4.10 IDREFS: http://www.w3.org/TR/xmlschema11-2/#IDREFS
 	IDREFS(node, jsonSchema, xsd) {
-		var items = new JsonSchemaFile();
+		var items = jsonSchema.newJsonSchemaFile();
 
 		items.type = JSON_SCHEMA_TYPES.STRING
 		//items.description = 'TODO: This should have a regex applied to validate the IDREFS format.';
@@ -436,7 +436,7 @@ const Options_NAME = Symbol();
 
 	// 3.4.12 ENTITIES: http://www.w3.org/TR/xmlschema11-2/#ENTITIES
 	ENTITIES(node, jsonSchema, xsd) {
-		var items = new JsonSchemaFile();
+		var items = jsonSchema.newJsonSchemaFile();
 
 		items.type = JSON_SCHEMA_TYPES.STRING
 		//items.description = 'TODO: This should have a regex applied to validate the ENTITIES format.';
@@ -469,7 +469,7 @@ const Options_NAME = Symbol();
 	// 3.4.16 long: http://www.w3.org/TR/xmlschema11-2/#long
 	long(node, jsonSchema, xsd) {
 		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.minium = -9223372036854775808;
+		jsonSchema.minimum = -9223372036854775808;
 		jsonSchema.maximum = 9223372036854775807;
 		return true;
 	}
@@ -477,7 +477,7 @@ const Options_NAME = Symbol();
 	// 3.4.17 int: http://www.w3.org/TR/xmlschema11-2/#int
 	int(node, jsonSchema, xsd) {
 		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.minium = -2147483648;
+		jsonSchema.minimum = -2147483648;
 		jsonSchema.maximum = 2147483647;
 		return true;
 	}
@@ -485,7 +485,7 @@ const Options_NAME = Symbol();
 	// 3.4.18 short: http://www.w3.org/TR/xmlschema11-2/#short
 	short(node, jsonSchema, xsd) {
 		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.minium = -32768;
+		jsonSchema.minimum = -32768;
 		jsonSchema.maximum = 32767;
 		return true;
 	}
@@ -493,7 +493,7 @@ const Options_NAME = Symbol();
 	// 3.4.19 byte: http://www.w3.org/TR/xmlschema11-2/#byte
 	byte(node, jsonSchema, xsd) {
 		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.minium = -128;
+		jsonSchema.minimum = -128;
 		jsonSchema.maximum = 127;
 		return true;
 	}
@@ -501,14 +501,14 @@ const Options_NAME = Symbol();
 	// 3.4.20 nonNegativeInteger: http://www.w3.org/TR/xmlschema11-2/#nonNegativeInteger
 	nonNegativeInteger(node, jsonSchema, xsd) {
 		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.minium = 0;
+		jsonSchema.minimum = 0;
 		return true;
 	}
 
 	// 3.4.21 unsignedLong: http://www.w3.org/TR/xmlschema11-2/#unsignedLong
 	unsignedLong(node, jsonSchema, xsd) {
 		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.minium = 0;
+		jsonSchema.minimum = 0;
 		jsonSchema.maximum = 18446744073709551615;
 		return true;
 	}
@@ -516,7 +516,7 @@ const Options_NAME = Symbol();
 	// 3.4.22 unsignedInt: http://www.w3.org/TR/xmlschema11-2/#unsignedInt
 	unsignedInt(node, jsonSchema, xsd) {
 		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.minium = 0;
+		jsonSchema.minimum = 0;
 		jsonSchema.maximum = 4294967295;
 		return true;
 	}
@@ -524,7 +524,7 @@ const Options_NAME = Symbol();
 	// 3.4.23 unsignedShort: http://www.w3.org/TR/xmlschema11-2/#unsignedShort
 	unsignedShort(node, jsonSchema, xsd) {
 		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.minium = 0;
+		jsonSchema.minimum = 0;
 		jsonSchema.maximum = 65535;
 		return true;
 	}
@@ -532,7 +532,7 @@ const Options_NAME = Symbol();
 	// 3.4.24 unsignedByte: http://www.w3.org/TR/xmlschema11-2/#unsignedByte
 	unsignedByte(node, jsonSchema, xsd) {
 		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.minium = 0;
+		jsonSchema.minimum = 0;
 		jsonSchema.maximum = 255;
 		return true;
 	}
@@ -540,7 +540,7 @@ const Options_NAME = Symbol();
 	// 3.4.25 positiveInteger: http://www.w3.org/TR/xmlschema11-2/#positiveInteger
 	positiveInteger(node, jsonSchema, xsd) {
 		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.minium = 0;
+		jsonSchema.minimum = 0;
 		jsonSchema.maximum = 4294967295;
 		jsonSchema.exclusiveMinimum = true;
 		return true;

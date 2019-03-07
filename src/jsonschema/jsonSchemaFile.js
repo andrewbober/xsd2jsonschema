@@ -5,14 +5,21 @@ const debug = require('debug')('xsd2jsonschema:JsonSchemaFileV4');
 const path = require('path');
 const URI = require('urijs');
 const clone = require('clone');
+// const equal = require('fast-deep-equal');
+const deepEql = require('deep-eql');
 const utils = require('../utils');
 const Constants = require('../constants');
 const PropertyDefinable = require('../propertyDefinable');
 const jsonSchemaTypes = require('./jsonSchemaTypes');
 const XsdAttributeValues = require('../xmlschema/xsdAttributeValues');
 
+//const parent_NAME = Symbol();
+//const targetSchema_NAME = Symbol();
 
 const properties = [
+	'namespaceMode',
+//	'baseJsonSchemaForNamespace',
+	'parent',
 	'filename',
 	'targetSchema',
 	'targetNamespace',
@@ -71,16 +78,25 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	 * @param {string} options.title - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.ref - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.$ref - The directory from which xml schema's should be loaded.  The default value is the current directory.
+	 * @param {JsonSchmeaFileV4} options.parent - A reference to the parent JSON Schema.
+	 * @param {string} options.namespaceMode - The method of handling namespaces. Must be one of: undefined, SUBSCHEMA, or FILENAME
 	 */
 	constructor(options) {
+		var superProperties;
+		if (options != undefined && options.properties !== undefined) {
+			superProperties = [ ... new Set(properties.concat(options.properties))];
+		} else {
+			superProperties = properties;
+		}
 		super({
-			propertyNames: properties
+			propertyNames: superProperties
 		});
 
+		this.parent = undefined;
 		this.filename = undefined;
 		this.targetSchema = this;
 		this.targetNamespace = undefined;
-		this.ref = undefined; // used to hold a JSON Pointer reference to this named type (Not used for anonymous types)
+		this.ref = undefined; // used to hold a JSON Pointer reference to this named type (Not used for anonymous types)  (CHANGE THIS TO URI AND IMPLEMENT LOCAL REFERENCES) 
 		this.$ref = undefined; // used when this schema is an instance of a reference
 
 		// JSON Schema draft v4 (core definitions and terminology referenced)
@@ -143,22 +159,13 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 		this.oneOf = []; // 5.5.5.1 Elements of the array MUST be objects. Each object MUST be a valid JSON Schema.
 		this.not = {}; // 5.5.6.1 This object MUST be a valid JSON Schema.
 
-		this.definitions = {}; // 5.5.7.1 MUST be an object. Each member value of this object MUST be a valid JSON Schema.
+		this.definitions = undefined; // 5.5.7.1 MUST be an object. Each member value of this object MUST be a valid JSON Schema.
 
 		if (options !== undefined) {
-			if (options.baseFilename !== undefined) {
-				const baseFilename = path.parse(options.baseFilename).name;
-				this.filename = baseFilename + '.json';
-				this.id = new URI(options.baseId).filename(this.filename).toString();
-				this.targetNamespace = options.targetNamespace;
-				this.$schema = 'http://json-schema.org/draft-04/schema#';
-				this.title = `This JSON Schema file was generated from ${options.baseFilename} on ${new Date()}.  For more information please see http://www.xsd2jsonschema.org`;
-				this.type = jsonSchemaTypes.OBJECT;
-			}
 			if (options.title !== undefined) {
 				this.title = options.title;
 			}
-			// This needs to be documented
+			// This needs to be documented  (CHANGE THIS TO URI AND IMPLEMENT LOCAL REFERENCES)
 			if (options.ref !== undefined) {
 				this.ref = options.ref;
 			}
@@ -166,8 +173,76 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 			if (options.$ref !== undefined) {
 				this.$ref = options.$ref;
 			}
+			// If available set the reference to the parent schema.
+			if (options.parent !== undefined) {
+				this.parent = options.parent;
+			}
+/*
+			// If available set the baseJsonSchemaForNamespace.  This is used when creating $ref values to identify the 
+			// schema representing the file containing this types definition.
+			if (options.baseJsonSchemaForNamespace !== undefined) {
+				this.baseJsonSchemaForNamespace = options.baseJsonSchemaForNamespace;
+			}
+*/
+			if (options.baseFilename !== undefined) {
+				this.targetNamespace = options.targetNamespace;
+				const filePath = path.parse(options.baseFilename);
+				const baseFilename = filePath.name;
+				// If available set the namespaceMode.  This is used when creating $ref values to suport subschemas.
+				if (options.namespaceMode !== undefined) {
+					this.namespaceMode = options.namespaceMode;
+				}
+				if (this.namespaceMode === Constants.FILENAME) {
+					this.filename = path.join(filePath.dir, baseFilename + utils.getSafeNamespace(this.targetNamespace).replace(/\//g, '.') + '.json');
+				} else {
+					this.filename = path.join(filePath.dir, baseFilename + '.json');
+				}
+				this.id = new URI(options.baseId === undefined ? '' : options.baseId).filename(baseFilename + '.json').toString();
+				this.$schema = 'http://json-schema.org/draft-04/schema#';
+				if (this.title === undefined) {
+					this.title = `This JSON Schema file was generated from ${options.baseFilename} on ${new Date()}.  For more information please see http://www.xsd2jsonschema.org`;
+				}
+				this.type = jsonSchemaTypes.OBJECT;
+				this.initializeSubschemas();
+			}
 		}
-		this.initializeSubschemas();
+	}
+/*
+    get parent() {
+        return this[parent_NAME];
+    }
+    set parent(newParent) {
+        this[parent_NAME] = newParent;
+    }
+
+	get targetSchema() {
+        this[targetSchema_NAME];
+    }
+    set targetSchema(newTargetSchema) {
+        this[targetSchema_NAME] = newTargetSchema;
+    }
+*/
+	/**
+	 * Creates a child JsonSchemaFile using the given options. The parent is set automatically.
+	 * 
+	 * @param {Object} options - And object used to override default options.
+	 * @param {string} options.baseFilename - The directory from which xml schema's should be loaded.  The default value is the current directory.
+	 * @param {string} options.id - The directory from which xml schema's should be loaded.  The default value is the current directory.
+	 * @param {string} options.targetNamespace - The directory from which xml schema's should be loaded.  The default value is the current directory.
+	 * @param {string} options.title - The directory from which xml schema's should be loaded.  The default value is the current directory.
+	 * @param {string} options.ref - The directory from which xml schema's should be loaded.  The default value is the current directory.
+	 * @param {string} options.$ref - The directory from which xml schema's should be loaded.  The default value is the current directory.
+	 * @param (JsonSchmeaFileV4) options.parent - this parameter is set to the current JsonSchemaFile.
+	 * 
+	 * @returns {JsonSchemaFileV4} - Returns a new JsonSchemaFile that has the current JsonSchemaFile.
+	 */
+	newJsonSchemaFile(options) {
+		if (options != undefined) {
+			options.parent = this; 
+			return new JsonSchemaFileV4(options);
+		} else {
+			return new JsonSchemaFileV4({ parent: this });
+		}
 	}
 
 	/**
@@ -177,12 +252,56 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	 * @param {Array} namespaces - An array of String values representing the components of a URL without the scheme.
 	 * @returns {void}
 	 */
-	createNestedSubschema(_subschemas, namespaces) {
+	createNestedSubschemaOld(_subschemas, namespaces) {
 		var subschemaName = namespaces.shift();
 		_subschemas[subschemaName] = new JsonSchemaFileV4();
 		this.targetSchema = _subschemas[subschemaName]; // Track the innermost schema as the target
 		if (namespaces.length > 0) {
 			this.createNestedSubschema(_subschemas[subschemaName].subSchemas, namespaces);
+		}
+	}
+
+	/**
+	 * Creates all subschemas identified by an array of subschema names and initializes the targetSchema to the inner-most subschema.
+	 * 
+	 * @param {JsonSchemaFileV4} schema - a JsonSchemaFile that will have nested subschemas.
+	 * @param {Array} namespaces - An array of String values representing the components of a URL without the scheme.
+	 * @returns {void}
+	 */
+	createNestedSubschema(schema, namespaces) {
+		const subschemaName = namespaces.shift();
+		const newSubSchema = schema.newJsonSchemaFile();
+		schema.subSchemas[subschemaName] = newSubSchema;
+		this.targetSchema = newSubSchema; // Track the innermost schema as the target
+		if (namespaces.length > 0) {
+			this.createNestedSubschema(newSubSchema, namespaces);
+		}
+	}
+
+	/**
+	 * Initializes the subschemas for this JsonSchemaFile from the previously initialized targetNamespace member.  The targetNamespace is
+	 * generally represented by a URL.  This URL is broken down into its constituent parts and each part becomes a subschema.
+	 * 
+	 * @returns {void}
+	 */
+	initializeSubschemasOrg() {
+		if (this.targetNamespace === undefined) {
+			return;
+		}
+		if (this.namespaceMode !== Constants.SUBSCHEMA) {
+			//this.createNestedSubschema(this, [Constants.DEFINITIONS]);
+			
+			//this.definitions = this.newJsonSchemaFile();
+			//this.targetSchema = this.definitions;
+			return;
+		}
+		var subschemaStr = utils.getSafeNamespace(this.targetNamespace);
+		if (!this.isEmpty(subschemaStr)) {
+			var namespaces = subschemaStr.split('/');
+			if (namespaces.length > 1) {
+				namespaces.shift();
+			}
+			this.createNestedSubschema(this, namespaces);
 		}
 	}
 
@@ -193,16 +312,20 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	 * @returns {void}
 	 */
 	initializeSubschemas() {
-		if (this.targetNamespace === undefined) {
-			return;
-		}
-		var subschemaStr = utils.getSafeNamespace(this.targetNamespace);
-		if (!this.isEmpty(subschemaStr)) {
-			var namespaces = subschemaStr.split('/');
-			if (namespaces.length > 1) {
-				namespaces.shift();
+		if (this.targetNamespace !== undefined && this.namespaceMode === Constants.SUBSCHEMA) {
+			var subschemaStr = utils.getSafeNamespace(this.targetNamespace);
+			if (!this.isEmpty(subschemaStr)) {
+				var namespaces = subschemaStr.split('/');
+				if (namespaces.length > 1) {
+					namespaces.shift();
+				}
+				this.createNestedSubschema(this, namespaces);
 			}
-			this.createNestedSubschema(this.subSchemas, namespaces);
+		} else {
+			//this.createNestedSubschema(this, [Constants.DEFINITIONS]);
+			
+			this.definitions = this.newJsonSchemaFile();
+			this.targetSchema = this.definitions;
 		}
 	}
 
@@ -239,6 +362,9 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	 * @returns {Boolean} - Returns true if the all members of the JsonSchemaFile are empty.
 	 */
 	isBlank() {
+		if (!this.isEmpty(this.parent)) {
+			return false;
+		}
 		if (!this.isEmpty(this.filename)) {
 			return false;
 		}
@@ -377,7 +503,7 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 		}
 
 		if (!this.isEmpty(this.definitions)) {
-			return false;
+			return this.definitions.isBlank();
 		}
 
 		if (!this.isEmpty(this.subSchemas)) {
@@ -421,22 +547,58 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 
 	// Read-only properties
 	/**
+	 * Returns a $ref limited to the JSON Pointer in the ref URI fragement if the $ref is being used internally to this file.  Otherwise, the full ref URI is returned.
+	 * 
+	 * @param {JsonSchemaFile} - the parent of this $ref
 	 * @returns {JsonSchemaFile} - a JsonSchemaFile representing a $ref to itself.
 	 */
-	get$RefToSchema() {
-		return this.ref == undefined ? this : new JsonSchemaFileV4({
-			$ref: this.ref
+	get$RefToSchema(parent) {
+		let refStr;
+        if(parent == undefined) {
+            throw new Error('Parameter "parent" is required');
+        }
+		if (this.ref == undefined) {
+			refStr = this.$ref
+		} else if (Object.is(parent.getTopLevelJsonSchema(), this.getTopLevelJsonSchema())) {
+			refStr = '#' + this.ref.fragment();
+		} else {
+			refStr = this.ref.toString();
+		}
+		return new JsonSchemaFileV4({
+			$ref: refStr,
+			parent: parent
 		});
 	}
 
 	/**
-	 * Returns a String representation of the targetNamespace, which is generally based on a URL, 
-	 * without the protocol, colon, or any parameters.
+	 * Returns a JSON Pointer representation of the targetNamespace, which is generally based on a URL.
 	 * 
-	 * @returns {String} - String representation of the targetNamespace.
+	 * @returns {String} - JSON Pointer representation of the targetNamespace.
 	 */
-	getSubschemaStr() {
-		return utils.getSafeNamespace(this.targetNamespace);
+	getSubschemaJsonPointer() {
+		if (this.namespaceMode == Constants.SUBSCHEMA) {
+			return utils.getSafeNamespace(this.targetNamespace);
+		}
+		return '/' + Constants.DEFINITIONS;
+	}
+
+	findTopLevelSchema(type) {
+		if (type.parent === undefined) {
+			return type;
+		}
+		return this.findTopLevelSchema(type.parent);
+	}
+
+	/**
+	 * Returns the top level JSON Schema for this schema by the parent without a parent.
+	 * 
+	 * @returns {JsonSchemaFileV4} - The top JsonSchemaFile representing a single file.
+	 */
+	getTopLevelJsonSchema() {
+		if (this.parent === undefined) {
+			return this;
+		}
+		return this.findTopLevelSchema(this.parent);
 	}
 
 	/**
@@ -446,13 +608,13 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	 */
 	getGlobalAttributesSchema() {
 		if (this.subSchemas[Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME] == undefined) {
-			this.subSchemas[Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME] = new JsonSchemaFileV4();
+			this.subSchemas[Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME] = this.newJsonSchemaFile();
 		}
 		return this.subSchemas[Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME];
 	}
 
 	/**
-	 * Returns a POJO of this jsonSchema.  Items are added in the order we wouild like them to appear in the resutling JsonSchema.
+	 * Returns a POJO of this jsonSchema.  Items are added in the order we wouild like them to appear in the resulting JsonSchema.
 	 * 
 	 * @returns {Object} - POJO of this jsonSchema.
 	 */
@@ -621,17 +783,20 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 		if (!this.isEmpty(this.required)) {
 			jsonSchema.required = this.required;
 		}
-
 		if (!this.isEmpty(this.definitions)) {
+			jsonSchema.definitions = this.definitions.getJsonSchema();
+		}
+/*
+		if (!this.isEmpty(this.definitions.subSchemas)) {
 			jsonSchema.definitions = {};
-			const propKeys = Object.keys(this.definitions);
+			const propKeys = Object.keys(this.definitions.subSchemas);
 			propKeys.forEach(function (key, index, array) {
-				if (this.definitions[key] !== undefined) {
-					jsonSchema.definitions[key] = this.definitions[key].getJsonSchema();
+				if (this.definitions.subSchemas[key] !== undefined) {
+					jsonSchema.definitions[key] = this.definitions.subSchemas[key].getJsonSchema();
 				}
 			}, this);
 		}
-
+*/
 		if (!this.isEmpty(this.subSchemas)) {
 			const subschemaNames = Object.keys(this.subSchemas);
 			subschemaNames.forEach(function (subschemaName, index, array) {
@@ -654,17 +819,104 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	 * @returns {JsonSchemaFile} - A deep copy of this JsonSchemaFile.
 	 */
 	clone() {
-		return clone(this);
+		return clone(this, true);
 	}
 
 	/**
-	 * Adds a String value to the enum array.
+	 * Returns true if the a deep copy of this JsonSchemaFile.
+	 * 
+	 * @param {JsonSchemaFileV4} other - The JsonSchemaFile to compare with this for equality.
+	 * @returns {Boolean} - true if the JsonSchemaFile objects are equal.
+	 */
+	equals(other) {
+		return deepEql(this, other);
+	}
+
+	/**
+	 * Returns true if the all members of the JsonSchemaFile are empty as defined by isEmpty().
+	 * 
+	 * @returns {Boolean} - Returns true if the all members of the JsonSchemaFile are empty.
+	 */
+	cloneNew() {
+		const retval = new JsonSchemaFileV4();
+
+		retval.parent = this.parent;  // this is wrong
+		retval.filename = this.filename;
+		retval.targetSchema = this.targetSchema;   // this is wrong
+		retval.targetNamespace = this.targetNamespace
+		retval.ref = this.ref
+		retval.$ref = this.$ref;
+
+		// JSON Schema draft v4 (core definitions and terminology referenced)
+		// 7.2 URI resolution scope alteration with the 'id'
+		retval.id = this.id;
+
+		// 3.4 Root schema, subschema  (7.2.2 Usage)
+		retval.$schema = this.$schema;
+
+		// 6.1 Metadata keywords 'title' and 'description'
+		retval.title = this.title;
+		retval.description = this.description;
+
+		// 5.5.  Validation keywords for any instance type (Type moved up here from the rest of 5.5 below for output formatting)
+		retval.type = this.type;
+
+		// 5.1.  Validation keywords for numeric instances (number and integer)
+		retval.multipleOf = this.multipleOf;
+		retval.minimum=this.minimum;
+		retval.exclusiveMinimum=this.exclusiveMinimum;
+		retval.maximum=this.maximum;
+		retval.exclusiveMaximum = this.exclusiveMaximum;
+
+		// 5.2.  Validation keywords for strings
+		retval.minLength=this.minLength;
+		retval.maxLength=this.maxLength;
+		retval.pattern=this.pattern;
+
+		// 5.5.  Validation keywords for any instance type
+		retval.enum = this.enum;
+		retval.allOf = this.allOf;
+		retval.anyOf = this.anyOf;
+		retval.oneOf = this.oneOf;
+		retval.not = this.not;
+
+		// 6.2 Default
+		retval.default = this.default;
+		retval.format = this.format;
+
+		// 5.4.5.  Dependencies
+		retval.dependencies = this.dependencies;
+
+		// 5.3.  Validation keywords for arrays
+		retval.additionalItems = this.additionalItems;
+		retval.maxItems = this.maxItems;
+		retval.minItems = this.minItems;
+		retval.uniqueItems = this.uniqueItems;
+		retval.items = this.items;
+
+		// 5.4.  Validation keywords for objects
+		retval.maxProperties = this.maxProperties;
+		retval.minProperties = this.minProperties;
+		retval.additionalProperties = this.additionalProperties;
+		retval.properties = this.properties;
+		retval.patternProperties = this.patternProperties;
+		retval.required = this.required;
+		retval.definitions = this.definitions; // this is wrong
+		retval.subSchemas = this.subSchemas;  // this is wrong
+
+		return retval;
+	}
+
+	/**
+	 * Adds a String value to the enum array removing any duplicates.
 	 * 
 	 * @param {String} val - The string value to add to the enum array.
 	 * @returns {void}
 	 */
 	addEnum(val) {
-		this.enum.push(val);
+		if(this.enum.indexOf(val) == -1) {
+			this.enum.push(val);
+		}
 	}
 
 	/**
@@ -711,13 +963,19 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 		if (baseType == undefined) {
 			throw new Error('Required parameter "baseType" is undefined');
 		}
-		this.allOf.push(baseType.get$RefToSchema());
-		const extensionSchema = new JsonSchemaFileV4();
+		this.allOf.push(baseType.get$RefToSchema(this));
+		const extensionSchema = this.newJsonSchemaFile();
 		if (extensionType != undefined) {
 			extensionSchema.type = extensionType;
 		}
 		this.allOf.push(extensionSchema);
 		return extensionSchema;
+	}
+
+	addOneOfSchema(oneOfSchema) {
+		if (this.oneOf === undefined) {
+			this.oneOf = this.newJsonSchemaFile();
+		}
 	}
 
 	/**
@@ -759,16 +1017,16 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 		if (type == undefined) {
 			throw new Error('Required parameter "type" is undefined');
 		}
-		if (this.getProperty(name) == undefined) {
-			var anyOfProp = new JsonSchemaFileV4();
+//		if (this.getProperty(name) == undefined) {
+			var anyOfProp = this.newJsonSchemaFile();
 			anyOfProp.addRequired(name);
 			this.anyOf.push(anyOfProp);
-			this.setProperty(name, type.get$RefToSchema());
-		} else {
-			const msg = 'Unable to add required anyOf property by reference because [' + name + '] is already defined as [' + this.getProperty(name) + ']  Not adding [' + type + ']';
-			throw new Error(msg);
-			//debug('Unable to add required anyOf property by reference because [' + name + '] is already defined as [' + this.getProperty(name) + ']  Not adding [' + type + ']');
-		}
+			this.setProperty(name, type);
+//		} else {
+//			const msg = this.id + ' - Unable to add required anyOf property by reference because [' + name + '] is already defined as [' + this.getProperty(name) + ']  Not adding [' + type + ']';
+			//debug(msg);
+//			throw new Error(msg);
+//		}
 	}
 
 	/**
@@ -867,6 +1125,14 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 
 	toString() {
 		return JSON.stringify(this.getJsonSchema(), null, '\t');
+	}
+
+	isForwardRef() {
+		return false;
+	}
+
+	isRef() {
+		return !(this.$ref == undefined)
 	}
 }
 

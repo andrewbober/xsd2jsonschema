@@ -2,24 +2,25 @@
 
 const debug = require('debug')('xsd2jsonschema:BaseConverter')
 
+const URI = require('urijs');
 const Qname = require('./qname');
 const jsonSchemaTypes = require('./jsonschema/jsonSchemaTypes');
-const NamespaceManager = require('./namespaceManager');
 const JsonSchemaFile = require('./jsonschema/jsonSchemaFile');
-const BuiltInTypeConverter = require('./builtInTypeConverter');
 const Processor = require('./processor');
 const XsdElements = require('./xmlschema/xsdElements');
 const XsdAttributes = require('./xmlschema/xsdAttributes');
 const XsdAttributeValues = require('./xmlschema/xsdAttributeValues');
-const XsdNodeType = require('./xmlschema/xsdNodeTypes');
+const XsdNodeTypes = require('./xmlschema/xsdNodeTypes');
 const utils = require('./utils');
 const XsdFile = require('./xmlschema/xsdFileXmlDom');
 const BaseSpecialCaseIdentifier = require('./baseSpecialCaseIdentifier');
 const SpecialCases = require('./specialCases');
+const NamespaceManager = require('./namespaceManager');
 
 
-const builtInTypeConverter_NAME = Symbol();
 const NamespaceManager_NAME = Symbol();
+const includeTextAndCommentNodes_NAME = Symbol();
+const anotherPassNeeded_NAME = Symbol();  // Hopefully this is never needed
 
 /**
  * Class representing a collection of XML Handler methods for converting XML Schema elements to JSON Schema.  XML 
@@ -38,39 +39,51 @@ const NamespaceManager_NAME = Symbol();
 	 * @constructor
 	 */
 	constructor(options) {
-		super();
+		super(options);
 		if (options != undefined) {
-			this.builtInTypeConverter = options.builtInTypeConverter != undefined ? options.builtInTypeConverter : new BuiltInTypeConverter();
+			this.namespaceManager = options.namespaceManager != undefined ? options.namespaceManager : new NamespaceManager();
 			this.specialCaseIdentifier = options.specialCaseIdentifier != undefined ? options.specialCaseIdentifier : new BaseSpecialCaseIdentifier();
-			this.namespaceManager = options.namespaceManager != undefined ? options.NamespaceManager : new NamespaceManager();
 		} else {
-			this.builtInTypeConverter = new BuiltInTypeConverter();
-			this.specialCaseIdentifier = new BaseSpecialCaseIdentifier();
 			this.namespaceManager = new NamespaceManager();
+			this.specialCaseIdentifier = new BaseSpecialCaseIdentifier();
 		}
+
 		// The working schema is initilized as needed through XML Handlers
 	}
 
 	// Getters/Setters
 
-	get NamespaceManager() {
+	get namespaceManager() {
 		return this[NamespaceManager_NAME];
 	}
-	set NamespaceManager(newNamespaceManager) {
+	set namespaceManager(newNamespaceManager) {
 		this[NamespaceManager_NAME] = newNamespaceManager;
 	}
 
-	get builtInTypeConverter() {
-		return this[builtInTypeConverter_NAME];
+	get includeTextAndCommentNodes() {
+		return this[includeTextAndCommentNodes_NAME];
 	}
-	set builtInTypeConverter(newBuiltInTypeConverter) {
-		this[builtInTypeConverter_NAME] = newBuiltInTypeConverter;
+	set includeTextAndCommentNodes(newIncludeTextAndCommentNodes) {
+		this[includeTextAndCommentNodes_NAME] = newIncludeTextAndCommentNodes;
+	}
+
+	get anotherPassNeeded() {
+		return this[anotherPassNeeded_NAME];
+	}
+	set anotherPassNeeded(newAnotherPassNeeded) {
+		this[anotherPassNeeded_NAME] = newAnotherPassNeeded;
 	}
 
 	dumpJsonSchema(jsonSchema) {
 		Object.keys(jsonSchema).forEach(function (prop, index, array) {
 			debug(prop + '=' + jsonSchema[prop]);
 		});
+	}
+
+	// Read-only properties
+	
+	get builtInTypeConverter() {
+		return this.namespaceManager.builtInTypeConverter;
 	}
 
 	/**
@@ -85,8 +98,10 @@ const NamespaceManager_NAME = Symbol();
 	}
 
 	/**
-	 * This method is called for each node in the XML Schema file being processed.  It first processes an ID attribute if present and 
-	 * then calls the appropriate XML Handler method.
+	 * This method is called for each node in the XML Schema file being processed.  It performs three actions
+	 *  1) processes an ID attribute if present
+	 *  2) calls super.process() to provide detailed logging
+	 *  3) calls the appropriate XML Handler method.
 	 * @param {Node} node - the current {@link https://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/core.html#ID-745549614 element} in xsd being converted.
 	 * @param {JsonSchemaFileV4} jsonSchema - the JSON Schema representing the current XML Schema file {@link XsdFile|xsd} being converted.
 	 * @param {XsdFile} xsd - the XML schema file currently being converted.
@@ -101,7 +116,17 @@ const NamespaceManager_NAME = Symbol();
 			var qualifiedTypeName = new Qname(id);
 			this.workingJsonSchema.addAttributeProperty(qualifiedTypeName.getLocal(), this.createAttributeSchema(node, jsonSchema, xsd, qualifiedTypeName));
 		}
-		const keepProcessing = this[XsdFile.getNodeName(node)](node, jsonSchema, xsd);
+		const fnName = XsdFile.getNodeName(node);
+		if((debug.enabled === true && node.nodeType != XsdNodeTypes.TEXT_NODE && node.nodeType != XsdNodeTypes.COMMENT_NODE) || this.includeTextAndCommentNodes === true) {
+
+			const nameAttr = XsdFile.getAttrValue(node,XsdAttributes.NAME);
+			const valueAttr = XsdFile.getValueAttr(node);
+			debug('Processing [' + fnName + '] ' 
+				+ (nameAttr == undefined ? '' : '[' + nameAttr + ']')
+				+ (valueAttr == undefined ? '' : '[' + valueAttr + ']')				
+			);
+		}
+		const keepProcessing = this[fnName](node, jsonSchema, xsd);
 		super.process(node, jsonSchema, xsd);
 		return keepProcessing
 	}
@@ -131,7 +156,8 @@ const NamespaceManager_NAME = Symbol();
 			case XsdElements.CHOICE:
 				throw new Error('any() needs to be implemented within choice!');
 			case XsdElements.SEQUENCE:
-				throw new Error('any() needs to be implemented within sequence!');
+				break
+//			throw new Error('any() needs to be implemented within sequence!');
 			case XsdElements.ALL:
 				throw new Error('any() needs to be implemented within all!');
 			case XsdElements.OPEN_CONTENT:
@@ -169,14 +195,24 @@ const NamespaceManager_NAME = Symbol();
 		return true;
 	}
 
+	isBuiltInType(qualifiedTypeName) {
+		return this.builtInTypeConverter[qualifiedTypeName.getLocal()] != undefined;
+	}
+
 	/* 
 	 * A factory method to create JSON Schemas of one of the XML Schema built-in types.
 	 *
 	 */
-	createAttributeSchema(node, jsonSchema, xsd, qualifiedTypeName) {
-		var attributeJsonSchema = new JsonSchemaFile();
-		this.builtInTypeConverter[qualifiedTypeName.getLocal()](node, attributeJsonSchema)
+	createAttributeSchema(node, xsd, qualifiedTypeName) {
+		var attributeJsonSchema = this.workingJsonSchema.newJsonSchemaFile();
+		this.builtInTypeConverter[qualifiedTypeName.getLocal()](node, attributeJsonSchema, xsd)
 		return attributeJsonSchema;
+	}
+
+	// Delete this?
+	createAttributeReference(typeAttr, jsonSchema, xsd) {
+		var refType = this.namespaceManager.getType(typeAttr, this.workingJsonSchema, jsonSchema, xsd, false);
+		return refType.get$RefToSchema(jsonSchema);
 	}
 
 	handleAttributeGlobal(node, jsonSchema, xsd) {
@@ -205,14 +241,20 @@ const NamespaceManager_NAME = Symbol();
 		var type = XsdFile.getAttrValue(node, XsdAttributes.TYPE);
 		var use = XsdFile.getAttrValue(node, XsdAttributes.USE);
 		// TODO: id, form, default, fixed, targetNamespace, inheritable (TBD)
+		var attributeJsonSchema;
 
 		this.parsingState.pushSchema(this.workingJsonSchema);
 		if (type !== undefined) {
 			var qualifiedTypeName = new Qname(type);
-			this.workingJsonSchema.addAttributeProperty(name, this.createAttributeSchema(node, jsonSchema, xsd, qualifiedTypeName), use);
+			if(this.isBuiltInType(qualifiedTypeName)) {
+				attributeJsonSchema = this.createAttributeSchema(node, xsd, qualifiedTypeName);
+			} else {
+				attributeJsonSchema = this.namespaceManager.getTypeReference(type, this.workingJsonSchema, jsonSchema, xsd);
+			}
+			this.workingJsonSchema.addAttributeProperty(name, attributeJsonSchema, use);
 		} else {
 			// Setup the working schema and allow processing to continue for any contained simpleType or annotation nodes.
-			var attributeJsonSchema = new JsonSchemaFile();
+			attributeJsonSchema = this.workingJsonSchema.newJsonSchemaFile();
 			this.workingJsonSchema.addAttributeProperty(name, attributeJsonSchema, use);
 			this.workingJsonSchema = attributeJsonSchema;
 		}
@@ -226,7 +268,7 @@ const NamespaceManager_NAME = Symbol();
 
 		if (ref !== undefined) {
 			var attrSchema = this.namespaceManager.getGlobalAttribute(ref, jsonSchema);
-			this.workingJsonSchema.addAttributeProperty(ref, attrSchema.get$RefToSchema(), use);
+			this.workingJsonSchema.addAttributeProperty(ref, attrSchema.get$RefToSchema(this.workingJsonSchema), use);
 		}
 
 		return true;
@@ -271,7 +313,7 @@ const NamespaceManager_NAME = Symbol();
 		var retval = true;
 		const children = Array.from(node.childNodes);
 		children.forEach(function (childNode) {
-			if (childNode.nodeType != XsdNodeType.TEXT_NODE) {
+			if (childNode.nodeType != XsdNodeTypes.TEXT_NODE) {
 				const minOccursAttr = XsdFile.getAttrValue(childNode, XsdAttributes.MIN_OCCURS);
 				if (minOccursAttr != 0) {
 					retval = false;
@@ -300,7 +342,13 @@ const NamespaceManager_NAME = Symbol();
 		var state = this.parsingState.getCurrentState();
 		switch (state.name) {
 			case XsdElements.CHOICE:
-				throw new Error('choice() needs to be implemented within choice');
+				// Allow to fall through and continue processing.  The schema is estabished with the complexType.
+				//throw new Error('choice() needs to be implemented within choice');
+				var oneOfSchema = this.workingJsonSchema.newJsonSchemaFile();
+				this.workingJsonSchema.oneOf.push(oneOfSchema);
+				this.parsingState.pushSchema(this.workingJsonSchema);
+				this.workingJsonSchema = oneOfSchema;
+			break;
 			case XsdElements.COMPLEX_TYPE:
 				// Allow to fall through and continue processing.  The schema is estabished with the complexType.
 				//throw new Error('choice() needs to be implemented within complexType');
@@ -315,30 +363,30 @@ const NamespaceManager_NAME = Symbol();
 				throw new Error('choice() needs to be implemented within restriction');
 			case XsdElements.SEQUENCE:
 				if (isSiblingChoice) {
-					var allOfSchema = new JsonSchemaFile();
+					debug('Found sibling <choice>');
+					var allOfSchema = this.workingJsonSchema.newJsonSchemaFile();
 					this.workingJsonSchema.allOf.push(allOfSchema);
 					this.parsingState.pushSchema(this.workingJsonSchema);
 					this.workingJsonSchema = allOfSchema;
 					if(isAnyOfChoice === true) {
+						debug('                   ... that is an anyOfChoice');
 						// Ducktype it on there for now.  This is checked in baseSpecialCaseIdentifier.fixAnyOfChoice.
 						// It is needed because all sibling choices may not be anyOfChoices.
 						allOfSchema.isAnyOfChoice = true;
 					}
 				}
-				if (!allChildrenAreOptional && isOptional) {
-					var optionalChoiceSchema = new JsonSchemaFile();
+				if (allChildrenAreOptional || isOptional) {
+					debug('Found optional <choice> for ' + jsonSchema.id);
+					var optionalChoiceSchema = this.workingJsonSchema.newJsonSchemaFile();
 					this.workingJsonSchema.anyOf.push(optionalChoiceSchema);
-					// Add an the optional part (empty schema)
-					var emptySchema = new JsonSchemaFile();
-					emptySchema.description = "This truthy schema is what makes an optional <choice> optional.  This needs a better solution because it allows anything."
-					this.workingJsonSchema.anyOf.push(emptySchema);
 					if (!isSiblingChoice) {
 						this.parsingState.pushSchema(this.workingJsonSchema)
 					}
 					this.workingJsonSchema = optionalChoiceSchema;
 						// The optional part will be added as a special case
-					this.specialCaseIdentifier.addSpecialCase(SpecialCases.OPTIONAL_CHOICE, this.workingJsonSchema, node);
+					this.specialCaseIdentifier.addSpecialCase(SpecialCases.OPTIONAL_CHOICE, optionalChoiceSchema, node);
 				} else {
+					debug('Found required <choice>');
 					// This is an needless grouping just allow to fall through and continue processing
 					// Allow to fall through and continue processing.  
 					// The schema should be estabished by the parent of the sequence.
@@ -368,9 +416,10 @@ const NamespaceManager_NAME = Symbol();
 		// TODO: id, mixed, abstract, block, final, defaultAttributesApply
 
 		var state = this.parsingState.getCurrentState();
+
 		switch (state.name) {
 			case XsdElements.SCHEMA:
-				this.workingJsonSchema = this.namespaceManager.getType(nameAttr, jsonSchema, xsd);
+				this.workingJsonSchema = this.namespaceManager.getType(nameAttr, jsonSchema, jsonSchema, xsd);
 				jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
 				this.workingJsonSchema.type = jsonSchemaTypes.OBJECT;
 				break;
@@ -417,15 +466,14 @@ const NamespaceManager_NAME = Symbol();
 
 		if (typeAttr !== undefined) {
 			var typeName = typeAttr;
-			var customType = this.namespaceManager.getType(typeName, jsonSchema, xsd);
-			var refType = customType.clone();
-			refType.id = jsonSchema.id;
+			var refType = this.namespaceManager.getTypeReference(typeName, jsonSchema, jsonSchema, xsd);
+			//refType.id = jsonSchema.id;
 			this.namespaceManager.addTypeReference(nameAttr, refType, jsonSchema, xsd);
-			this.workingJsonSchema = customType.get$RefToSchema();
+			this.workingJsonSchema = refType;
 			jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
 			//workingJsonSchema.type = jsonSchemaTypes.OBJECT;
 		} else {
-			this.workingJsonSchema = this.namespaceManager.getType(nameAttr, jsonSchema, xsd);
+			this.workingJsonSchema = this.namespaceManager.getType(nameAttr, jsonSchema, jsonSchema, xsd);
 			jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
 			this.workingJsonSchema.type = jsonSchemaTypes.OBJECT;
 		}
@@ -443,28 +491,31 @@ const NamespaceManager_NAME = Symbol();
 	}
 
 	addChoiceProperty(targetSchema, propertyName, customType, minOccursAttr) {
-		var choiceSchema = new JsonSchemaFile();
+		var choiceSchema = targetSchema.newJsonSchemaFile();
 		//choiceSchema.additionalProperties = false;
 		this.addProperty(choiceSchema, propertyName, customType, minOccursAttr);
 		targetSchema.oneOf.push(choiceSchema);
 	}
 
 	addPropertyAsArray(targetSchema, propertyName, customType, minOccursAttr, maxOccursAttr) {
-		var arraySchema = new JsonSchemaFile();
-		arraySchema.type = jsonSchemaTypes.ARRAY;
+		var oneOfSchema = targetSchema.newJsonSchemaFile();
+		var arraySchema = oneOfSchema.newJsonSchemaFile();
 		var min = minOccursAttr === undefined ? undefined : minOccursAttr;
 		var max = maxOccursAttr === undefined ? undefined : maxOccursAttr;
+
+		arraySchema.type = jsonSchemaTypes.ARRAY;
 		arraySchema.minItems = min;
 		arraySchema.maxItems = max === XsdAttributeValues.UNBOUNDED ? undefined : max;
-		arraySchema.items = customType.get$RefToSchema();
-		var oneOfSchema = new JsonSchemaFile();
-		oneOfSchema.oneOf.push(customType.get$RefToSchema());
+		arraySchema.items = customType.get$RefToSchema(arraySchema);
+
+		oneOfSchema.oneOf.push(customType.get$RefToSchema(oneOfSchema));
 		oneOfSchema.oneOf.push(arraySchema);
 		this.addProperty(targetSchema, propertyName, oneOfSchema, minOccursAttr);
 	}
 
 	addChoicePropertyAsArray(targetSchema, propertyName, customType, minOccursAttr, maxOccursAttr) {
-		var choiceSchema = new JsonSchemaFile();
+		var choiceSchema = targetSchema.newJsonSchemaFile();
+
 		//choiceSchema.additionalProperties = false;
 		this.addPropertyAsArray(choiceSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
 		targetSchema.oneOf.push(choiceSchema);
@@ -481,19 +532,27 @@ const NamespaceManager_NAME = Symbol();
 		if (typeAttr !== undefined) {
 			lookupName = typeAttr;
 		}
-		var propertyName = nameAttr;  // name attribute is required for local element
+		var propertyName = nameAttr;
 		var customType;
 		if (lookupName !== undefined) {
-			customType = this.namespaceManager.getType(lookupName, jsonSchema, xsd).get$RefToSchema();
+			if (this.namespaceManager.isBuiltInType(lookupName, xsd)) {
+				//customType = this.namespaceManager.getBType(lookupName, this.workingJsonSchema, jsonSchema, xsd, false);
+				customType = this.namespaceManager.getBuiltInType(lookupName, this.workingJsonSchemaent, xsd);
+			} else {
+				customType = this.namespaceManager.getTypeReference(lookupName, this.workingJsonSchema, jsonSchema, xsd);
+			}
 		} else {
-			customType = this.namespaceManager.getType(propertyName, jsonSchema, xsd);
+			//propertyName = nameAttr + '-' + XsdFile.getNameOfFirstParentWithNameAttribute(node);  // local element names attributes are scoped to the parent so they are not unique within the namespace.
+			//customType = this.namespaceManager.getType(propertyName, this.workingJsonSchema, jsonSchema, xsd);
+			customType = this.workingJsonSchema.newJsonSchemaFile();
 		}
 		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED));
 		var state = this.parsingState.getCurrentState();
 		switch (state.name) {
 			case XsdElements.CHOICE:
-				if (this.specialCaseIdentifier.isOptional(node.parentNode, xsd) || this.allChildrenAreOptional(node.parentNode)) {
+				if (this.allChildrenAreOptional(node.parentNode) && this.specialCaseIdentifier.isOptional(node.parentNode, xsd)) {
 					if (isArray) {
+						
 						this.addPropertyAsArray(this.workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
 					} else {
 						this.addProperty(this.workingJsonSchema, propertyName, customType, minOccursAttr);
@@ -517,6 +576,8 @@ const NamespaceManager_NAME = Symbol();
 			default:
 				throw new Error('element() [local] called from within unexpected parsing state!');
 		}
+		this.parsingState.pushSchema(this.workingJsonSchema);
+		this.workingJsonSchema = customType;
 		return true;
 	}
 
@@ -530,31 +591,31 @@ const NamespaceManager_NAME = Symbol();
 		// a name nor a type attribute - just a ref attribute.  This is awkward when the reference elmenent
 		// is a property of an object in JSON.  With no other options to name the property ref is used.
 		var propertyName = refAttr;  // ref attribute is required for an element reference
-		var customType = this.namespaceManager.getType(propertyName, jsonSchema, xsd).get$RefToSchema();
+		var ref = this.namespaceManager.getTypeReference(propertyName, this.workingJsonSchema, jsonSchema, xsd);
 		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED));
 		var state = this.parsingState.getCurrentState();
 		switch (state.name) {
 			case XsdElements.CHOICE:
-				if (this.specialCaseIdentifier.isOptional(node.parentNode, xsd) || this.allChildrenAreOptional(node.parentNode)) {
+				if (this.allChildrenAreOptional(node.parentNode) && this.specialCaseIdentifier.isOptional(node.parentNode, xsd)) {
 					if (isArray) {
-						this.addPropertyAsArray(this.workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
+						this.addPropertyAsArray(this.workingJsonSchema, propertyName, ref, minOccursAttr, maxOccursAttr);
 					} else {
-						this.addProperty(this.workingJsonSchema, propertyName, customType, minOccursAttr);
+						this.addProperty(this.workingJsonSchema, propertyName, ref, minOccursAttr);
 					}
 				} else {
 					if (isArray) {
-						this.addChoicePropertyAsArray(this.workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
+						this.addChoicePropertyAsArray(this.workingJsonSchema, propertyName, ref, minOccursAttr, maxOccursAttr);
 					} else {
-						this.addChoiceProperty(this.workingJsonSchema, propertyName, customType, minOccursAttr);
+						this.addChoiceProperty(this.workingJsonSchema, propertyName, ref, minOccursAttr);
 					}
 				}
 				break;
 			case XsdElements.SEQUENCE:
 			case XsdElements.ALL:
 				if (isArray) {
-					this.addPropertyAsArray(this.workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
+					this.addPropertyAsArray(this.workingJsonSchema, propertyName, ref, minOccursAttr, maxOccursAttr);
 				} else {
-					this.addProperty(this.workingJsonSchema, propertyName, customType, minOccursAttr);
+					this.addProperty(this.workingJsonSchema, propertyName, ref, minOccursAttr);
 				}
 				break;
 			default:
@@ -592,15 +653,25 @@ const NamespaceManager_NAME = Symbol();
 	extension(node, jsonSchema, xsd) {
 		var baseAttr = XsdFile.getAttrValue(node, XsdAttributes.BASE);
 		// TODO: id
-		var baseType = new Qname(baseAttr);
-		var baseTypeName = baseType.getLocal();
 		var state = this.parsingState.getCurrentState();
+		// This switch isn't really needed since both content types are being handled the same, but keeping it just in case this turns out to be a false assumption.
 		switch (state.name) {
 			case XsdElements.COMPLEX_CONTENT:
-				this.workingJsonSchema = this.workingJsonSchema.extend(this.namespaceManager.getType(baseTypeName, jsonSchema, xsd)) //, jsonSchemaTypes.OBJECT);
+				this.parsingState.pushSchema(this.workingJsonSchema);
+				let typeRef = this.namespaceManager.getTypeReference(baseAttr, this.workingJsonSchema, jsonSchema, xsd);
+				this.workingJsonSchema = this.workingJsonSchema.extend(typeRef) //, jsonSchemaTypes.OBJECT);
 				break;
-			case XsdElements.SIMPLE_TYPE:
-				throw new Error('extension() needs to be impemented within simpleType!');
+			case XsdElements.SIMPLE_CONTENT:
+				if (this.namespaceManager.isBuiltInType(baseAttr, xsd)) {
+					let baseType = new Qname(baseAttr);
+					let baseTypeName = baseType.getLocal();
+					return this.builtInTypeConverter[baseTypeName](node, this.workingJsonSchema);
+				} else {
+					this.parsingState.pushSchema(this.workingJsonSchema);
+					let typeRef = this.namespaceManager.getTypeReference(baseAttr, this.workingJsonSchema, jsonSchema, xsd);
+					this.workingJsonSchema = this.workingJsonSchema.extend(typeRef) //, jsonSchemaTypes.OBJECT);
+				}
+				break;
 			default:
 				throw new Error('extension() called from within unexpected parsing state!');
 		}
@@ -626,14 +697,14 @@ const NamespaceManager_NAME = Symbol();
 		var state = this.parsingState.getCurrentState();
 		switch (state.name) {
 			case XsdElements.SCHEMA:
-				this.workingJsonSchema = this.namespaceManager.getType(nameAttr, jsonSchema, xsd);
+				this.workingJsonSchema = this.namespaceManager.getType(nameAttr, jsonSchema, jsonSchema, xsd);
 				jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
 				this.workingJsonSchema.type = jsonSchemaTypes.OBJECT;
 				break;
 			case XsdElements.REDEFINE:
-				throw new Error('group() [definition] needs to be impemented within restriction!');
+				throw new Error('group() [definition] needs to be impemented within redefine!');
 			case XsdElements.OVERRIDE:
-				throw new Error('group() [definition] needs to be impemented within choice!');
+				throw new Error('group() [definition] needs to be impemented within override!');
 			default:
 				throw new Error('group() [definition] called from within unexpected parsing state!');
 		}
@@ -645,7 +716,7 @@ const NamespaceManager_NAME = Symbol();
 		var refName = XsdFile.getAttrValue(node, XsdAttributes.REF);
 		// TODO: id, maxOccurs
 
-		var state = this.parsingState.getCurrentState();
+		const state = this.parsingState.getCurrentState();
 		switch (state.name) {
 			case XsdElements.EXTENSION:
 				throw new Error('group() [reference] needs to be impemented within extension!');
@@ -659,8 +730,7 @@ const NamespaceManager_NAME = Symbol();
 				if (minOccursAttr === undefined || minOccursAttr > 0) {
 					this.workingJsonSchema.addRequired(refName);
 				}
-				var customType = this.namespaceManager.getType(refName, jsonSchema, xsd);
-				this.workingJsonSchema.setProperty(refName, customType.get$RefToSchema());
+				this.workingJsonSchema.setProperty(refName, this.namespaceManager.getType(refName, this.workingJsonSchema, jsonSchema, xsd).get$RefToSchema(this.workingJsonSchema));
 				break;
 			default:
 				throw new Error('group() [reference] called from within unexpected parsing state!');
@@ -669,13 +739,13 @@ const NamespaceManager_NAME = Symbol();
 	}
 
 	handleGroupReference(node, jsonSchema, xsd) {
-		var minOccursAttr = XsdFile.getAttrValue(node, XsdAttributes.MIN_OCCURS);
-		var maxOccursAttr = XsdFile.getAttrValue(node, XsdAttributes.MAX_OCCURS);
-		var refAttr = XsdFile.getAttrValue(node, XsdAttributes.REF);
+		const minOccursAttr = XsdFile.getAttrValue(node, XsdAttributes.MIN_OCCURS);
+		const maxOccursAttr = XsdFile.getAttrValue(node, XsdAttributes.MAX_OCCURS);
+		const refAttr = XsdFile.getAttrValue(node, XsdAttributes.REF);
 		// TODO: id
 
-		var propertyName = refAttr;  // ref attribute is required for group reference
-		var customType = this.namespaceManager.getType(propertyName, jsonSchema, xsd).get$RefToSchema();
+		const propertyName = refAttr;  // ref attribute is required for group reference
+		const ref = this.namespaceManager.getTypeReference(propertyName, this.workingJsonSchema, jsonSchema, xsd);
 		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED));
 		var state = this.parsingState.getCurrentState();
 		switch (state.name) {
@@ -685,18 +755,18 @@ const NamespaceManager_NAME = Symbol();
 				throw new Error('group() [reference] needs to be impemented within restriction!');
 			case XsdElements.CHOICE:
 				if (isArray) {
-					this.addChoicePropertyAsArray(this.workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
+					this.addChoicePropertyAsArray(this.workingJsonSchema, propertyName, ref, minOccursAttr, maxOccursAttr);
 				} else {
-					this.addChoiceProperty(this.workingJsonSchema, propertyName, customType, minOccursAttr);
+					this.addChoiceProperty(this.workingJsonSchema, propertyName, ref, minOccursAttr);
 				}
 				break;
 			case XsdElements.COMPLEX_TYPE:
 			case XsdElements.SEQUENCE:
 			case XsdElements.ALL:
 				if (isArray) {
-					this.addPropertyAsArray(this.workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
+					this.addPropertyAsArray(this.workingJsonSchema, propertyName, ref, minOccursAttr, maxOccursAttr);
 				} else {
-					this.addProperty(this.workingJsonSchema, propertyName, customType, minOccursAttr);
+					this.addProperty(this.workingJsonSchema, propertyName, ref, minOccursAttr);
 				}
 				break;
 			default:
@@ -714,8 +784,10 @@ const NamespaceManager_NAME = Symbol();
 	}
 
 	import(node, jsonSchema, xsd) {
-		// TODO: id, namespace, schemaLocation
-		// do nothing
+		const namespace = XsdFile.getAttrValue(node, XsdAttributes.NAMESPACE);
+ 		const schemaLocation = XsdFile.getAttrValue(node, XsdAttributes.SCHEMA_LOCATION);
+		// TODO: id
+		xsd.imports[namespace] = new URI(xsd.directory).segment(schemaLocation).toString();
 		return true;
 	}
 
@@ -862,12 +934,17 @@ const NamespaceManager_NAME = Symbol();
 		var baseTypeName = baseType.getLocal();
 		// TODO: id, (base inheritance via allOf)
 
-		if (this.builtInTypeConverter[baseTypeName] === undefined) {
-			this.parsingState.pushSchema(this.workingJsonSchema);
-			this.workingJsonSchema = this.workingJsonSchema.extend(this.namespaceManager.getType(baseTypeName, jsonSchema, xsd));
-			return true;
-		} else {
+		if (this.namespaceManager.isBuiltInType(baseAttr, xsd)) {
 			return this.builtInTypeConverter[baseTypeName](node, this.workingJsonSchema);
+		} else {
+			this.parsingState.pushSchema(this.workingJsonSchema);
+			let typeRef = this.namespaceManager.getTypeReference(baseAttr, jsonSchema, jsonSchema, xsd);
+			if(XsdFile.isEmpty(node)) {
+				this.workingJsonSchema.$ref = typeRef.get$RefToSchema(this.workingJsonSchema).$ref;
+			} else {
+				this.workingJsonSchema = this.workingJsonSchema.extend(typeRef);
+			}
+			return true;
 		}
 	}
 
@@ -876,6 +953,7 @@ const NamespaceManager_NAME = Symbol();
 
 		jsonSchema.description = 'Schema tag attributes: ' + utils.objectToString(XsdFile.buildAttributeMap(node));
 		this.initializeNamespaces(xsd);
+		this.workingJsonSchema = jsonSchema;
 		return true;
 	}
 
@@ -896,16 +974,16 @@ const NamespaceManager_NAME = Symbol();
 		if (isOptional === true) {
 			const type = XsdFile.getTypeNode(node);
 			const typeName = type.getAttribute('name');
-			debug('Optional Sequence Found : ' + xsd.baseFilename + ':' + typeName);
+			debug('Optional Sequence Found : ' + xsd.filename + ':' + typeName);
 			if (typeName == '') {
-				this.parsingState.dumpStates(xsd.baseFilename);
+				this.parsingState.dumpStates(xsd.filename);
 				XsdFile.dumpNode(node);
 			}
 		}
 		var state = this.parsingState.getCurrentState();
 		switch (state.name) {
 			case XsdElements.CHOICE:
-				var choiceSchema = new JsonSchemaFile();
+				var choiceSchema = this.workingJsonSchema.newJsonSchemaFile();
 				//choiceSchema.additionalProperties = false;
 				this.workingJsonSchema.oneOf.push(choiceSchema);
 				this.parsingState.pushSchema(this.workingJsonSchema);
@@ -921,10 +999,12 @@ const NamespaceManager_NAME = Symbol();
 				break;
 			case XsdElements.SEQUENCE:
 				if (isOptional) {
-					var optionalSequenceSchema = new JsonSchemaFile();
+					var optionalSequenceSchema = this.workingJsonSchema.newJsonSchemaFile();
 					this.workingJsonSchema.anyOf.push(optionalSequenceSchema);
+					this.specialCaseIdentifier.addSpecialCase(SpecialCases.OPTIONAL_SEQUENCE, optionalSequenceSchema, node);
 					// Add an the optional part (empty schema)
-					var emptySchema = new JsonSchemaFile();
+					var emptySchema = this.workingJsonSchema.newJsonSchemaFile();
+					emptySchema.description = "This truthy schema is what makes an optional <sequence> optional."
 					this.workingJsonSchema.anyOf.push(emptySchema);
 					this.parsingState.pushSchema(this.workingJsonSchema);
 					this.workingJsonSchema = optionalSequenceSchema;
@@ -948,7 +1028,7 @@ const NamespaceManager_NAME = Symbol();
 		var nameAttr = XsdFile.getAttrValue(node, XsdAttributes.NAME);
 		// TODO: id, final
 
-		this.workingJsonSchema = this.namespaceManager.getType(nameAttr, jsonSchema, xsd);
+		this.workingJsonSchema = this.namespaceManager.getType(nameAttr, jsonSchema, jsonSchema, xsd);
 		jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
 		return true;
 	}
@@ -960,6 +1040,7 @@ const NamespaceManager_NAME = Symbol();
 	}
 
 	simpleType(node, jsonSchema, xsd) {
+		debug('Found SimpleType');
 		var continueParsing
 		if (XsdFile.isNamed(node)) {
 			continueParsing = this.handleSimpleTypeNamedGlobal(node, jsonSchema, xsd);
@@ -978,7 +1059,8 @@ const NamespaceManager_NAME = Symbol();
 			// TODO: This should be a configurable option
 			// workingJsonSchema.description = node.text();
 		} else if (this.parsingState.inAppInfo()) {
-			this.workingJsonSchema.concatDescription(node.parent().name() + '=' + node.text() + ' ');
+			//this.workingJsonSchema.concatDescription(node.parentNode.nodeName + '=' + node.textContent + ' ');
+			this.workingJsonSchema.description += node.parentNode.nodeName + '=' + node.textContent + ' ';
 		}
 		return true;
 	}
@@ -1019,9 +1101,7 @@ const NamespaceManager_NAME = Symbol();
 	}
 
 	processSpecialCases() {
-		this.specialCaseIdentifier.specialCases.forEach(function (sc, index, array) {
-			this.specialCaseIdentifier[sc.specialCase](sc.jsonSchema, sc.node);
-		}, this);
+		this.specialCaseIdentifier.processSpecialCases();
 	}
 }
 

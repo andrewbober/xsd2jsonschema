@@ -101,11 +101,17 @@ describe('BaseSpecialCaseIdentifier AnyOfChoice Test', function () {
         // fixOptionalChoiceTruthy
         it('should generate an OptionalChoice using a True Schema (e.g. {})', function () {
             const jsonSchema = new JsonSchemaFile();
-            const jsonSchemaCheck = jsonSchema.clone();
+            const optionalChoice = jsonSchema.newJsonSchemaFile();
+            const tagName = anyOfChoiceXsd.schemaElement.prefix == undefined ? 'choice' : anyOfChoiceXsd.schemaElement.prefix + ':choice';
+            node = anyOfChoiceXsd.schemaElement.getElementsByTagName(tagName)[2];
 
-            // This is currently done inline in baseConverter.js so the jsonSchema should not be changed
-            sci.fixOptionalChoiceTruthy(jsonSchema);
-            expect(jsonSchema).toEqual(jsonSchemaCheck);
+            expect(jsonSchema.description).toBeUndefined();
+            expect(jsonSchema.anyOf.length).toBe(0);
+            sci.fixOptionalChoiceTruthy(optionalChoice, node);
+            
+            // An truthy schema with only a description set should be added to the anyOf array.
+            expect(jsonSchema.anyOf[0].description).toBe('This truthy schema is what makes an optional <choice> optional.');
+            expect(jsonSchema.anyOf.length).toBe(1);
         })
 
         // fixOptionalChoiceNot
@@ -120,12 +126,7 @@ describe('BaseSpecialCaseIdentifier AnyOfChoice Test', function () {
 
         // fixOptionalChoice
         it('should select the appropriate method to generate an OptionalChoice based on the options', function () {
-            const jsonSchema = new JsonSchemaFile();
-            const jsonSchemaCheck = jsonSchema.clone();
-
-            // This is currently not implemented so the jsonSchema should not be changed
-            sci.fixOptionalChoice(jsonSchema);
-            expect(jsonSchema).toEqual(jsonSchemaCheck);
+            // TBD
         })
     })
 

@@ -20,10 +20,9 @@ const action = process.argv[2];
 
 // Options for example
 const options = {
-	mask: /_\d{4}-\d{2}-\d{2}/,
+	xsdBaseUri: "example/schema",
 	outputDir: "example/generated_jsonschema",
-	baseId: "http://www.xsd2jsonschema.org/schema/",
-	xsdBaseDir: "example/schema",
+	mask: /_\d{4}-\d{2}-\d{2}/
 };
 
 const xsdFilenames = [
@@ -81,7 +80,7 @@ if (action === "convert") {
 		"example/data/ExampleDataPersonInfo.json",
 		"example/data/ExampleDataPersonName.json"
 	];
-	const validate = ajv.getSchema("http://www.xsd2jsonschema.org/schema/ExampleTypes.json");
+	const validate = ajv.getSchema("ExampleTypes.json");
 	exampleDataFilenames.forEach(function (filename, index, array) {
 		var exampleData = loadFile(filename);
 		const valid = validate(exampleData);

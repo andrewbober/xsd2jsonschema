@@ -62,7 +62,7 @@ const XsdFile = require('./xmlschema/xsdFileXmlDom');
 		if (visitor.onBegin(jsonSchema, xsd)) {
 			this.walk(visitor, xsd.schemaElement, jsonSchema, xsd);
 		}
-		visitor.onEnd(jsonSchema, xsd);
+		return visitor.onEnd(jsonSchema, xsd);
 	}
 
 }

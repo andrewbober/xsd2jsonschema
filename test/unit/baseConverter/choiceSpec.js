@@ -55,6 +55,7 @@ describe("BaseConverter <choice>", function() {
 
     afterEach(function() {});
 
+/*
     describe("in CHOICE state", function() {
     
         it("should fail because this state is not implemented", function() {
@@ -82,7 +83,6 @@ describe("BaseConverter <choice>", function() {
         });
     });
 
-/*
     describe("in COMPLEX_TYPE state", function() {
         it("should test something with choice", function() {
             const nodes = xsd.select("//xs:complexType[@name='optionalChoiceEverythingIsOptionalType']/xs:complextType/xs:choice");

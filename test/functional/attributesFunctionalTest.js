@@ -5,7 +5,7 @@ const BaseFunctionalTest = require('./baseFunctionalTest');
 class AttributeFunctionalTest extends BaseFunctionalTest {
 	constructor() {
 		super({
-			xsdPath: 'xmlSchemas/functional/',
+			xsdPath: 'test/xmlschemas/functional/',
 			xsdFilename: 'attributes.xsd',
 			testInstances: [
 				{

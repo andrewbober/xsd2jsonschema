@@ -5,19 +5,20 @@ const JsonSchemaTypes = require('xsd2jsonschema').JsonSchemaTypes;
 const JsonSchemaFormats = require('xsd2jsonschema').JsonSchemaFormats;
 
 beforeEach(function() {
-    this.buildEverythingJsonSchema = function(ref) {
+    this.buildEverythingJsonSchema = function(namespaceMode) {
         //var fullJsonSchema = new JsonSchemaFile();
         const xsdFileMock = {
-            baseFilename: 'unitTestSchema',
+            filename: 'unitTestSchema',
             targetNamespace: 'http://www.xsd2jsonschema.org/example/unit/test'
         };
 
         const fullJsonSchema = new JsonSchemaFile({
             baseId: 'http://musicOfTheNight',
-            baseFilename: xsdFileMock.baseFilename,
+            baseFilename: xsdFileMock.filename,
             targetNamespace: xsdFileMock.targetNamespace,
             title: 'A nice test',
-            mask: 'PhantomOfTheOpera'
+            mask: 'PhantomOfTheOpera',
+            namespaceMode: namespaceMode
         });
 
 //        fullJsonSchema.filename = 'something';
@@ -61,7 +62,8 @@ beforeEach(function() {
         everything.anyOf = [ new JsonSchemaFile() ];
         everything.oneOf = [ new JsonSchemaFile() ];
         everything.not = new JsonSchemaFile();
-        everything.definitions = { 'something' : new JsonSchemaFile() };
+        everything.definitions = new JsonSchemaFile();
+        everything.definitions.addSubSchema( 'something', new JsonSchemaFile());
         return fullJsonSchema;
     };
 });

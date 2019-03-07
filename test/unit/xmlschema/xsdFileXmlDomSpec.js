@@ -1,10 +1,11 @@
 
 'use strict';
 
+const URI = require('urijs');
 const XsdFile = require('xsd2jsonschema').XsdFile;
 const XsdNodeTypes = require('xsd2jsonschema').XsdNodeTypes;
 
-describe('JsonSchemaFile Test -', function() {
+describe('XsdFileXmlDomFile Test -', function() {
     var example;
     var base;
     var attr;
@@ -23,7 +24,9 @@ describe('JsonSchemaFile Test -', function() {
 
     it('should return a fully constructed XsdFile instance', function() {
         expect(example).not.toBeUndefined();
-        expect(example.baseFilename).toEqual('ExampleTypes.xsd');
+        const uri = new URI('test/xmlSchemas/example/ExampleTypes.xsd');
+        uri.toString();
+        expect(example.uri).toEqual(uri);
     });
 
     it('should fail argument checks', function() {

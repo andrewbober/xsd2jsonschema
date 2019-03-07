@@ -312,7 +312,7 @@ describe("BuiltInTypeConverter Test -", function() {
     it("should convert long tags to JSON Schema integer type", function() {
         rc.long(node, jsonSchema, xsd);
         expect(jsonSchema.type).toEqual(jsonSchemaTypes.INTEGER);
-        expect(jsonSchema.minium).toEqual(-9223372036854775808);
+        expect(jsonSchema.minimum).toEqual(-9223372036854775808);
         expect(jsonSchema.maximum).toEqual(9223372036854775807);
     });
 
@@ -320,7 +320,7 @@ describe("BuiltInTypeConverter Test -", function() {
     it("should convert int tags to JSON Schema integer type", function() {
         rc.int(node, jsonSchema, xsd);
         expect(jsonSchema.type).toEqual(jsonSchemaTypes.INTEGER);
-        expect(jsonSchema.minium).toEqual(-2147483648);
+        expect(jsonSchema.minimum).toEqual(-2147483648);
         expect(jsonSchema.maximum).toEqual(2147483647);
     });
 
@@ -328,7 +328,7 @@ describe("BuiltInTypeConverter Test -", function() {
     it("should convert short tags to JSON Schema integer type", function() {
         rc.short(node, jsonSchema, xsd);
         expect(jsonSchema.type).toEqual(jsonSchemaTypes.INTEGER);
-        expect(jsonSchema.minium).toEqual(-32768);
+        expect(jsonSchema.minimum).toEqual(-32768);
         expect(jsonSchema.maximum).toEqual(32767);
     });
 
@@ -336,7 +336,7 @@ describe("BuiltInTypeConverter Test -", function() {
     it("should convert byte tags to JSON Schema integer type", function() {
         rc.byte(node, jsonSchema, xsd);
         expect(jsonSchema.type).toEqual(jsonSchemaTypes.INTEGER);
-        expect(jsonSchema.minium).toEqual(-128);
+        expect(jsonSchema.minimum).toEqual(-128);
         expect(jsonSchema.maximum).toEqual(127);
     });
 
@@ -344,14 +344,14 @@ describe("BuiltInTypeConverter Test -", function() {
     it("should convert nonNegativeInteger tags to JSON Schema integer type", function() {
         rc.nonNegativeInteger(node, jsonSchema, xsd);
         expect(jsonSchema.type).toEqual(jsonSchemaTypes.INTEGER);
-        expect(jsonSchema.minium).toEqual(0);
+        expect(jsonSchema.minimum).toEqual(0);
     });
 
 // unsignedLong
     it("should convert unsignedLong tags to JSON Schema integer type", function() {
         rc.unsignedLong(node, jsonSchema, xsd);
         expect(jsonSchema.type).toEqual(jsonSchemaTypes.INTEGER);
-        expect(jsonSchema.minium).toEqual(0);
+        expect(jsonSchema.minimum).toEqual(0);
         expect(jsonSchema.maximum).toEqual(18446744073709551615);
     });
 
@@ -359,7 +359,7 @@ describe("BuiltInTypeConverter Test -", function() {
     it("should convert unsignedInt tags to JSON Schema integer type", function() {
         rc.unsignedInt(node, jsonSchema, xsd);
         expect(jsonSchema.type).toEqual(jsonSchemaTypes.INTEGER);
-        expect(jsonSchema.minium).toEqual(0);
+        expect(jsonSchema.minimum).toEqual(0);
         expect(jsonSchema.maximum).toEqual(4294967295);
     });
 
@@ -367,7 +367,7 @@ describe("BuiltInTypeConverter Test -", function() {
     it("should convert unsignedShort tags to JSON Schema integer type", function() {
         rc.unsignedShort(node, jsonSchema, xsd);
         expect(jsonSchema.type).toEqual(jsonSchemaTypes.INTEGER);
-        expect(jsonSchema.minium).toEqual(0);
+        expect(jsonSchema.minimum).toEqual(0);
         expect(jsonSchema.maximum).toEqual(65535);
     });
 
@@ -375,7 +375,7 @@ describe("BuiltInTypeConverter Test -", function() {
     it("should convert unsignedByte tags to JSON Schema integer type", function() {
         rc.unsignedByte(node, jsonSchema, xsd);
         expect(jsonSchema.type).toEqual(jsonSchemaTypes.INTEGER);
-        expect(jsonSchema.minium).toEqual(0);
+        expect(jsonSchema.minimum).toEqual(0);
         expect(jsonSchema.maximum).toEqual(255);
     });
 
@@ -383,7 +383,7 @@ describe("BuiltInTypeConverter Test -", function() {
     it("should convert positiveInteger tags to JSON Schema integer type", function() {
         rc.positiveInteger(node, jsonSchema, xsd);
         expect(jsonSchema.type).toEqual(jsonSchemaTypes.INTEGER);
-        expect(jsonSchema.minium).toEqual(0);
+        expect(jsonSchema.minimum).toEqual(0);
         expect(jsonSchema.maximum).toEqual(4294967295);
         expect(jsonSchema.exclusiveMinimum).toBe(true);
     });

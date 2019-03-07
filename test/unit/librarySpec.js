@@ -8,6 +8,7 @@ const XsdFile = require('xsd2jsonschema').XsdFile;
 const JsonSchemaTypes = require('xsd2jsonschema').JsonSchemaTypes;
 const JsonSchemaFormats = require('xsd2jsonschema').JsonSchemaFormats;
 const JsonSchemaFile = require('xsd2jsonschema').JsonSchemaFile;
+const JsonSchemaRef = require('xsd2jsonschema').JsonSchemaRef;
 
 const DefaultConversionVisitor = require('xsd2jsonschema').DefaultConversionVisitor;
 const BaseConversionVisitor = require('xsd2jsonschema').BaseConversionVisitor;
@@ -23,6 +24,8 @@ const NamespaceManager = require('xsd2jsonschema').NamespaceManager;
 const PropertyDefinable = require('xsd2jsonschema').PropertyDefinable;
 const DepthFirstTraversal = require('xsd2jsonschema').DepthFirstTraversal;
 const ParsingState = require('xsd2jsonschema').ParsingState;
+const State = require('xsd2jsonschema').State;
+const ForwardReference = require('xsd2jsonschema').ForwardReference;
 
 // Library
 //const CheckXsdAttributes = require('../../src/xmlschema/xsdAttributes');
@@ -32,7 +35,8 @@ const CheckXsdFile = require('../../src/xmlschema/xsdFileXmlDom');
 
 //const CheckJsonSchemaTypes = require('../../src/jsonschema/jsonSchemaTypes');
 //const CheckJsonSchemaFormats = require('../../src/jsonschema/jsonSchemaFormats');
-const checkJsonSchemaFile = require('../../src/jsonschema/jsonSchemaFile');
+const CheckJsonSchemaFile = require('../../src/jsonschema/jsonSchemaFile');
+const CheckJsonSchemaRef = require('../../src/jsonschema/jsonSchemaRef');
 
 const CheckDefaultConversionVisitor = require('../../src/visitors/defaultConversionVisitor');
 const CheckBaseConversionVisitor = require('../../src/visitors/baseConversionVisitor');
@@ -47,7 +51,9 @@ const CheckBuiltInTypeConverter = require('../../src/builtInTypeConverter');
 const CheckNamespaceManager = require('../../src/namespaceManager');
 const CheckPropertyDefinable = require('../../src/propertyDefinable');
 const CheckDepthFirstTraversal = require('../../src/depthFirstTraversal');
-const CheckParsingState = require('../../src/parsingState');
+const CheckParsingState = require('../../src/parsingState').ParsingState;
+const CheckState = require('../../src/parsingState').State;
+const CheckForwardReference = require('../../src/forwardReference');
 
 describe('The Library Test -', function() {
 
@@ -61,6 +67,10 @@ describe('The Library Test -', function() {
     //const jsonSchemaTypes = new JsonSchemaTypes();
     //const jsonSchemaFormats = new JsonSchemaFormats();
     const jsonSchemaFile = new JsonSchemaFile();
+    const jsonSchemaRef = new JsonSchemaRef({
+        ref: 'anything',
+        forwardReference: {}
+    });
     
     const defaultConversionVisitor = new DefaultConversionVisitor();
     const baseConversionVisitor = new BaseConversionVisitor();
@@ -72,7 +82,6 @@ describe('The Library Test -', function() {
 		baseId : undefined,
 		mask : undefined,
 		outputDir : undefined
-
     });
     const processor = new Processor();
     const baseConverter = new BaseConverter();
@@ -82,6 +91,19 @@ describe('The Library Test -', function() {
     const propertyDefinable = new PropertyDefinable();
     const depthFirstTraversal = new DepthFirstTraversal();
     const parsingState = new ParsingState();
+    const state = new State({
+        node: 'anything',
+        workingSchema: 'anything',
+        attribute: 'anything'
+    });
+    const forwardReference = new ForwardReference(
+        'anything', 
+        'anything', 
+        'anything', 
+        'anything', 
+        'anything', 
+        'anything'
+    );
 
     it('xsdFile should be an instantOf the XsdFile class', function() {
         expect(xsdFile instanceof CheckXsdFile).toBeTruthy();
@@ -89,8 +111,13 @@ describe('The Library Test -', function() {
     });
 
     it('jsonSchemaFile should be an instantOf the JsonSchemaFile class', function() {
-        expect(jsonSchemaFile instanceof checkJsonSchemaFile).toBeTruthy();
-        expect(jsonSchemaFile).toEqual(jasmine.any(checkJsonSchemaFile));
+        expect(jsonSchemaFile instanceof CheckJsonSchemaFile).toBeTruthy();
+        expect(jsonSchemaFile).toEqual(jasmine.any(CheckJsonSchemaFile));
+    });
+
+    it('jsonSchemaFile should be an instantOf the JsonSchemaRef class', function() {
+        expect(jsonSchemaRef instanceof CheckJsonSchemaRef).toBeTruthy();
+        expect(jsonSchemaRef).toEqual(jasmine.any(CheckJsonSchemaRef));
     });
 
     it('defaultConversionVisitor should be an instantOf the DefaultConversionVisitor class', function() {
@@ -148,14 +175,23 @@ describe('The Library Test -', function() {
         expect(propertyDefinable).toEqual(jasmine.any(CheckPropertyDefinable));
     });
 
-    it('depthFirstTraversal should be an instantOf the depthFirstTraversal class', function() {
+    it('depthFirstTraversal should be an instantOf the DepthFirstTraversal class', function() {
         expect(depthFirstTraversal instanceof DepthFirstTraversal).toBeTruthy();
         expect(depthFirstTraversal).toEqual(jasmine.any(CheckDepthFirstTraversal));
     });
 
-    it('parsingState should be an instantOf the parsingState class', function() {
+    it('parsingState should be an instantOf the ParsingState class', function() {
         expect(parsingState instanceof ParsingState).toBeTruthy();
         expect(parsingState).toEqual(jasmine.any(CheckParsingState));
     });
 
+    it('state should be an instantOf the State class', function() {
+        expect(state instanceof State).toBeTruthy();
+        expect(state).toEqual(jasmine.any(CheckState));
+    });
+
+    it('forwardReference should be an instantOf the ForwardReference class', function() {
+        expect(forwardReference instanceof ForwardReference).toBeTruthy();
+        expect(forwardReference).toEqual(jasmine.any(CheckForwardReference));
+    });
 })

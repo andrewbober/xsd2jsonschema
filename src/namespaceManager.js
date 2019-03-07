@@ -2,16 +2,20 @@
 
 const debug = require('debug')('xsd2jsonschema:NamespaceManager');
 
+const URI = require('urijs');
+const XsdAttributes = require('./xmlschema/xsdAttributes');
 const JsonSchemaFile = require('./jsonschema/jsonSchemaFile');
 const Qname = require('./qname');
 const BuiltInTypeConverter = require('./builtInTypeConverter');
 const Constants = require('./constants');
-const URI = require('urijs');
+const ForwardReference = require('./forwardReference');
 
 
 const namespaces_NAME = Symbol();
-const xmlSchemaNamespace_NAME = Symbol();
 const builtInTypeConverter_NAME = Symbol();
+const jsonSchema_NAME = Symbol();
+const xmlSchemas_NAME = Symbol();
+const forwardReferences_NAME = Symbol();
 
 /**
  * Class responsible for managaging namespaces and types within those namespaces, which are defined as 
@@ -23,7 +27,7 @@ const builtInTypeConverter_NAME = Symbol();
  * or by an *&lt;import&gt;* tag.
  * 
  * An object is used to manage any number of XML Namespaces including a specialized namespace for global
- * attributes.  Namespaces are themselves JSON objects with one property named types.  Initially,
+ * attributes and the XSD well known namespaces.  Namespaces are themselves JSON objects with one property named types.  Initially,
  * the collection of namespaces contains only the globalAttributes specialized namespace.  Additional 
  * namespaces will be added to the collection as they are encountered.
  * 
@@ -36,23 +40,30 @@ const builtInTypeConverter_NAME = Symbol();
  * @module NamespaceManager
  */
 
- class NamespaceManager {
+class NamespaceManager {
 	constructor(options) {
-		this.namespaces = {
-			globalAttributes: { 
-				types: {}
-			}
-		};
+		/*
+				this.namespaces = {
+					globalAttributes: { 
+						types: {}
+					}
+				};
+				this.namespaces = {};
+				this.namespaces[Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME] = {
+					types: {}
+				}
+		*/
 		this.namespaces = {};
-		this.namespaces[Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME] = {
-			types: {}
-		}
-			this.XML_SCHEMA_NAMESPACE = 'http://www.w3.org/2001/XMLSchema';
+		this.addNamespace(Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME);
+		this.addNamespace(Constants.XML_SCHEMA_NAMESPACE);
 		if (options != undefined) {
 			this.builtInTypeConverter = options.builtInTypeConverter != undefined ? options.builtInTypeConverter : new BuiltInTypeConverter();
 		} else {
 			this.builtInTypeConverter = new BuiltInTypeConverter();
 		}
+		this.jsonSchemas = {};
+		this.xmlSchemas = {};
+		this.forwardReferences = [];
 	}
 
 	// Getters/Setters
@@ -71,10 +82,10 @@ const builtInTypeConverter_NAME = Symbol();
 	}
 
 	get XML_SCHEMA_NAMESPACE() {
-		return this[xmlSchemaNamespace_NAME];
+		throw new Error();
 	}
 	set XML_SCHEMA_NAMESPACE(newXmlSchemaNamespace) {
-		this[xmlSchemaNamespace_NAME] = newXmlSchemaNamespace;
+		throw new Error();
 	}
 
 	get builtInTypeConverter() {
@@ -82,6 +93,32 @@ const builtInTypeConverter_NAME = Symbol();
 	}
 	set builtInTypeConverter(newBuiltInTypeConverter) {
 		this[builtInTypeConverter_NAME] = newBuiltInTypeConverter;
+	}
+
+	get jsonSchemas() {
+		return this[jsonSchema_NAME];
+	}
+	set jsonSchemas(newJsonSchema) {
+		this[jsonSchema_NAME] = newJsonSchema;
+	}
+
+	get xmlSchemas() {
+		return this[xmlSchemas_NAME];
+	}
+	set xmlSchemas(newXmlSchemas) {
+		this[xmlSchemas_NAME] = newXmlSchemas;
+	}
+
+	get forwardReferences() {
+		return this[forwardReferences_NAME];
+	}
+	set forwardReferences(newForwardReferences) {
+		this[forwardReferences_NAME] = newForwardReferences;
+	}
+
+	addNewJsonSchema(newJsonSchemaOptions) {
+		var jsonSchema = new JsonSchemaFile(newJsonSchemaOptions);
+		this.jsonSchemas[newJsonSchemaOptions.uri.toString()] = jsonSchema;
 	}
 
 	/**
@@ -93,6 +130,7 @@ const builtInTypeConverter_NAME = Symbol();
 	addNamespace(_namespace) {
 		//var namespace = utils.getSafeNamespace(_namespace);
 		const namespace = _namespace;
+
 		if (!this.namespaces.hasOwnProperty(namespace)) {
 			this.namespaces[namespace] = { types: {} };
 		}
@@ -110,63 +148,337 @@ const builtInTypeConverter_NAME = Symbol();
 	}
 
 	isWellKnownXmlNamespace(namespace) {
-		return namespace === this.XML_SCHEMA_NAMESPACE;	
-	}
-
-	getBuiltInType(typeName, xsd) {
-		if (this.namespaces[this.XML_SCHEMA_NAMESPACE].types[typeName] === undefined) {
-			const newType = new JsonSchemaFile();
-			// The 'node' parameter to the builtInTypeConverter's xml handler methods is not currently
-			// used so it is save to pass in null for now.  This is likely a future bug.
-			this.builtInTypeConverter[typeName](null, newType, xsd);
-			this.namespaces[this.XML_SCHEMA_NAMESPACE].types[typeName] = newType;
-		}
-		const builtInType = this.namespaces[this.XML_SCHEMA_NAMESPACE].types[typeName];
-		return builtInType;
+		return namespace === Constants.XML_SCHEMA_NAMESPACE;
 	}
 
 	/**
-	 * This method returns the requested type, which can be either a custom type or an XML
-	 * built-in type.  If the type exists in the namesapce of baseJsonSchema the
-	 * custom type is return.  If the type does not exist it is created and then returned.
+	 * 
+	 * @param {String} fullTypeName The name of the type to be returned.  One of the seven core JSON Schema types.
+	 * @param {JsonSchemaFile} parent The parent of this type.
+	 * @param {XsdFile} xsd - the XML schema file currently being processed.
+	 *
+	 * @returns {JsonSchemaFile} The requested custom type.
+	 */
+	getBuiltInType(fullTypeName, parent, xsd) {
+		const qname = new Qname(fullTypeName);
+		const typeName = qname.getLocal();
+		if (this.namespaces[Constants.XML_SCHEMA_NAMESPACE].types[typeName] === undefined) {
+			const newType = new JsonSchemaFile();
+			// The 'node' parameter to the builtInTypeConverter's xml handler methods is not currently
+			// used so it is safe to pass in null for now.  This is likely a future bug!
+			debug(`Returning JSON Schema type [${typeName}]`);
+			this.builtInTypeConverter[typeName](null, newType, xsd);
+			this.namespaces[Constants.XML_SCHEMA_NAMESPACE].types[typeName] = newType;
+		}
+		const builtInType = this.namespaces[Constants.XML_SCHEMA_NAMESPACE].types[typeName].clone();
+		builtInType.parent = parent;
+		return builtInType;
+	}
+
+	getNamespaceName(qname, xsd) {
+		let namespaceName = qname.getPrefix();
+		if (namespaceName == '' && xsd.resolveNamespace(namespaceName) == undefined) {
+			namespaceName = XsdAttributes.TARGET_NAMESPACE;
+		}
+		return namespaceName;
+	}
+
+	getNamespaceValue(qname, xsd) {
+		let namespaceName = qname.getPrefix();
+		if (namespaceName == '' && xsd.resolveNamespace(namespaceName) == undefined) {
+			namespaceName = XsdAttributes.TARGET_NAMESPACE;
+		}
+		return xsd.resolveNamespace(namespaceName);
+	}
+
+	isBuiltInType(fullTypeName, xsd) {
+		const qname = new Qname(fullTypeName);
+		const namespace = this.getNamespaceValue(qname, xsd);
+		return this.isWellKnownXmlNamespace(namespace) && (this.builtInTypeConverter[qname.getLocal()] != undefined);
+	}
+
+	createForwardReference(namespace, typeName, parent, baseJsonSchema, xsd) {
+		debug('Creating FORWARD REFERENCE to [' + typeName + '] in namespace [' + namespace + '] from [' + xsd.uri.toString() + ']');
+		// Create the ForwardReference type, which will be resolved later after the type has been processed.
+		const forwardRef = new ForwardReference(this, namespace, typeName, parent, baseJsonSchema, xsd);
+		this.forwardReferences.push(forwardRef);
+		return forwardRef.ref;
+	}
+
+	/**
+	 * This method returns a reference to the requested type, which can be either a custom type or an 
+	 * XML built-in type.  If the type exists in the namesapce of xsd then a reference to the type is
+	 * retuned. If the type does not exist a forwardReference to the type is created and then returned.
 	 * 
 	 * @param {String} fullTypeName The name of the type to be returned.  The format of this
-	 * parameter is 'prefix:localName' where localName is require and the prefix an separating colon are optional. 
+	 * parameter is 'prefix:localName' as defined {@link http://www.w3.org/TR/xml-names/#NT-QName |here}. 
+	 * @param {JsonSchemaFile} parent The parent of this type.
 	 * @param {JsonSchemaFile} baseJsonSchema The JsonShemaFile being created as a result of converting an XML
 	 *  Schema file to JSON Schema.
 	 * @param {XsdFile} xsd - the XML schema file currently being processed.
 	 * 
 	 * @returns {JsonSchemaFile} The requested custom type.
 	 */
-	getType(fullTypeName, baseJsonSchema, xsd) {
+	getTypeReference(fullTypeName, parent, baseJsonSchema, xsd, createType) {
 		if (fullTypeName === undefined) {
 			throw new Error('\'fullTypeName\' parameter required');
+		}
+		if (parent === undefined) {
+			throw new Error('\'parent\' parameter required');
 		}
 		if (baseJsonSchema === undefined) {
 			throw new Error('\'baseJsonSchema\' parameter required');
 		}
+		if (xsd === undefined) {
+			throw new Error('\'xsd\' parameter required');
+		}
+		if (createType != undefined) {
+			throw new Error('\'createType\' parameter not allowed');
+		}
 		const namespaceQname = new Qname(fullTypeName);
-		const namespace = xsd.resolveNamespace(namespaceQname.getPrefix());
+		const namespace = this.getNamespaceValue(namespaceQname, xsd);
+		if (namespace == undefined) {
+			throw new Error('A namespace has not been defined for [' + fullTypeName + ']');
+		}
 		const typeName = namespaceQname.getLocal();
 		if (this.isWellKnownXmlNamespace(namespace)) {
-			return this.getBuiltInType(typeName);
+			return this.getBuiltInType(typeName, parent, xsd);
 		}
-		var type = this.namespaces[namespace].types[typeName];
-		if (type === undefined) {
-			// Create the type, which will be filled out later as the XSD is processed, and add it to the namespace.
-			this.namespaces[namespace].types[typeName] = new JsonSchemaFile({
-				ref : baseJsonSchema.id + '#' + baseJsonSchema.getSubschemaStr() + '/' + typeName
-			});
-			type = this.namespaces[namespace].types[typeName];
+		if (this.namespaces[namespace].types[typeName] === undefined) {
+			return this.createForwardReference(namespace, fullTypeName, parent, baseJsonSchema, xsd);
+		} else {
+			debug('Returning reference to existing type [' + fullTypeName + '] in namespace [' + namespace + ']');
+			const baseJsonSchemaForNamespace = this.jsonSchemas[xsd.imports[namespace]] == undefined ? baseJsonSchema : this.jsonSchemas[xsd.imports[namespace]];
+			const type = this.namespaces[namespace].types[typeName];
+			return type.get$RefToSchema(parent);
+		}
+	}
 
-			// Add the type type to the an anyOf in baseJsonSchema so it can be used directly for validation.
-			const baseId = new URI(baseJsonSchema.id);
-			const typeId = new URI(type.ref);
-			if (baseId.filename() == typeId.filename()) {
-				baseJsonSchema.addRequiredAnyOfPropertyByReference(typeName, type);
-			}
+	createType(namespace, typeName, parent, baseJsonSchema, xsd) {
+		debug('Creating TYPE [' + typeName + '] in namespace [' + namespace + '] from [' + xsd.uri.toString() + ']');
+		// Create the type, which will be filled out later as the XSD is processed, and add it to the namespace.
+		const baseJsonSchemaForNamespace = this.jsonSchemas[xsd.imports[namespace]] == undefined ? baseJsonSchema : this.jsonSchemas[xsd.imports[namespace]];
+		const newType = new JsonSchemaFile({
+			ref: new URI(baseJsonSchemaForNamespace.id + '#' + baseJsonSchemaForNamespace.getSubschemaJsonPointer() + '/' + typeName)
+		});
+		this.namespaces[namespace].types[typeName] = newType;
+		// const type = this.namespaces[namespace].types[typeName].clone();
+		const type = this.namespaces[namespace].types[typeName];
+		type.parent = parent;
+		// Add the type type to the anyOf in baseJsonSchema so it can be used directly for validation.
+		const baseId = new URI(baseJsonSchema.id);
+		const typeId = new URI(newType.ref);
+		if (baseId.filename() == typeId.filename()) {
+			baseJsonSchema.addRequiredAnyOfPropertyByReference(typeName, type.get$RefToSchema(baseJsonSchema));
 		}
 		return type;
+	}
+
+	/**
+	 * This method returns the requested type, which can be either a custom type or an 
+	 * XML built-in type.  If the type exists in the namesapce of xsd then the type is
+	 * retuned. If the type does not exist it is created and then returned.
+	 * 
+	 * @param {String} fullTypeName The name of the type to be returned.  The format of this
+	 * parameter is 'prefix:localName' as defined {@link http://www.w3.org/TR/xml-names/#NT-QName |here}. 
+	 * @param {JsonSchemaFile} parent The parent of this type.
+	 * @param {JsonSchemaFile} baseJsonSchema The JsonShemaFile being created as a result of converting an XML
+	 *  Schema file to JSON Schema.
+	 * @param {XsdFile} xsd - the XML schema file currently being processed.
+	 * 
+	 * @returns {JsonSchemaFile} The requested custom type.
+	 */
+	getType(fullTypeName, parent, baseJsonSchema, xsd, createType) {
+		if (fullTypeName === undefined) {
+			throw new Error('\'fullTypeName\' parameter required');
+		}
+		if (parent === undefined) {
+			throw new Error('\'parent\' parameter required');
+		}
+		if (baseJsonSchema === undefined) {
+			throw new Error('\'baseJsonSchema\' parameter required');
+		}
+		if (xsd === undefined) {
+			throw new Error('\'xsd\' parameter required');
+		}
+		if (createType != undefined) {
+			throw new Error('\'createType\' parameter not allowed');
+		}
+		const namespaceQname = new Qname(fullTypeName);
+		const namespace = this.getNamespaceValue(namespaceQname, xsd);
+		if (namespace == undefined) {
+			throw new Error('A namespace has not been defined for [' + fullTypeName + ']');
+		}
+		const typeName = namespaceQname.getLocal();
+		if (this.isWellKnownXmlNamespace(namespace)) {
+			return this.getBuiltInType(typeName, parent, xsd);
+		}
+		if (this.namespaces[namespace].types[typeName] === undefined) {
+			return this.createType(namespace, typeName, parent, baseJsonSchema, xsd);
+		} else {
+			debug('Returning existing type [' + typeName + '] in namespace [' + namespace + ']');
+			let type = this.namespaces[namespace].types[typeName]; //.clone();
+			if (type.isForwardRef()) {
+				// create the new type
+				const newType = this.createType(namespace, typeName, parent, baseJsonSchema, xsd);
+				debug(`Replacing forward reference [${type.ref}] with new type [${newType.ref}]`);
+				// resolve any references that were created.
+				type.resolveRef(newType)
+				// remove the forward reference because it does not need to be resolved later.
+				const index = this.forwardReferences.indexOf(type.forwardReference);
+				this.forwardReferences.splice(index, 1);
+				// replace the forward reference with the actual type in the namespace 
+				this.namespaces[namespace].types[typeName] = newType;
+				type = this.namespaces[namespace].types[typeName];
+			}
+			return type;
+		}
+	}
+
+	compilePointer (pointer) {
+		if (typeof pointer === 'string') {
+		  	pointer = pointer.split('/')
+			  if (Array.isArray(pointer)) {
+				return pointer
+			}
+		} 
+		throw new Error(`Invalid JSON pointer [${pointer}}]`)
+	}
+
+	getReferencedTypeName(type) {
+		if (!type.isRef()) {
+			return new Error(`ref expected but found ${type.toString()}`);
+		}
+		var pointer = this.compilePointer(type.$ref);
+		return pointer[pointer.length-1];
+	}
+
+	/**
+	 * This method returns the requested type, which can be either a custom type or an 
+	 * XML built-in type.  If the type exists in the namesapce of xsd then the type is
+	 * retuned. If the type does not exist it is created and then returned.
+	 * 
+	 * @param {String} fullTypeName The name of the type to be returned.  The format of this
+	 * parameter is 'prefix:localName' as defined {@link http://www.w3.org/TR/xml-names/#NT-QName |here}. 
+	 * @param {JsonSchemaFile} parent The parent of this type.
+	 * @param {JsonSchemaFile} baseJsonSchema The JsonShemaFile being created as a result of converting an XML
+	 *  Schema file to JSON Schema.
+	 * @param {XsdFile} xsd - the XML schema file currently being processed.
+	 * 
+	 * @returns {JsonSchemaFile} The requested custom type.
+	 */
+	getTypeReferenceFromRefChain(fullTypeName, parent, baseJsonSchema, xsd) {
+		if (fullTypeName === undefined) {
+			throw new Error('\'fullTypeName\' parameter required');
+		}
+		if (parent === undefined) {
+			throw new Error('\'parent\' parameter required');
+		}
+		if (baseJsonSchema === undefined) {
+			throw new Error('\'baseJsonSchema\' parameter required');
+		}
+		if (xsd === undefined) {
+			throw new Error('\'xsd\' parameter required');
+		}
+		const namespaceQname = new Qname(fullTypeName);
+		const namespace = this.getNamespaceValue(namespaceQname, xsd);
+		if (namespace == undefined) {
+			throw new Error('A namespace has not been defined for [' + fullTypeName + ']');
+		}
+		const typeName = namespaceQname.getLocal();
+		if (this.isWellKnownXmlNamespace(namespace)) {
+			return this.getBuiltInType(typeName, parent, xsd);
+		}
+		if (this.namespaces[namespace].types[typeName] === undefined) {
+			return this.createForwardReference(namespace, fullTypeName, parent, baseJsonSchema, xsd);
+		} else {
+			debug('Returning reference to existing type [' + fullTypeName + '] in namespace [' + namespace + ']');
+			const baseJsonSchemaForNamespace = this.jsonSchemas[xsd.imports[namespace]] == undefined ? baseJsonSchema : this.jsonSchemas[xsd.imports[namespace]];
+			const type = this.namespaces[namespace].types[typeName];
+			// Return a reference to a type.  Don't return a reference to a reference.
+			if (type.isRef()) {
+				return this.getTypeReferenceFromRefChain(this.getReferencedTypeName(type), parent, baseJsonSchema, xsd)
+			} else {
+				return type.get$RefToSchema(parent);
+			}
+		}
+	}	
+	
+	dumpForwardReferences() {
+		debug('Begin Forward References (' + this.forwardReferences.length + ')');
+		this.forwardReferences.forEach(function (fRef, index, array) {
+			if (fRef.ref.ref == undefined) {
+				debug(index + ') $ref:' + fRef.ref.$ref.toString());
+			} else {
+				debug(index + ') ref:' + fRef.ref.ref.toString());
+			}
+		}, this);
+	}
+
+	resolveForwardReferenceOld(fRef) {
+		const type = this.getTypeReferenceFromRefChain(fRef.fullTypeName, fRef.parent, fRef.baseJsonSchema, fRef.xsd);
+		//const displayRef = type.ref == undefined ? type.$ref : type.ref;
+		const fromType = fRef.ref.$ref;
+		const toType = type.ref == undefined ? type.$ref : type.ref;
+		debug(`Resolving type [${fRef.ref.$ref}] to [${type.ref == undefined ? type.$ref : type.ref}]`);
+		if(type.resolved != undefined && type.resolved != true && fromType != toType) {
+			this.resolveForwardReference(type.forwardReference);
+		}
+		let newRef = (type.ref != undefined ? type.ref : type.$ref)
+		debug('Updating ' + fRef.ref.$ref.toString() + ' to ' + newRef.toString() + ', from ' + fRef.baseJsonSchema.filename);
+		fRef.ref.resolveRef(type);
+	}
+
+	resolveForwardReference(fRef) {
+		const type = this.getTypeReferenceFromRefChain(fRef.fullTypeName, fRef.parent, fRef.baseJsonSchema, fRef.xsd);
+		const fromType = fRef.ref.$ref;
+		const toType = type.ref == undefined ? type.$ref : type.ref;
+		debug(`Resolving type [${fRef.ref.$ref}] to [${type.ref == undefined ? type.$ref : type.ref}]`);
+		if(type.resolved != undefined && type.resolved != true && fromType != toType) {
+			this.resolveForwardReference(type.forwardReference);
+		}
+		debug(`'Updating [${fromType}] to [${toType}] from ${fRef.baseJsonSchema.filename}`);
+		fRef.ref.resolveRef(type);
+	}
+
+	resolveForwardReferences() {
+		this.forwardReferences.forEach(function (fRef, index, array) {
+			this.resolveForwardReference(fRef);
+		}, this);
+		this.dumpForwardReferences();
+	}
+
+	cloneForwardReference(forwardRef) {
+		for(let i=0; i<this.forwardReferences.length; i++) {
+			let fRef = this.forwardReferences[i];
+			if(forwardRef.equals(fRef.ref)) {
+				const cloneRef = this.getTypeReference(fRef.fullTypeName, fRef.parent, fRef.baseJsonSchema, fRef.xsd);
+				return cloneRef;
+			}
+		}
+		return undefined;
+	}
+
+	/**
+	 * This method returns true if the type exists in the namespace of the .
+	 * 
+	 * @param {String} fullTypeName The name of the type to be returned.  The format of this
+	 * parameter is 'prefix:localName' as defined {@link http://www.w3.org/TR/xml-names/#NT-QName |here}. 
+	 * @param {XsdFile} xsd - the XML schema file currently being processed.
+	 * 
+	 * @returns {boolean} The requested custom type.
+	 */
+	typeExists(fullTypeName, xsd) {
+		if (fullTypeName === undefined) {
+			throw new Error('\'fullTypeName\' parameter required');
+		}
+		const namespaceQname = new Qname(fullTypeName);
+		const namespace = this.getNamespaceValue(namespaceQname, xsd);
+		if (namespace == undefined) {
+			throw new Error('A namespace has not been defined for [' + fullTypeName + ']');
+		}
+		const typeName = namespaceQname.getLocal();
+		return this.namespaces[namespace].types[typeName] != undefined;
 	}
 
 	/**
@@ -182,10 +494,16 @@ const builtInTypeConverter_NAME = Symbol();
 	 */
 	addTypeReference(fullTypeName, type, baseJsonSchema, xsd) {
 		const namespaceQname = new Qname(fullTypeName);
-		const namespace = xsd.resolveNamespace(namespaceQname.getPrefix());
+		const namespaceName = this.getNamespaceName(namespaceQname, xsd);
+		const namespace = xsd.resolveNamespace(namespaceName);
 		const refName = namespaceQname.getLocal();
-		this.namespaces[namespace].types[refName] = type;
-		baseJsonSchema.addRequiredAnyOfPropertyByReference(refName, type);
+		if (this.namespaces[namespace].types[refName] === undefined) {
+			debug('Creating reference [' + refName + '] in namespace [' + namespace + '] from [' + xsd.uri.toString() + ']');
+			this.namespaces[namespace].types[refName] = type;
+			baseJsonSchema.addRequiredAnyOfPropertyByReference(refName, type);
+		} else {
+			debug('Reference [' + refName + '] already exists in namespace [' + namespace + '] from [' + xsd.uri.toString() + ']');
+		}
 	}
 
 	/**
@@ -208,10 +526,10 @@ const builtInTypeConverter_NAME = Symbol();
 		var globalAttributesNamespace = this.namespaces.globalAttributes;
 		if (globalAttributesNamespace.types[name] === undefined) {
 			globalAttributesNamespace.types[name] = new JsonSchemaFile({
-				ref : baseJsonSchema.id + '#/' + Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME + '/' + name
+				ref: new URI(baseJsonSchema.id + '#/' + Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME + '/' + name)
 			});
 		}
-		return globalAttributesNamespace.types[name];
+		return globalAttributesNamespace.types[name].clone();
 	}
 
 	toString() {

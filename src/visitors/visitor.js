@@ -58,8 +58,9 @@ class Visitor {
 		try {
 			return this.processor.process(node, jsonSchema, xsd);
 		} catch (err) {
+			
 			debug(err.stack);
-			this.processor.parsingState.dumpStates(xsd.baseFilename);
+			this.processor.parsingState.dumpStates(xsd.filename);
 			XsdFile.dumpNode(node);
 			//return false;
 			throw err;

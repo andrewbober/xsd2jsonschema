@@ -5,6 +5,32 @@
 	"configurations": [
 		{
 			// Name of configuration; appears in the launch configuration drop down menu.
+			"name": "Example Live Conversion",
+			// Type of configuration. Possible values: "node", "mono".
+			"type": "node",
+			// Action to take
+			"request": "launch",
+			// Workspace relative or absolute path to the program.
+			"program": "${workspaceRoot}/example-live/example-live.js",
+			// Automatically stop program after launch.
+			"stopOnEntry": false,
+			// Command line arguments passed to the program.
+			"args": [],
+			"cwd": "${workspaceRoot}/",
+			// Workspace relative or absolute path to the runtime executable to be used. Default is the runtime executable on the PATH.
+			"runtimeExecutable": null,
+			// Optional arguments passed to the runtime executable.
+			"runtimeArgs": ["--nolazy"],
+			// Environment variables passed to the program.
+			"env": {
+				"NODE_ENV": "development",
+				"DEBUG": "xsd2jsonschema:BaseConverter,xsd2jsonschema:NamespaceManager"
+			},
+			// Use JavaScript source maps (if they exist).
+			"sourceMaps": false
+		},
+		{
+			// Name of configuration; appears in the launch configuration drop down menu.
 			"name": "Example Conversion",
 			// Type of configuration. Possible values: "node", "mono".
 			"type": "node",
@@ -23,7 +49,8 @@
 			"runtimeArgs": ["--nolazy"],
 			// Environment variables passed to the program.
 			"env": {
-				"NODE_ENV": "development"
+				"NODE_ENV": "development",
+				"DEBUG": "xsd2jsonschema:BaseConverter,xsd2jsonschema:ParsingState"
 			},
 			// Use JavaScript source maps (if they exist).
 			"sourceMaps": false
@@ -55,6 +82,32 @@
 		},
 		{
 			// Name of configuration; appears in the launch configuration drop down menu.
+			"name": "Example Xml Usage",
+			// Type of configuration. Possible values: "node", "mono".
+			"type": "node",
+			// Action to take
+			"request": "launch",
+			// Workspace relative or absolute path to the program.
+			"program": "${workspaceRoot}/example/example.js",
+			// Automatically stop program after launch.
+			"stopOnEntry": false,
+			// Command line arguments passed to the program.
+			"args": ["xml-usage"],
+			"cwd": "${workspaceRoot}/",
+			// Workspace relative or absolute path to the runtime executable to be used. Default is the runtime executable on the PATH.
+			"runtimeExecutable": null,
+			// Optional arguments passed to the runtime executable.
+			"runtimeArgs": ["--nolazy"],
+			// Environment variables passed to the program.
+			"env": {
+				"NODE_ENV": "development",
+				"DEBUG": "xsd2jsonschema:XmlUsageVisitorSum"
+			},
+			// Use JavaScript source maps (if they exist).
+			"sourceMaps": false
+		},
+		{
+			// Name of configuration; appears in the launch configuration drop down menu.
 			"name": "Launch Functional Test",
 			// Type of configuration. Possible values: "node", "mono".
 			"type": "node",
@@ -74,7 +127,7 @@
 			// Environment variables passed to the program.
 			"env": {
 				"NODE_ENV": "development",
-				"DEBUG": "xsd2jsonschema:AttributeFunctionalTest"
+				"DEBUG": "xsd2jsonschema:*"
 			},
 			// Use JavaScript source maps (if they exist).
 			"sourceMaps": false
@@ -91,7 +144,7 @@
 			// Automatically stop program after launch.
 			"stopOnEntry": false,
 			// Command line arguments passed to the program.
-			"args": ["./test/functional/**/*Spec*"],
+			"args": ["--config=test/unit/jasmine.json"],
 			"cwd": "${workspaceRoot}/",
 			// Workspace relative or absolute path to the runtime executable to be used. Default is the runtime executable on the PATH.
 			"runtimeExecutable": null,
@@ -99,7 +152,8 @@
 			"runtimeArgs": ["--nolazy"],
 			// Environment variables passed to the program.
 			"env": {
-				"NODE_ENV": "development"
+				"NODE_ENV": "development",
+				"DEBUG": "xsd2jsonschema:*"
 			},
 			// Use JavaScript source maps (if they exist).
 			"sourceMaps": false
@@ -125,7 +179,7 @@
 			// Environment variables passed to the program.
 			"env": {
 				"NODE_ENV": "development",
-				"DEBUG": "xsd2jsonschema:*FunctionalTest"
+				"DEBUG": "xsd2jsonschema:*"
 			},
 			// Use JavaScript source maps (if they exist).
 			"sourceMaps": false
@@ -150,7 +204,8 @@
 			"runtimeArgs": ["--nolazy"],
 			// Environment variables passed to the program.
 			"env": {
-				"NODE_ENV": "development"
+				"NODE_ENV": "development",
+				"DEBUG": "xxxxsd2jsonschema:*"
 			},
 			// Use JavaScript source maps (if they exist).
 			"sourceMaps": false

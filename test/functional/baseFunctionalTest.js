@@ -149,15 +149,31 @@ class BaseFunctionalTest {
             console.log(this.constructor.name + " = PASSED");
         } else {
             console.log(this.constructor.name + " = FAILED");
+            this.dumpErrors();
         }
     }
 
-    getErrors() {
+    dumpErrors() {
+        this.test.testInstances.forEach(function(testInstance, index, array) {
+            if(testInstance.testPassed == false) {
+                console.log("Test instance: " + JSON.stringify(testInstance, null, "\t"))
+            }
+        }, this);
+    }
+
+    getErrors(dump) {
         const errors = {};
         for (let i = 0; i < this.test.testInstances.length; i++) {
-            const validationErrors = this.test.testInstances[i].validationErrors;
+            const testInstance= this.test.testInstances[i]
+            const validationErrors = testInstance.validationErrors;
+            debug("Test instance: " + JSON.stringify(testInstance, null, "\t"))
             if (validationErrors != undefined) {
                 errors[i] = validationErrors;
+                if (dump != undefined && dump != false) {
+                    debug(i + ") " + JSON.stringify(validationErrors.errors, null, "\t"));
+                }
+            } else {
+                debug("No validation errors to report");
             }
         }
         return errors;
