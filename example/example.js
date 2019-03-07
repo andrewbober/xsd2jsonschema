@@ -20,10 +20,9 @@ const action = process.argv[2];
 
 // Options for example
 const options = {
-	mask: /_\d{4}-\d{2}-\d{2}/,
+	xsdBaseUri: "example/schema",
 	outputDir: "example/generated_jsonschema",
-	baseId: "http://www.xsd2jsonschema.org/schema/",
-	xsdBaseDir: "example/schema",
+	mask: /_\d{4}-\d{2}-\d{2}/
 };
 
 const xsdFilenames = [
@@ -61,8 +60,8 @@ if (action === "convert") {
 	var log = JSON.stringify(apt.getJsonSchema(), null, 2);
 	console.log(log);
 
-	var customTypes = converter.getCustomTypes();
-	var apt2 = customTypes.getNamespace("/www.xsd2jsonschema.org/example").customTypes["PersonInfoType"];
+	var namespaceManager = converter.getNamespaceManager();
+	var apt2 = namespaceManager.getNamespace("/www.xsd2jsonschema.org/example").types["PersonInfoType"];
 	var log2 = JSON.stringify(apt2.getJsonSchema(), null, 2);
 	console.log(log2);
 } else if (action === "dump-schemas") {
@@ -81,7 +80,7 @@ if (action === "convert") {
 		"example/data/ExampleDataPersonInfo.json",
 		"example/data/ExampleDataPersonName.json"
 	];
-	const validate = ajv.getSchema("http://www.xsd2jsonschema.org/schema/ExampleTypes.json");
+	const validate = ajv.getSchema("ExampleTypes.json");
 	exampleDataFilenames.forEach(function (filename, index, array) {
 		var exampleData = loadFile(filename);
 		const valid = validate(exampleData);

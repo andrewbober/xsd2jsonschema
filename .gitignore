@@ -84,3 +84,17 @@ Temporary Items
 ### Typings ###
 ## Ignore downloaded typings
 typings
+
+### XML Schema Test Suite ###
+xmlschema-test-suite
+example/generated_jsonschema/*
+test/generated_jsonschema/*
+example-live/generated_jsonschema/*
+
+### build/test intermediates
+out
+coverage
+
+
+## Just for now 2018-12-11
+example-live

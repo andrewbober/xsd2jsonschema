@@ -2,7 +2,7 @@
  * New node file
  */
 
-"use strict";
+'use strict';
 
 var qualName_NAME = Symbol();
 
@@ -16,7 +16,6 @@ class Qname {
 	get qualName() {
 		return this[qualName_NAME];
 	}
-
 	set qualName(newQualName) {
 		this[qualName_NAME] = newQualName;
 	}

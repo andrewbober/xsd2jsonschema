@@ -1,5 +1,8 @@
 // Place your settings in this file to overwrite default and user settings.
 {
+    // If true, will use single instead of double quotes
+    "prettier.singleQuote": true,
+
     "editor.minimap.enabled": true,
     "eslint.enable": true,
     "eslint.options": {

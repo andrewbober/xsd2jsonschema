@@ -1,0 +1,74 @@
+{
+	"id": "http://musicOfTheNight/unitTestSchema.json",
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"title": "A nice test",
+	"type": "object",
+	"properties": {
+		"everything": {
+			"$ref": "http://musicOfTheNight/subschemaUnitTest.json#/www.xsd2jsonschema.org/example/unit/test/everything"
+		}
+	},
+	"required": [
+		"everything"
+	],
+	"www.xsd2jsonschema.org": {
+		"example": {
+			"unit": {
+				"test": {
+					"everything": {
+						"description": "something",
+						"type": "object",
+						"multipleOf": 2,
+						"minimum": 2,
+						"exclusiveMinimum": true,
+						"maximum": 2,
+						"exclusiveMaximum": true,
+						"minLength": 2,
+						"maxLength": 2,
+						"pattern": "something",
+						"enum": [
+							"something"
+						],
+						"allOf": [
+							{}
+						],
+						"anyOf": [
+							{}
+						],
+						"oneOf": [
+							{}
+						],
+						"not": {},
+						"default": {
+							"something": {}
+						},
+						"format": "something",
+						"dependencies": {
+							"something": {}
+						},
+						"additionalItems": {},
+						"maxItems": 2,
+						"minItems": 2,
+						"uniqueItems": true,
+						"items": {},
+						"maxProperties": 2,
+						"minProperties": 2,
+						"additionalProperties": true,
+						"properties": {
+							"something": {}
+						},
+						"patternProperties": {
+							"something": {}
+						},
+						"required": [
+							"something"
+						],
+						"definitions": {
+							"something": {}
+						}
+					}
+				}
+			}
+		}
+	}
+}

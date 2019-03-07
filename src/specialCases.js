@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  * Defines constants for identifying special cases in XML Schema that cannot be directly translated into JSON Schema.

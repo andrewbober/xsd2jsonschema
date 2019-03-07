@@ -1,0 +1,64 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.xsd2jsonschema.org/example" targetNamespace="http://www.xsd2jsonschema.org/example" elementFormDefault="qualified" attributeFormDefault="unqualified" version="1.0.0">
+	Love
+	<!--Character-->
+	<xs:simpleType name="C">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<!--Narrow Character-->
+	<xs:simpleType name="NarrowCharacter">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+			<xs:pattern value="[\p{IsBasicLatin}]*"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<!--Boolean-->
+	<xs:simpleType name="Boolean">
+		<xs:restriction base="xs:boolean"/>
+	</xs:simpleType>
+	<!--Year, YrMon, Date, Time, DateTime, Timestamp-->
+	<xs:simpleType name="Year">
+		<xs:restriction base="xs:gYear"/>
+	</xs:simpleType>
+	<xs:simpleType name="YrMon">
+		<xs:restriction base="xs:gYearMonth"/>
+	</xs:simpleType>
+	<xs:simpleType name="Date">
+		<xs:restriction base="xs:date"/>
+	</xs:simpleType>
+	<xs:simpleType name="Time">
+		<xs:restriction base="xs:time"/>
+	</xs:simpleType>
+	<xs:simpleType name="DateTime">
+		<xs:restriction base="xs:dateTime"/>
+	</xs:simpleType>
+	<xs:simpleType name="Timestamp">
+		<xs:restriction base="xs:dateTime"/>
+	</xs:simpleType>
+	<!--Integer-->
+	<xs:simpleType name="Integer">
+		<xs:restriction base="xs:integer"/>
+	</xs:simpleType>
+	<!--Universal Resource Identifier (URI)-->
+	<xs:simpleType name="URI">
+		<xs:restriction base="xs:anyURI">
+			<xs:minLength value="1"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<!--Binary-->
+	<xs:simpleType name="Binary">
+		<xs:restriction base="xs:base64Binary"/>
+	</xs:simpleType>
+	<xs:simpleType name="Duration">
+		<xs:restriction base="xs:duration"/>
+	</xs:simpleType>
+
+	<xs:simpleType name="Char_20">
+		<xs:restriction base="C">
+			<xs:minLength value="1"/>
+			<xs:maxLength value="20"/>
+		</xs:restriction>
+	</xs:simpleType>
+</xs:schema>
