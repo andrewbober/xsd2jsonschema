@@ -250,10 +250,10 @@ class Xsd2JsonSchema {
         if (spacing == undefined) {
             spacing = '\t';
         }
-        const dir = new URI(this.outputDir).segment(jsonSchema.filename);
+        const dir = path.join(this.outputDir.toString(), jsonSchema.filename.toString())
         const data = JSON.stringify(jsonSchema.getJsonSchema(), null, spacing);
         //const maskedFilename = this.getMaskedFileName(jsonSchema.filename);
-        fs.ensureDirSync(dir.directory())
+        fs.ensureDirSync(this.outputDir.toString());
         fs.writeFileSync(dir.toString(), data);
     }
 
