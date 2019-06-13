@@ -11,7 +11,7 @@ const processor_NAME = Symbol();
 /**
  * Class representing a visitor.  Vistors are utilized by {@link DepthFirstTraversal} to process each node within an XML 
  * Schema file.  This base implmention simply calls the processor member's {@link Processor#process|Processor.process()}
- * method to facilitate conversion of the XML node being visited from XMLSchema to JSON Schema.
+ * method to facilitate processing of the current node of the {@link XsdFile} being traversed.
  * 
  * @module Visitor
  * @see {@link BaseConversionVisitor} 
@@ -31,7 +31,7 @@ class Visitor {
 		if (processor != undefined) {
 			this.processor = processor;
 		} else {
-			this.processor = new Processor();
+			//this.processor = new Processor();
 		}
 	}
 
@@ -45,14 +45,15 @@ class Visitor {
 	}
 
 	/**
-	 * This method is called for each node in the XML Schema file being processed.  It involks {@link BaseConverter#process|BaseConverter.process()} 
+	 * This method is called for each node in the XML Schema file being processed.  It involks {@link ConverterDraft04#process|ConverterDraft04.process()} 
 	 * to effect the conversion of the current element in {@link XsdFile|xsd}.
 	 * 
 	 * @param {Node} node - The current element in xsd being converted.
 	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current XML Schema file {@link XsdFile|xsd} being converted.
 	 * @param {XsdFile} xsd - The XML schema file currently being converted.
 	 * 
-	 * @returns {Boolean} - False if an error occurs to cancel traversal of {@link XsdFile|xsd}.  Otherwise, the return value of {@link BaseConverter#process|BaseConverter.process()}
+	 * @returns {Boolean} - Returns the value of the current subclass of {@link Processor}, which is {@link ConverterDraft04#process|ConverterDraft04.process()} by default.
+	 * @throws Will log any uncaught exception including the current parsing state within the {@link XsdFile|xsd} being processed and rethrow to cancel traversal.
 	 */
 	visit(node, jsonSchema, xsd) {
 		try {
@@ -62,7 +63,6 @@ class Visitor {
 			debug(err.stack);
 			this.processor.parsingState.dumpStates(xsd.filename);
 			XsdFile.dumpNode(node);
-			//return false;
 			throw err;
 		}
 	}

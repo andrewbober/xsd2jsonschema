@@ -2,46 +2,34 @@
 
 const debug = require('debug')('xsd2jsonschema:Xsd2JsonSchema');
 
-const path = require('path');
-const fs = require('fs-extra');
 const URI = require('urijs');
 
-// var XsdFile = require('./xmlschema/xsdFile');
 const XsdFile = require('./xmlschema/xsdFileXmlDom');
-const JsonSchemaFile = require('./jsonschema/jsonSchemaFile');
-const DepthFirstTraversal = require('./depthFirstTraversal');
-const DefaultConversionVisitor = require('./visitors/defaultConversionVisitor');
 const BaseConversionVisitor = require('./visitors/baseConversionVisitor');
-const Constants = require('./constants');
+const DepthFirstTraversal = require('./depthFirstTraversal');
+const BaseSpecialCaseIdentifier = require('./baseSpecialCaseIdentifier');
 const NamespaceManager = require('./namespaceManager');
-const BaseConverter = require('./baseConverter');
+const ConverterDraft04 = require('./converterDraft04');
+const ConverterDraft06 = require('./converterDraft06');
+const ConverterDraft07 = require('./converterDraft07');
+const BuiltInTypeConverter = require('./builtInTypeConverter');
+const CONSTANTS = require('./constants');
 
 
-const xsdBaseUri_NAME = Symbol();
-const outputDir_NAME = Symbol();
 const baseId_NAME = Symbol();
-const mask_NAME = Symbol();
+
+const namespaceManager_NAME = Symbol();
 const visitor_NAME = Symbol();
-const NamespaceManager_NAME = Symbol();
 
 const defaultXsd2JsonSchemaOptions = {
-    xsdBaseUri: new URI('.'),
-    outputDir: new URI('.'),
     baseId: undefined,
-    mask: undefined,
-    namespaceMode: undefined
+    namespaceMode: undefined,
+    jsonSchemaVersion: CONSTANTS.DRAFT_07,
+    uriStandard: CONSTANTS.RFC_3986
 }
 
 /**
- * Class prepresenting an instance of the Xsd2JsonSchema library.  This needs to be refactored to
- * remove the filesystem focus and work off URI's or possibly just strings/buffers representing the contents
- * of the XML Schema files that are being converted to JSON Schema.
- * 
- * I would like the library to be encapsulated from IO if possible.
- * 
- * The current implementation is really only usable as a cli.
- * 
- * TODO: Set defaults for all options and make the 'options' parameter optional.
+ * Class prepresenting an instance of the Xsd2JsonSchema library.
  * 
  */
 
@@ -49,60 +37,62 @@ class Xsd2JsonSchema {
     /**
      * 
      * @param {Object} options - An object used to override default options.
-     * @param {URI} options.xsdBaseUri - The directory from which xml schema's should be loaded.  The default value is the current directory.
-     * @param {URI} options.outputDir - The destination directory for generated JSON Schema files.  The default value is the current directory.
      * @param {string} options.baseId - The base value for the 'id' in any generated JSON Schema files.  The default value is undefined.
-     * @param {string} options.mask - A regular expression used to reduce generated JSON Schema filenames as needed.  The default value is 'undefined'.
      * @param {string} options.builtInTypeConverter - An instance of a subclass of {@link BuiltInTypeConverter|BuiltInTypeConverter}.
-     * @param {string} options.converter - A subclass of {@link BaseConverter|BaseConverter}.  This is the class NOT an instance of the class.
+     * @param {string} options.converter - A subclass of {@link ConverterDraft04|ConverterDraft04}.  This is the class NOT an instance of the class.
      * @param {string} options.visitor - A subclass of {@link BaseConversionVisitor|BaseConversionVisitor}.  This is the class NOT an instance of the class.
-     * @param {string} options.namespaceMode - The method of handling namespaces. Must be one of: undefined, SUBSCHEMA, or FILENAME
+     * @param {string} options.namespaceMode - The method of handling namespaces. Must be one of: undefined, SUBSCHEMA, or FILENAME.  The default value is undefined.
      */
     constructor(options) {
-        if (options != undefined) {
-            this.xsdBaseUri = options.xsdBaseUri != undefined ? new URI(options.xsdBaseUri) : defaultXsd2JsonSchemaOptions.xsdBaseUri;
-            this.outputDir = options.outputDir != undefined ? new URI(options.outputDir) : defaultXsd2JsonSchemaOptions.outputDir;
-            this.baseId = options.baseId != undefined ? options.baseId : defaultXsd2JsonSchemaOptions.baseId;
-            this.mask = options.mask != undefined ? options.mask : defaultXsd2JsonSchemaOptions.mask;
-            // NamespaceManager
-            this.namespaceManager = new NamespaceManager();
-            if (options.builtInTypeConverter != undefined) {
-                this.namespaceManager.builtInTypeConverter = options.builtInTypeConverter;
-            }
-            // Converter
-            if (options.converter != undefined) {
-                this.converter = options.converter;
-            } else {
-                this.converter = new BaseConverter();
-            }
-            // Visitor
-            if (options.visitor != undefined) {
-                this.visitor = options.visitor;
-            } else {
-                this.visitor = new BaseConversionVisitor();
-            }
-        } else {
-            this.xsdBaseUri = defaultXsd2JsonSchemaOptions.xsdBaseUri;
-            this.outputDir = defaultXsd2JsonSchemaOptions.outputDir;
-            this.baseId = defaultXsd2JsonSchemaOptions.baseId;
-            this.mask = defaultXsd2JsonSchemaOptions.mask;
-            this.namespaceManager = new NamespaceManager();
-            this.converter = new BaseConverter();
-            this.visitor = new BaseConversionVisitor();
+        var builtInTypeConverter;
+        var converter;
+        var jsonSchemaVersion;
 
+        if (options != undefined) {
+            this.baseId = options.baseId != undefined ? options.baseId : defaultXsd2JsonSchemaOptions.baseId;
+            jsonSchemaVersion = options.jsonSchemaVersion != undefined ? options.jsonSchemaVersion : defaultXsd2JsonSchemaOptions.jsonSchemaVersion;
+
+            // BuiltInTypeConverter
+            builtInTypeConverter = this.getBuiltInTypeConverter(jsonSchemaVersion, options.builtInTypeConverter);
+
+            // NamespaceManager
+            this.namespaceManager = new NamespaceManager({
+                jsonSchemaVersion: jsonSchemaVersion
+            });
+            this.namespaceManager.builtInTypeConverter = builtInTypeConverter;
+
+            // Converter
+            converter = this.getConverter(jsonSchemaVersion, options.converter);
+            converter.namespaceManager = this.namespaceManager;
+            converter.specialCaseIdentifier = new BaseSpecialCaseIdentifier();
+
+            // Visitor
+            this.visitor = this.getVisitor(jsonSchemaVersion, options.visitor);
+            this.visitor.processor = converter;
+        } else {
+            this.baseId = defaultXsd2JsonSchemaOptions.baseId;
+
+            // BuiltInTypeConverter
+            builtInTypeConverter = this.getBuiltInTypeConverter(defaultXsd2JsonSchemaOptions.jsonSchemaVersion);
+
+            // NamespaceManager
+            this.namespaceManager = new NamespaceManager({
+                jsonSchemaVersion: defaultXsd2JsonSchemaOptions.jsonSchemaVersion
+            });
+            this.namespaceManager.builtInTypeConverter = builtInTypeConverter;
+
+            // Converter
+            converter = this.getConverter(defaultXsd2JsonSchemaOptions.jsonSchemaVersion);
+            converter.namespaceManager = this.namespaceManager;
+            converter.specialCaseIdentifier = new BaseSpecialCaseIdentifier();
+
+            // visitor
+            this.visitor = new BaseConversionVisitor(converter);
+            //JsonSchemaFile.setVersion(defaultXsd2JsonSchemaOptions.jsonSchemaVersion);
         }
-        this.converter.namespaceManager = this.namespaceManager;
-        this.visitor.processor = this.converter;
     }
 
     // Getters/Setters
-    get xsdBaseUri() {
-        return this[xsdBaseUri_NAME];
-    }
-    set xsdBaseUri(newXsdBaseUri) {
-        this[xsdBaseUri_NAME] = newXsdBaseUri;
-    }
-
     get baseId() {
         return this[baseId_NAME];
     }
@@ -110,18 +100,16 @@ class Xsd2JsonSchema {
         this[baseId_NAME] = newBaseId;
     }
 
-    get mask() {
-        return this[mask_NAME];
-    }
-    set mask(newMask) {
-        this[mask_NAME] = newMask;
-    }
+    // BuiltInTypeConverter
+    // NamespaceManager
+    // Converter
+    // visitor
 
-    get outputDir() {
-        return this[outputDir_NAME];
+    get namespaceManager() {
+        return this[namespaceManager_NAME];
     }
-    set outputDir(newOutputDir) {
-        this[outputDir_NAME] = newOutputDir;
+    set namespaceManager(newNamespaceManager) {
+        this[namespaceManager_NAME] = newNamespaceManager;
     }
 
     get visitor() {
@@ -130,13 +118,6 @@ class Xsd2JsonSchema {
     set visitor(newVisitor) {
         this[visitor_NAME] = newVisitor;
     }
-
-	get namespaceManager() {
-		return this[NamespaceManager_NAME];
-	}
-	set namespaceManager(newNamespaceManager) {
-		this[NamespaceManager_NAME] = newNamespaceManager;
-	}
 
     get jsonSchemas() {
         throw new Error('Unsupported operation');
@@ -152,25 +133,102 @@ class Xsd2JsonSchema {
         throw new Error('Unsupported operation');
     }
 
-    loadSchema(uri) {
+    getBuiltInTypeConverter(jsonSchemaVersion, builtInTypeConverter) {
+        switch (jsonSchemaVersion) {
+            case CONSTANTS.DRAFT_04:
+            case CONSTANTS.DRAFT_06:
+            case CONSTANTS.DRAFT_07:
+                if (builtInTypeConverter != undefined) {
+                    return builtInTypeConverter;
+                } else {
+                    return new BuiltInTypeConverter();
+                }
+                break;
+            default: throw new Error(`Unknown JSON Schema Version supplied [${jsonSchemaVersion}]`);
+        }
+    }
+
+    validateConverter(jsonSchemaVersion, converterForJsonSchemaVersion, converter) {
+        if (converter == undefined) {
+            return false;
+        }
+        if (converterForJsonSchemaVersion === converter) {
+            return true;
+        }
+        if (converterForJsonSchemaVersion.prototype.isPrototypeOf(converter)) {
+            return true;
+        } else {
+            throw new Error(`JSON Schema converter version missmatch. The provided converter [${converter.constructor.name}] does not extend the proper converter [${converterForJsonSchemaVersion.name}] for the version of JSON Schema specified [${jsonSchemaVersion}]`);
+        }
+    }
+
+    getConverter(jsonSchemaVersion, converter) {
+        var customConverterMsg = 'Converting XML Schema to JSON Schema using custom converter';
+        var defaultConverterMsg = 'Convertering XML Schema to JSON Schema using default converter for';
+
+        switch (jsonSchemaVersion) {
+            case CONSTANTS.DRAFT_04:
+                if (this.validateConverter(CONSTANTS.DRAFT_04, ConverterDraft04, converter)) {
+                    debug(`${customConverterMsg} [${converter.constructor.name}] for ${CONSTANTS.DRAFT_04}`);
+                    return converter;
+                } else {
+                    debug(`${defaultConverterMsg} ${CONSTANTS.DRAFT_04}`);
+                    return new ConverterDraft04();
+                }
+                break;
+            case CONSTANTS.DRAFT_06:
+                if (this.validateConverter(CONSTANTS.DRAFT_06, ConverterDraft06, converter)) {
+                    debug(`${customConverterMsg} [${converter.constructor.name}] for ${CONSTANTS.DRAFT_06}`);
+                    return converter;
+                } else {
+                    debug(`${defaultConverterMsg} ${CONSTANTS.DRAFT_06}`);
+                    return new ConverterDraft06();
+                }
+                break;
+            case CONSTANTS.DRAFT_07:
+                if (this.validateConverter(CONSTANTS.DRAFT_07, ConverterDraft07, converter)) {
+                    debug(`${customConverterMsg} [${converter.constructor.name}] for ${CONSTANTS.DRAFT_07}`);
+                    return converter;
+                } else {
+                    debug(`${defaultConverterMsg} ${CONSTANTS.DRAFT_07}`);
+                    return new ConverterDraft07();
+                }
+                break;
+            default: throw new Error(`Unknown JSON Schema Version supplied [${jsonSchemaVersion}]`);
+        }
+    }
+
+    getVisitor(jsonSchemaVersion, visitor) {
+        switch (jsonSchemaVersion) {
+            case CONSTANTS.DRAFT_04:
+            case CONSTANTS.DRAFT_06:
+            case CONSTANTS.DRAFT_07:
+                if (visitor != undefined) {
+                    return visitor;
+                } else {
+                    visitor = new BaseConversionVisitor();
+                }
+                break;
+            default: throw new Error(`Unknown JSON Schema Version supplied [${jsonSchemaVersion}]`);
+        }
+        return visitor;
+    }
+
+    loadSchema(uri, xml) {
         if (this.namespaceManager.xmlSchemas[uri.toString()] !== undefined) {
             return;
         }
         var xsd = new XsdFile({
+            xml: xml,
             uri: uri
         });
         this.namespaceManager.xmlSchemas[uri.toString()] = xsd;
-        if (xsd.hasIncludes()) {
-            this.loadSchemas(new URI(xsd.directory), xsd.includeUris);
-        }
-        if (xsd.hasImports()) {
-            this.loadSchemas(new URI(xsd.directory), xsd.importUris);
-        }
     }
 
-    loadSchemas(baseUri, filenames) {
-        filenames.forEach(function (filename, index, array) {
-            this.loadSchema(new URI(baseUri).segment(filename));
+    loadSchemas(schemas) {
+        const uris = Object.keys(schemas);
+        uris.forEach(function (uri, index, array) {
+            this.loadSchema(uri, schemas[uri]);
         }, this);
         return this.namespaceManager.xmlSchemas;
     }
@@ -184,7 +242,7 @@ class Xsd2JsonSchema {
             var jsonSchema = this.namespaceManager.jsonSchemas[uri.toString()];
             debug(`About to traverse XML [${xsd.uri.filename()}]`);
             // This is a future I hope never comes. For now anotherPass will always come back as false
-            // because nothing in BaseConverter is setting it otherwise.
+            // because nothing in ConverterDraft04 is setting it otherwise.
             anotherPass = traversal.traverse(this.visitor, jsonSchema, xsd);
         }
     }
@@ -195,14 +253,11 @@ class Xsd2JsonSchema {
         // prime the jsoonSchema map to support forward references in namespaceManager.
         filenames.forEach(function (filename, index, array) {
             const xsd = this.namespaceManager.xmlSchemas[filename];
-            const relativeUri = new URI(path.relative(this.xsdBaseUri.toString(), filename));
-            const maskedFilename = this.getMaskedFileName(relativeUri.filename());
-            const baseFilename = path.join(relativeUri.directory(), maskedFilename);
             const uri = new URI(filename);
             this.namespaceManager.addNewJsonSchema({
-                uri: uri, 
+                uri: uri,
                 namespaceMode: this.namespaceMode,
-                baseFilename: baseFilename,
+                baseFilename: filename,
                 targetNamespace: xsd.targetNamespace,
                 baseId: this.baseId
             });
@@ -215,14 +270,17 @@ class Xsd2JsonSchema {
     }
 
     processAllSchemas(parms) {
-        if (parms.xsdBaseUri != undefined) {
-            this.xsdBaseUri = new URI(parms.xsdBaseUri);
+        if (parms == undefined) {
+            throw new Error('The parameter "parms" is required');
+        }
+        if (parms.schemas == undefined) {
+            throw new Error('"parms.schemas" is required');
         }
         if (parms.visitor != undefined) {
             this.visitor = parms.visitor;
         }
-        this.namespaceManager.jsonSchemas = {};  // is this really needed?
-        this.loadSchemas(this.xsdBaseUri, parms.xsdFilenames);
+        this.namespaceManager.reset();
+        this.loadSchemas(parms.schemas);
         this.processSchemas();
         this.namespaceManager.resolveForwardReferences();
         return this.namespaceManager.jsonSchemas;
@@ -233,39 +291,6 @@ class Xsd2JsonSchema {
             throw new Error('The parameter unmaskedFilename is required');
         }
         return (this.mask === undefined) ? unmaskedFilename : unmaskedFilename.replace(this.mask, '');
-    }
-
-    /**
-     * Writes out a JsonSchemaFile to the output directory directory with the provided formatting option.
-     * 
-     * @param {JsonSchemaFile} jsonSchema - The jsonSchema to be writen out to a file.
-     * @param {String} spacing - Adds indentation, white space, and line break characters to the JSON file written to disk.  The 
-     * default value is '\t'.  This is used as the last parameter to JSON.stringify().
-     * @returns {void}
-     */
-    writeFile(jsonSchema, spacing) {
-        if (jsonSchema == undefined) {
-            throw new Error('The parameter jsonSchema is required');
-        }
-        if (spacing == undefined) {
-            spacing = '\t';
-        }
-        const dir = new URI(this.outputDir).segment(jsonSchema.filename);
-        const data = JSON.stringify(jsonSchema.getJsonSchema(), null, spacing);
-        //const maskedFilename = this.getMaskedFileName(jsonSchema.filename);
-        fs.ensureDirSync(dir.directory())
-        fs.writeFileSync(dir.toString(), data);
-    }
-
-    writeFiles() {
-        try {
-            fs.ensureDirSync(this.outputDir.toString());
-        } catch (err) {
-            debug(err);
-        }
-        Object.keys(this.namespaceManager.jsonSchemas).forEach(function (uri, index, array) {
-            this.writeFile(this.namespaceManager.jsonSchemas[uri], '  ');
-        }, this);
     }
 
     dump() {

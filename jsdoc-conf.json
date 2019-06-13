@@ -14,20 +14,28 @@
         "plugins/markdown"
     ],
     "templates": {
-        "logoFile": "",
+        "default": {
+            "staticFiles": {
+                "include": [
+                    "./static"
+                ]
+            },
+            "includeDate": false
+        },
+        "logoFile": "400dpiLogoCropped.png",
         "cleverLinks": false,
         "monospaceLinks": false,
         "dateFormat": "ddd MMM Do YYYY",
         "outputSourceFiles": false,
         "outputSourcePath": false,
         "systemName": "Xsd2JsonSchema",
-        "footer": "",
-        "copyright": "Xsd2JsonSchema Copyright © 2016-2017 Andrew Bober.",
+        "footer": "Happy Footer!",
+        "copyright": "Xsd2JsonSchema Copyright © 2019 DrewHarbor LLC",
         "navType": "vertical",
         "theme": "oblivion",
         "linenums": true,
         "collapseSymbols": false,
-        "inverseNav": true,
+        "inverseNav": false,
         "protocol": "html://",
         "methodHeadingReturns": false
     },
@@ -35,5 +43,12 @@
         "parser": "evilstreak",
         "dialect": "Maruku",
         "hardwrap": false
+    },
+    "opts": {
+        "encoding": "utf8",
+        "readme": "./README.md",
+        "destination": "docs-generated/",
+        "recurse": true,
+        "verbose": true
     }
 }

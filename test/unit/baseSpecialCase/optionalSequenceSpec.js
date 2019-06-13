@@ -15,10 +15,22 @@ describe('BaseSpecialCaseIdentifier Test -', function () {
     beforeEach(function () {
         sci = new BaseSpecialCaseIdentifier();
         node = null;
-        anyOfChoiceXsd = new XsdFile({ uri: 'test/xmlSchemas/functional/anyOfChoice.xsd' });
-        optionalChoiceXsd = new XsdFile({ uri: 'test/xmlSchemas/functional/optionalChoice.xsd' });
-        optionalSequenceXsd = new XsdFile({ uri: 'test/xmlSchemas/functional/optionalSequence.xsd' });
-        siblingChoiceXsd = new XsdFile({ uri: 'test/xmlSchemas/functional/siblingChoice.xsd' });
+        anyOfChoiceXsd = new XsdFile({ 
+            uri: 'test/xmlSchemas/functional/anyOfChoice.xsd',
+            xml: this.readfile('test/xmlSchemas/functional/anyOfChoice.xsd')
+        });
+        optionalChoiceXsd = new XsdFile({ 
+            uri: 'test/xmlSchemas/functional/optionalChoice.xsd', 
+            xml: this.readfile('test/xmlSchemas/functional/optionalChoice.xsd')
+        });
+        optionalSequenceXsd = new XsdFile({ 
+            uri: 'test/xmlSchemas/functional/optionalSequence.xsd', 
+            xml: this.readfile('test/xmlSchemas/functional/optionalSequence.xsd')
+        });
+        siblingChoiceXsd = new XsdFile({ 
+            uri: 'test/xmlSchemas/functional/siblingChoice.xsd', 
+            xml: this.readfile('test/xmlSchemas/functional/siblingChoice.xsd')
+        });
     });
 
     afterEach(function () {

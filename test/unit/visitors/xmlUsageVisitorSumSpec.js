@@ -2,7 +2,7 @@
 
 const XsdFile = require('xsd2jsonschema').XsdFile;
 const XsdElements = require('xsd2jsonschema').XsdElements;
-const JsonSchemaFile = require('xsd2jsonschema').JsonSchemaFile;
+const JsonSchemaFileDraft04 = require('xsd2jsonschema').JsonSchemaFileDraft04;
 const XmlUsageVisitorSum = require('xsd2jsonschema').XmlUsageVisitorSum;
 
 describe('DepthFirstTraversal Test -', function () {
@@ -13,10 +13,12 @@ describe('DepthFirstTraversal Test -', function () {
     
     beforeEach(function () {
         xsd = new XsdFile({ 
-            uri: 'test/xmlSchemas/unit/attributes.xsd'
+            uri: 'test/xmlSchemas/unit/attributes.xsd',
+            xml: this.readfile('test/xmlSchemas/unit/attributes.xsd')
         });
-        jsonSchema = new JsonSchemaFile({
-            xsd : xsd,
+        jsonSchema = new JsonSchemaFileDraft04({
+            baseFilename: xsd.filename,
+            targetNamespace: xsd.targetNamespace,
             baseId : "http://www.xsd2jsonschema.org/unit/test"
         });
     });

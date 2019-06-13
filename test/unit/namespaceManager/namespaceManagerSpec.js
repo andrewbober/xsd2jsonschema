@@ -1,12 +1,13 @@
 'use strict';
 
 const URI = require('urijs');
+const deepEql = require('deep-eql');
 const BuiltInTypeConverter = require('xsd2jsonschema').BuiltInTypeConverter;
 const XsdFile = require('xsd2jsonschema').XsdFile;
-const JsonSchemaFile = require('xsd2jsonschema').JsonSchemaFile;
+const JsonSchemaFile = require('xsd2jsonschema').JsonSchemaFileDraft04;
 const NamespaceManager = require('xsd2jsonschema').NamespaceManager;
 const JSON_SCHEMA_TYPES = require('xsd2jsonschema').JsonSchemaTypes;
-const Constants = require('xsd2jsonschema').Constants;
+const CONSTANTS = require('xsd2jsonschema').Constants;
 
 describe('NamespaceManager Test - ', function() {
     var namespaceManager;
@@ -16,7 +17,10 @@ describe('NamespaceManager Test - ', function() {
     var xsd;
 
     beforeEach(function() {
-        namespaceManager = new NamespaceManager();
+		namespaceManager = new NamespaceManager({
+			jsonSchemaVersion: CONSTANTS.DRAFT_04,
+			builtInTypeConverter: new BuiltInTypeConverter()
+		});
         node = null;
         baseJsonSchema = new JsonSchemaFile({
             uri: 'test/xmlSchemas/unit/attributes.xsd',
@@ -27,15 +31,16 @@ describe('NamespaceManager Test - ', function() {
         });
         parent = new JsonSchemaFile();
         xsd = new XsdFile({ 
-            uri: 'test/xmlSchemas/unit/attributes.xsd'
+            uri: 'test/xmlSchemas/unit/attributes.xsd',
+            xml: this.readfile('test/xmlSchemas/unit/attributes.xsd')
         });
     });
 
     // constructor
     it('should initialize the namespaces', function() {
         const blankNamespaces = {};
-        blankNamespaces[Constants.XML_SCHEMA_NAMESPACE] =  { types: {} }
-        blankNamespaces[Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME] =  { types: {} }
+        blankNamespaces[CONSTANTS.XML_SCHEMA_NAMESPACE] =  { types: {} }
+        blankNamespaces[CONSTANTS.GLOBAL_ATTRIBUTES_SCHEMA_NAME] =  { types: {} }
         expect(namespaceManager.namespaces).toEqual(blankNamespaces);
     });
 
@@ -43,6 +48,7 @@ describe('NamespaceManager Test - ', function() {
     it('should initialize the namespaces and utilize the given type converter', function() {
         const tc = new BuiltInTypeConverter();
         const ns = new NamespaceManager({
+			jsonSchemaVersion: CONSTANTS.DRAFT_04,
             builtInTypeConverter : tc
         })
         expect(ns.builtInTypeConverter).toBe(tc);
@@ -71,7 +77,9 @@ describe('NamespaceManager Test - ', function() {
         expect(originalNamespaceCount).toEqual(originalNamespaceCount);
 
         const type = namespaceManager.getBuiltInType('integer', baseJsonSchema, xsd);
-        expect(type).toEqual(expectedJsonSchema);
+        // Jasmine toEqual() method doesn't handle es6 subclasses correctly so use deepEql() instead.
+        //expect(type).toEqual(expectedJsonSchema);
+        expect(deepEql(type, expectedJsonSchema)).toBeTruthy();
     });
 
     // getType
@@ -100,7 +108,9 @@ describe('NamespaceManager Test - ', function() {
         spyOn(xsd, 'resolveNamespace').and.returnValue('someName');
         spyOn(namespaceManager, 'isWellKnownXmlNamespace').and.returnValue(true);
         var type1 = namespaceManager.getType('xs:integer', baseJsonSchema, baseJsonSchema, xsd);
-        expect(type1).toEqual(expectedJsonSchema);
+        // Jasmine toEqual() method doesn't handle es6 subclasses correctly so use deepEql() instead.
+        //expect(type1).toEqual(expectedJsonSchema);
+        expect(deepEql(type1, expectedJsonSchema)).toBeTruthy();
         expect(xsd.resolveNamespace).toHaveBeenCalled();
         expect(namespaceManager.isWellKnownXmlNamespace).toHaveBeenCalled();
     
@@ -187,7 +197,11 @@ describe('NamespaceManager Test - ', function() {
         const expectedGlobalAtttibuteType = new JsonSchemaFile({
             ref: new URI('myId#/globalAttributes/myTypeName')
         });
-        expect(namespaceManager.getGlobalAttribute(typeName, baseJsonSchema)).toEqual(expectedGlobalAtttibuteType);
+        // Jasmine toEqual() method doesn't handle es6 subclasses correctly so use deepEql() instead.
+        const globalAttribute = namespaceManager.getGlobalAttribute(typeName, baseJsonSchema);
+        //expect(globalAttribute).toEqual(expectedGlobalAtttibuteType);
+        //expect(expectedGlobalAtttibuteType).toEqual(globalAttribute);
+        expect(deepEql(globalAttribute, expectedGlobalAtttibuteType)).toBeTruthy();
     });
 
     it('should not throw any errors', function() {

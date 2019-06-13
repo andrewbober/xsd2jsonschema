@@ -3,7 +3,7 @@
 const debug = require('debug')('xsd2jsonschema:CloneSpec');
 
 const clone = require('clone');
-const JsonSchemaFile = require('xsd2jsonschema').JsonSchemaFile;
+const JsonSchemaFile = require('xsd2jsonschema').JsonSchemaFileDraft04;
 
 it('should clone the jsonSchema', function() {
     const child = new JsonSchemaFile();

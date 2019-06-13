@@ -94,7 +94,7 @@ class BaseSpecialCaseIdentifier {
 
         for (let i = 0; i < nodelist.length; i++) {
             if (nodelist.item(i).nodeType != XsdNodeTypes.TEXT_NODE) {
-                debug('NodeType=' + XsdNodeTypes.getTypeName(nodelist.item(i).nodeType));
+                debug(`NodeType=${XsdNodeTypes.getTypeName(nodelist.item(i).nodeType)} NodeName = ${nodelist.item(i).localName}`);
                 count++;
             }
         }

@@ -1,7 +1,7 @@
 {
   "name": "xsd2jsonschema",
-  "description": "A tool to convert XML Schema to JSON Schema.",
-  "version": "0.2.0",
+  "description": "A pure JavaScript library for converting complex XML Schemas into equivalent JSON Schemas.",
+  "version": "0.3.0",
   "homepage": "http://www.xsd2jsonschema.org",
   "license": "Apache-2.0",
   "author": {
@@ -41,17 +41,19 @@
     "functionalTest": "node test/functional/allFunctionalTests.js",
     "cover": "nyc --reporter=lcov nyc npm test",
     "update-coveralls": "cat coverage/lcov.info | coveralls",
-    "example-convert": "node example/example.js convert",
-    "example-validate": "node example/example.js validate",
-    "example-xml-usage": "node example/example.js xml-usage",
-    "example-xml-usage-sum": "node example/example.js xml-usage-sum",
-    "jsdoc": "jsdoc -c jsdoc-conf.json -t ./node_modules/jsdoc-oblivion/template -R README.md -r ./src/"
+    "convert-and-save": "node examples/convert-and-save.js",
+    "convert-and-validate": "node examples/convert-and-validate.js",
+    "visitors": "node examples/visitors.js",
+    "hello-world": "node examples/hello-world.js",
+    "jsdoc": "jsdoc -c jsdoc-conf.json -t ./node_modules/jsdoc-oblivion/template -R README.md -r ./src/",
+    "jsdoc2": "jsdoc -c jsdoc-conf-better-docs.json -r ./src/"
   },
   "dependencies": {
     "clone": "^2.1.2",
     "debug": "^3.2.6",
     "deep-eql": "^4.0.0",
     "fs-extra": "^3.0.1",
+    "get-uri": "^2.0.3",
     "urijs": "^1.19.1",
     "validator": "^9.4.1",
     "xml2js": "^0.4.19",
@@ -60,12 +62,13 @@
   },
   "devDependencies": {
     "ajv": "^4.11.5",
-    "coveralls": "^3.0.2",
+    "better-docs": "^1.1.6",
+    "coveralls": "^3.0.3",
     "ink-docstrap": "^1.3.2",
-    "jasmine": "^2.99.0",
+    "jasmine": "^3.4.0",
     "jsdoc": "^3.5.5",
     "jsdoc-oblivion": "0.0.4",
-    "nyc": "^11.9.0",
+    "nyc": "^14.1.0",
     "require-self": "^0.1.0"
   }
 }

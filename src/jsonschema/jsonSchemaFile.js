@@ -1,11 +1,10 @@
 'use strict';
 
-const debug = require('debug')('xsd2jsonschema:JsonSchemaFileV4');
+const debug = require('debug')('xsd2jsonschema:JsonSchemaFile');
 
 const path = require('path');
 const URI = require('urijs');
 const clone = require('clone');
-// const equal = require('fast-deep-equal');
 const deepEql = require('deep-eql');
 const utils = require('../utils');
 const Constants = require('../constants');
@@ -18,7 +17,6 @@ const XsdAttributeValues = require('../xmlschema/xsdAttributeValues');
 
 const properties = [
 	'namespaceMode',
-//	'baseJsonSchemaForNamespace',
 	'parent',
 	'filename',
 	'targetSchema',
@@ -26,6 +24,7 @@ const properties = [
 	'ref',
 	'$ref',
 	'id',
+	'schemaId',
 	'subSchemas',
 	'$schema',
 	'title',
@@ -68,12 +67,12 @@ const properties = [
  * Please see http://json-schema.org for more details.
  */
 
-class JsonSchemaFileV4 extends PropertyDefinable {
+class JsonSchemaFile extends PropertyDefinable {
 	/**
 	 * 
 	 * @param {Object} options - And object used to override default options.
 	 * @param {string} options.baseFilename - The directory from which xml schema's should be loaded.  The default value is the current directory.
-	 * @param {string} options.id - The directory from which xml schema's should be loaded.  The default value is the current directory.
+	 * @param {string} options.baseId - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.targetNamespace - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.title - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.ref - The directory from which xml schema's should be loaded.  The default value is the current directory.
@@ -162,6 +161,9 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 		this.definitions = undefined; // 5.5.7.1 MUST be an object. Each member value of this object MUST be a valid JSON Schema.
 
 		if (options !== undefined) {
+			if (options.schemaId !== undefined) {
+				this.schemaId = options.schemaId;
+			}
 			if (options.title !== undefined) {
 				this.title = options.title;
 			}
@@ -177,13 +179,7 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 			if (options.parent !== undefined) {
 				this.parent = options.parent;
 			}
-/*
-			// If available set the baseJsonSchemaForNamespace.  This is used when creating $ref values to identify the 
-			// schema representing the file containing this types definition.
-			if (options.baseJsonSchemaForNamespace !== undefined) {
-				this.baseJsonSchemaForNamespace = options.baseJsonSchemaForNamespace;
-			}
-*/
+
 			if (options.baseFilename !== undefined) {
 				this.targetNamespace = options.targetNamespace;
 				const filePath = path.parse(options.baseFilename);
@@ -198,7 +194,7 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 					this.filename = path.join(filePath.dir, baseFilename + '.json');
 				}
 				this.id = new URI(options.baseId === undefined ? '' : options.baseId).filename(baseFilename + '.json').toString();
-				this.$schema = 'http://json-schema.org/draft-04/schema#';
+				this.$schema = options.$schema;
 				if (this.title === undefined) {
 					this.title = `This JSON Schema file was generated from ${options.baseFilename} on ${new Date()}.  For more information please see http://www.xsd2jsonschema.org`;
 				}
@@ -227,24 +223,29 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	 * 
 	 * @param {Object} options - And object used to override default options.
 	 * @param {string} options.baseFilename - The directory from which xml schema's should be loaded.  The default value is the current directory.
-	 * @param {string} options.id - The directory from which xml schema's should be loaded.  The default value is the current directory.
+	 * @param {string} options.baseId - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.targetNamespace - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.title - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.ref - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.$ref - The directory from which xml schema's should be loaded.  The default value is the current directory.
-	 * @param (JsonSchmeaFileV4) options.parent - this parameter is set to the current JsonSchemaFile.
+	 * @param (JsonSchemaFile) options.parent - this parameter is set to the current JsonSchemaFile.
 	 * 
-	 * @returns {JsonSchemaFileV4} - Returns a new JsonSchemaFile that has the current JsonSchemaFile.
+	 * @returns {JsonSchemaFile} - Returns a new JsonSchemaFile that has the current JsonSchemaFile.
 	 */
+/*
 	newJsonSchemaFile(options) {
+		debug('Warning: JsonSchemaFile.newJsonSchemaFile() should only be called from JsonSchemaFile and only when ');
+		if (this.newJsonSchemaFile.caller != 'JsonSchemaFile') {
+			throw new Error('You a junkie or what dude?');
+		}
 		if (options != undefined) {
 			options.parent = this; 
-			return new JsonSchemaFileV4(options);
+			return new JsonSchemaFile(options);
 		} else {
-			return new JsonSchemaFileV4({ parent: this });
+			return new JsonSchemaFile({ parent: this });
 		}
 	}
-
+*/
 	/**
 	 * Creates all subschemas identified by an array of subschema names and initializes the targetSchema to the inner-most subschema.
 	 * 
@@ -254,7 +255,7 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	 */
 	createNestedSubschemaOld(_subschemas, namespaces) {
 		var subschemaName = namespaces.shift();
-		_subschemas[subschemaName] = new JsonSchemaFileV4();
+		_subschemas[subschemaName] = new JsonSchemaFile();
 		this.targetSchema = _subschemas[subschemaName]; // Track the innermost schema as the target
 		if (namespaces.length > 0) {
 			this.createNestedSubschema(_subschemas[subschemaName].subSchemas, namespaces);
@@ -264,7 +265,7 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	/**
 	 * Creates all subschemas identified by an array of subschema names and initializes the targetSchema to the inner-most subschema.
 	 * 
-	 * @param {JsonSchemaFileV4} schema - a JsonSchemaFile that will have nested subschemas.
+	 * @param {JsonSchemaFile} schema - a JsonSchemaFile that will have nested subschemas.
 	 * @param {Array} namespaces - An array of String values representing the components of a URL without the scheme.
 	 * @returns {void}
 	 */
@@ -514,7 +515,7 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	}
 
 	/**
-	 * Adds a subSchema to the targetSchema.  The targetSchema is not updated because it represents the active XSD Namespace.
+	 * Sets a subSchema on the targetSchema.  The targetSchema is not updated because it represents the active XSD Namespace.
 	 * 
 	 * @param {String} schemaName - the name of the subschema.
 	 * @param {JsonSchemaFile} subSchema - a JsonSchemaFile representing the subschema.
@@ -522,7 +523,7 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	 * @returns {JsonSchemaFile} subSchema - the subSchema parameter is returned for chaining or for use updating the targetSchema
 	 * if constructing a schema manually.
 	 */
-	addSubSchema(schemaName, subSchema) {
+	setSubSchema(schemaName, subSchema) {
 		this.targetSchema.subSchemas[schemaName] = subSchema;
 		return subSchema;
 	}
@@ -564,7 +565,7 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 		} else {
 			refStr = this.ref.toString();
 		}
-		return new JsonSchemaFileV4({
+		return this.newJsonSchemaFile({
 			$ref: refStr,
 			parent: parent
 		});
@@ -592,7 +593,7 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	/**
 	 * Returns the top level JSON Schema for this schema by the parent without a parent.
 	 * 
-	 * @returns {JsonSchemaFileV4} - The top JsonSchemaFile representing a single file.
+	 * @returns {JsonSchemaFile} - The top JsonSchemaFile representing a single file.
 	 */
 	getTopLevelJsonSchema() {
 		if (this.parent === undefined) {
@@ -618,15 +619,18 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	 * 
 	 * @returns {Object} - POJO of this jsonSchema.
 	 */
-	getJsonSchema() {
-		const jsonSchema = {};
+	getJsonSchema(jsonSchema) {
+		if (jsonSchema == undefined) {
+			jsonSchema = {};
+		}
 
 		if (!this.isEmpty(this.$ref)) {
 			jsonSchema.$ref = this.$ref;
 		}
 
 		if (!this.isEmpty(this.id)) {
-			jsonSchema.id = this.id;
+			//jsonSchema.id = this.id;
+			jsonSchema[this.schemaId] = this.id
 		}
 		if (!this.isEmpty(this.$schema)) {
 			jsonSchema.$schema = this.$schema;
@@ -825,86 +829,11 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	/**
 	 * Returns true if the a deep copy of this JsonSchemaFile.
 	 * 
-	 * @param {JsonSchemaFileV4} other - The JsonSchemaFile to compare with this for equality.
+	 * @param {JsonSchemaFile} other - The JsonSchemaFile to compare with this for equality.
 	 * @returns {Boolean} - true if the JsonSchemaFile objects are equal.
 	 */
 	equals(other) {
 		return deepEql(this, other);
-	}
-
-	/**
-	 * Returns true if the all members of the JsonSchemaFile are empty as defined by isEmpty().
-	 * 
-	 * @returns {Boolean} - Returns true if the all members of the JsonSchemaFile are empty.
-	 */
-	cloneNew() {
-		const retval = new JsonSchemaFileV4();
-
-		retval.parent = this.parent;  // this is wrong
-		retval.filename = this.filename;
-		retval.targetSchema = this.targetSchema;   // this is wrong
-		retval.targetNamespace = this.targetNamespace
-		retval.ref = this.ref
-		retval.$ref = this.$ref;
-
-		// JSON Schema draft v4 (core definitions and terminology referenced)
-		// 7.2 URI resolution scope alteration with the 'id'
-		retval.id = this.id;
-
-		// 3.4 Root schema, subschema  (7.2.2 Usage)
-		retval.$schema = this.$schema;
-
-		// 6.1 Metadata keywords 'title' and 'description'
-		retval.title = this.title;
-		retval.description = this.description;
-
-		// 5.5.  Validation keywords for any instance type (Type moved up here from the rest of 5.5 below for output formatting)
-		retval.type = this.type;
-
-		// 5.1.  Validation keywords for numeric instances (number and integer)
-		retval.multipleOf = this.multipleOf;
-		retval.minimum=this.minimum;
-		retval.exclusiveMinimum=this.exclusiveMinimum;
-		retval.maximum=this.maximum;
-		retval.exclusiveMaximum = this.exclusiveMaximum;
-
-		// 5.2.  Validation keywords for strings
-		retval.minLength=this.minLength;
-		retval.maxLength=this.maxLength;
-		retval.pattern=this.pattern;
-
-		// 5.5.  Validation keywords for any instance type
-		retval.enum = this.enum;
-		retval.allOf = this.allOf;
-		retval.anyOf = this.anyOf;
-		retval.oneOf = this.oneOf;
-		retval.not = this.not;
-
-		// 6.2 Default
-		retval.default = this.default;
-		retval.format = this.format;
-
-		// 5.4.5.  Dependencies
-		retval.dependencies = this.dependencies;
-
-		// 5.3.  Validation keywords for arrays
-		retval.additionalItems = this.additionalItems;
-		retval.maxItems = this.maxItems;
-		retval.minItems = this.minItems;
-		retval.uniqueItems = this.uniqueItems;
-		retval.items = this.items;
-
-		// 5.4.  Validation keywords for objects
-		retval.maxProperties = this.maxProperties;
-		retval.minProperties = this.minProperties;
-		retval.additionalProperties = this.additionalProperties;
-		retval.properties = this.properties;
-		retval.patternProperties = this.patternProperties;
-		retval.required = this.required;
-		retval.definitions = this.definitions; // this is wrong
-		retval.subSchemas = this.subSchemas;  // this is wrong
-
-		return retval;
 	}
 
 	/**
@@ -1136,4 +1065,4 @@ class JsonSchemaFileV4 extends PropertyDefinable {
 	}
 }
 
-module.exports = JsonSchemaFileV4;
+module.exports = JsonSchemaFile;

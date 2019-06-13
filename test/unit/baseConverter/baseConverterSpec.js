@@ -1,9 +1,72 @@
 'use strict';
 
 const XsdFile = require('xsd2jsonschema').XsdFile;
-const JsonSchemaFile = require('xsd2jsonschema').JsonSchemaFile;
-const BaseConverter = require('xsd2jsonschema').BaseConverter;
-const Constants = require('xsd2jsonschema').Constants;
+const JsonSchemaFileDraft04 = require('xsd2jsonschema').JsonSchemaFileDraft04;
+const ConverterDraft04 = require('xsd2jsonschema').ConverterDraft04;
+const BaseSpecialCaseIdentifier = require('xsd2jsonschema').BaseSpecialCaseIdentifier;
+const NamespaceManager = require('xsd2jsonschema').NamespaceManager;
+const BuiltInTypeConverter = require('xsd2jsonschema').BuiltInTypeConverter;
+const CONSTANTS = require('xsd2jsonschema').Constants;
+
+const XML_SCHEMA = 
+`
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://www.xsd2jsonschema.org/example" version="1.1.0" 
+	xmlns="http://www.xsd2jsonschema.org/example" 
+	xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:annotation>
+		<xs:documentation>AnyOfChoice samples both valid and invalid.</xs:documentation>
+	</xs:annotation>
+	<xs:complexType name="optionalChoiceEverythingIsOptionalType">
+		<xs:sequence>
+			<xs:element name="Option6" type="xs:string" minOccurs="0"/>
+			<xs:element name="Option5" type="xs:string" minOccurs="0"/>
+			<xs:element name="Option4" type="xs:string" minOccurs="0"/>
+			<xs:element name="Option3" type="xs:string" minOccurs="0"/>
+			<xs:choice minOccurs="0">
+				<xs:element name="Option2" type="xs:string" minOccurs="0"/>
+				<xs:element name="Option1" type="xs:string" minOccurs="0"/>
+			</xs:choice>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="optionalChoiceAllOptionsRequiredType">
+		<xs:sequence>
+			<xs:element name="Option3" type="xs:boolean"/>
+			<xs:choice minOccurs="0">
+				<xs:element name="Option2" type="xs:string"/>
+				<xs:element name="Option1" type="xs:string"/>
+			</xs:choice>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="optionalChoiceOneRequiredOptionType">
+		<xs:sequence>
+			<xs:element name="Option2" type="xs:boolean"/>
+			<xs:choice minOccurs="0">
+				<xs:element name="Option1" type="xs:string"/>
+			</xs:choice>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="optionalChoiceOneRequiredOptionAndOneOptionalType">
+		<xs:sequence>
+			<xs:element name="Option3" type="xs:boolean"/>
+			<xs:choice minOccurs="0">
+				<xs:element name="Option2" type="xs:string"/>
+				<xs:element name="Option1" type="xs:string" minOccurs="0"/>
+			</xs:choice>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="optionalChoiceTwoRequiredOptionAndOneOptionalType">
+		<xs:sequence>
+			<xs:element name="Option4" type="xs:boolean"/>
+			<xs:choice minOccurs="0">
+				<xs:element name="Option3" type="xs:string"/>
+				<xs:element name="Option2" type="xs:string"/>
+				<xs:element name="Option1" type="xs:string" minOccurs="0"/>
+			</xs:choice>
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>
+`;
 
 describe('BaseConverter Test -', function () {
     var bc;
@@ -11,11 +74,19 @@ describe('BaseConverter Test -', function () {
     var jsonSchema;
     
     beforeEach(function () {
-        bc = new BaseConverter();
-        xsd = new XsdFile({ 
-            uri: 'test/xmlSchemas/functional/optionalChoice.xsd'
+		var namespaceManager = new NamespaceManager({
+			jsonSchemaVersion: CONSTANTS.DRAFT_04,
+			builtInTypeConverter: new BuiltInTypeConverter()
+		});
+        bc = new ConverterDraft04({
+			namespaceManager: namespaceManager,
+			specialCaseIdentifier: new BaseSpecialCaseIdentifier()
+		});
+		xsd = new XsdFile({ 
+            uri: 'optionalChoice.xsd',
+            xml: XML_SCHEMA
         });
-        jsonSchema = new JsonSchemaFile({
+        jsonSchema = new JsonSchemaFileDraft04({
             baseFilename: xsd.baseFilename,
             targetNamespace: xsd.targetNamespace,
             baseId : "http://www.xsd2jsonschema.org/unittests/"
@@ -28,8 +99,8 @@ describe('BaseConverter Test -', function () {
 
     it('should confirm a newly allocated BaseConverter was properly initiialized', function () {
         const blankNamespaces = {};
-        blankNamespaces[Constants.XML_SCHEMA_NAMESPACE] =  { types: {} }
-        blankNamespaces[Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME] =  { types: {} }
+        blankNamespaces[CONSTANTS.XML_SCHEMA_NAMESPACE] =  { types: {} }
+        blankNamespaces[CONSTANTS.GLOBAL_ATTRIBUTES_SCHEMA_NAME] =  { types: {} }
 
         expect(bc.builtInTypeConverter).not.toBeUndefined();
         expect(bc.specialCaseIdentifier).not.toBeUndefined();

@@ -2,9 +2,11 @@
 
 const XsdFile = require('./xmlschema/xsdFileXmlDom');
 
+const okayToContinue_NAME = Symbol();
+
 /**
  * Class represtending a depth first traversal algorithm.  This class is used as part of a visitor pattern 
- * to traverse the nodes within an XML Schema file visiting each to facitiate conversion to JSON Schema.
+ * to traverse the nodes within an XML Schema visiting each to facitiate conversion to JSON Schema.
  */
 
  class DepthFirstTraversal {
@@ -13,9 +15,19 @@ const XsdFile = require('./xmlschema/xsdFileXmlDom');
 	 * @constructor
 	 */
 	constructor() {
-
+		this.okayToContinue = true;
 	}
 
+    // Getters/Setters
+
+	get okayToContinue() {
+		return this[okayToContinue_NAME];
+	}
+	
+	set okayToContinue(NewOkayToContinue) {
+		this[okayToContinue_NAME] = NewOkayToContinue;
+	}
+	
 	/**
 	 * This function implements a recursive algorithm to traverse a tree of xml schema nodes in a depth first manner.  Each
 	 * node is visited and a customizalbe {@link BaseConversionVisitor|visiter} is applied.  The visiter can abandon the traversal at any time by 
@@ -32,13 +44,16 @@ const XsdFile = require('./xmlschema/xsdFileXmlDom');
 		// walk the tree
 		if (node !== null) {
 			visitor.enterState(node, jsonSchema, xsd);
-			var okayToContinue = visitor.visit(node, jsonSchema, xsd);
-			if (okayToContinue) {
+			this.okayToContinue = visitor.visit(node, jsonSchema, xsd);
+			if (this.okayToContinue) {
 				var children = XsdFile.getChildNodes(node);
 				if (children !== null && children.length > 0) {
-					children.forEach(function (child, index, array) {
+					for(let child of children) {
 						this.walk(visitor, child, jsonSchema, xsd);
-					}, this);
+						if(!this.okayToContinue) {
+							break;
+						}
+					};
 				}
 			}
 			visitor.exitState(node, jsonSchema, xsd);

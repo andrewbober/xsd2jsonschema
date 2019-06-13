@@ -2,8 +2,36 @@
 
 const XsdFile = require('xsd2jsonschema').XsdFile;
 const XsdElements = require('xsd2jsonschema').XsdElements;
-const JsonSchemaFile = require('xsd2jsonschema').JsonSchemaFile;
+const JsonSchemaFile = require('xsd2jsonschema').JsonSchemaFileDraft04;
 const BaseSpecialCaseIdentifier = require('xsd2jsonschema').BaseSpecialCaseIdentifier;
+
+const XML_SCHEMA = 
+`
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.xsd2jsonschema.org/tests" targetNamespace="http://www.xsd2jsonschema.org/tests" elementFormDefault="qualified" attributeFormDefault="unqualified" version="1.0.0">
+	<xs:attribute name="globalAttrString" type="xs:string" />
+	<xs:attribute name="globalAttrInteger" type="xs:integer" />
+	<xs:attribute name="globalAttrBoolean" type="xs:boolean" />
+	<xs:attribute name="globalAttrUntyped">
+		<xs:simpleType>
+			<xs:restriction base="xs:date"/>
+		</xs:simpleType>
+	</xs:attribute>
+	<xs:complexType name="AttributeTestType">
+			<xs:attribute name="localAttrInteger" type="xs:integer" />
+			<xs:attribute name="localAttrRequired" type="xs:boolean" use="required" />
+			<xs:attribute ref="globalAttrBoolean" />
+			<xs:attribute ref="globalAttrUntyped" use="required" />
+			<xs:attribute name="localAttribute">
+				<xs:simpleType>
+					<xs:restriction base="xs:integer" />
+				</xs:simpleType>
+			</xs:attribute>	
+			<xs:attribute name="localAttrBoolean" type="xs:boolean" />
+	</xs:complexType>
+	<xs:element name="AttributeTest" type="AttributeTestType"/>
+</xs:schema>
+`;
 
 describe('BaseSpecialCaseIdentifier Test -', function () {
     var sci;
@@ -13,7 +41,8 @@ describe('BaseSpecialCaseIdentifier Test -', function () {
     beforeEach(function () {
         sci = new BaseSpecialCaseIdentifier();
         xsd = new XsdFile({ 
-            uri: 'test/xmlSchemas/unit/attributes.xsd'
+            uri: 'attributes.xsd',
+            xml: XML_SCHEMA //.replace(/\n\t/gi, '')
         });
         jsonSchema = new JsonSchemaFile({
             xsd : xsd,
@@ -41,8 +70,8 @@ describe('BaseSpecialCaseIdentifier Test -', function () {
     });
 
     // countNonTextNodes
-    it('should return seven. There are six ELEMENT nodes and one COMMENT node in attributes.xsd', function () {
-        expect(sci.countNonTextNodes(xsd.schemaElement.childNodes)).toEqual(7);
+    it('should return seven. There are six ELEMENT nodes in attributes.xsd', function () {
+        expect(sci.countNonTextNodes(xsd.schemaElement.childNodes)).toEqual(6);
     });
 
     // locateNewNameType - zero nameTypes

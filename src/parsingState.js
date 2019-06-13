@@ -32,7 +32,7 @@ const attribute_NAME = Symbol();
  *   }
  *
  * @module ParsingState
- * @see {@link BaseConverter#attribute|BaseConverter.attribute()}
+ * @see {@link ConverterDraft04#attribute|ConverterDraft04.attribute()}
  */
 
 class State {

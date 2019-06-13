@@ -4,6 +4,7 @@
     "prettier.singleQuote": true,
 
     "editor.minimap.enabled": true,
+    "editor.tabSize": 4,
     "eslint.enable": true,
     "eslint.options": {
         

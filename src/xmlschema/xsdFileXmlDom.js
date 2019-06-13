@@ -10,7 +10,7 @@ const XsdAttributes = require('./xsdAttributes');
 const XsdElements = require('./xsdElements');
 const XsdAttributeValues = require('./xsdAttributeValues');
 const XsdNodeTypes = require('./xsdNodeTypes');
-
+const Constants = require('../constants');
 
 const uri_NAME = Symbol();
 const xmlDoc_NAME = Symbol();
@@ -27,15 +27,16 @@ const imports_NAME = Symbol();
 class XsdFile {
     constructor(options) {
         if (options == undefined || typeof options !== 'object') {
-            throw new Error("Parameter 'options' is required")
+            throw new Error('Parameter "options" is required')
         }
         if (options.uri == undefined) {
-            throw new Error("'options.uri' is required");
+            throw new Error('"options.uri" is required');
         }
-        this.uri = new URI(options.uri);
         if (options.xml == undefined) {
-            options.xml = fs.readFileSync(this.uri.toString()).toString();
+            throw new Error('"options.xml" is required');
         }
+        // Instantiate the URL just in case a string was passed in.
+        this.uri = new URI(options.uri);
         this.xmlDoc = new DOMParser().parseFromString(options.xml, 'text/xml');
         this.namespaces = {};
         this.imports = {};
@@ -44,7 +45,7 @@ class XsdFile {
         this.initializeImports();
     }
 
-	// Getters/Setters
+    // Getters/Setters
 
     get uri() {
         return this[uri_NAME];
@@ -93,44 +94,80 @@ class XsdFile {
     get filename() {
         return this.uri.filename();
     }
+    set filename(unused) {
+        throw new Error('Unsupported operation');
+    }
 
     get directory() {
         return this.uri.directory();
+    }
+    set directory(unused) {
+        throw new Error('Unsupported operation');
     }
 
     get schemaElement() {
         return this.xmlDoc.documentElement;
     }
-
-    get targetNamespace(){
-        return this.xmlDoc.documentElement.getAttribute(XsdAttributes.TARGET_NAMESPACE);
+    set schemaElement(unused) {
+        throw new Error('Unsupported operation');
     }
 
-// 1	Map the XML Schmea Namespase to a prefix such as xsd or xs, and make the target namespace the default namespace.
-// 2	Map a prefix to the target namespace, and make the  XML Schema Namespase the default namespace.
-// 3	Map prefixes to all the namespaces.
+    get targetNamespace() {
+        return this.xmlDoc.documentElement.getAttribute(XsdAttributes.TARGET_NAMESPACE);
+    }
+    set targetNamespace(unused) {
+        throw new Error('Unsupported operation');
+    }
+
+    // 1	Map the XML Schmea Namespase to a prefix such as xsd or xs, and make the target namespace the default namespace.
+    // 2	Map a prefix to the target namespace, and make the  XML Schema Namespase the default namespace.
+    // 3	Map prefixes to all the namespaces.
     initilizeNamespaces() {
-		const attrs = XsdFile.getAttributes(this.schemaElement);
-		Object.keys(attrs).forEach(function (key, index, array) {
+        const attrs = XsdFile.getAttributes(this.schemaElement);
+        Object.keys(attrs).forEach(function (key, index, array) {
             const attr = attrs[key];
             if (attr.nodeType === XsdNodeTypes.ATTRIBUTE_NODE) {
                 const attrValue = attr.value;
-				switch (attr.localName) {
-					case XsdAttributes.TARGET_NAMESPACE:
-						this.namespaces[XsdAttributes.TARGET_NAMESPACE] = attrValue;
+                switch (attr.localName) {
+                    case XsdAttributes.TARGET_NAMESPACE:
+                        this.namespaces[XsdAttributes.TARGET_NAMESPACE] = attrValue;
                         break;
                     case XsdAttributeValues.XMLNS:
                         this.namespaces[''] = attrValue;
                         break;
-					default :
-						if(attr.prefix === 'xmlns') {
+                    default:
+                        if (attr.prefix === 'xmlns') {
                             const namespace = attr.localName;
                             this.namespaces[namespace] = attrValue;
-						}
-						break;
-				}
+                        }
+                        break;
+                }
             }
         }, this);
+        // Ensure values are set for targetNamespace, the default namespace, and the XML Schema Namespace
+        if (this.namespaces[XsdAttributes.TARGET_NAMESPACE] == undefined && this.namespaces[''] == undefined) {
+            this.namespaces[XsdAttributes.TARGET_NAMESPACE] = Constants.NO_NAMESPACE;
+            this.namespaces[''] = Constants.NO_NAMESPACE;
+        } else if (this.namespaces[XsdAttributes.TARGET_NAMESPACE] == undefined && this.namespaces[''] != undefined) {
+            this.namespaces[XsdAttributes.TARGET_NAMESPACE] = this.namespaces[''];
+        } else if (this.namespaces[XsdAttributes.TARGET_NAMESPACE] != undefined && this.namespaces[''] == undefined) {
+            this.namespaces[''] = this.namespaces[XsdAttributes.TARGET_NAMESPACE];
+        }
+        // If the XML Schema Namespace is missing setup a couple of defaults so we can try to convert the schema.  (not a good sign)
+        if (this.isMissingXmlSchemaNamespace()) {
+            this.namespaces[Constants.XML_SCHEMA_DEFAULT_NAMESPACE_NAME_XS] = Constants.XML_SCHEMA_NAMESPACE;
+            this.namespaces[Constants.XML_SCHEMA_DEFAULT_NAMESPACE_NAME_XSD] = Constants.XML_SCHEMA_NAMESPACE;
+        }
+    }
+
+    isMissingXmlSchemaNamespace() {
+        const keys = Object.keys(this.namespaces);
+        for(let key of keys) {
+            if(this.namespaces[key] == Constants.XML_SCHEMA_NAMESPACE) {
+                return false;
+            }
+        }
+        return true;
     }
 
     resolveNamespace(namespaceName) {
@@ -194,8 +231,8 @@ class XsdFile {
     }
 
     toString() {
-        const str = 
-`baseFilename=${this.filename}
+        const str =
+            `baseFilename=${this.filename}
 uri=${this.uri}
 includeUris=${this.includeUris}
 namespaces=${JSON.stringify(this.namespaces, null, '\t')}
@@ -223,7 +260,7 @@ xmlDoc=${this.xmlDoc}`
     /* *********************************************************************************** */
 
     static nodeQuickDumpStr(node) {
-        var retval= XsdFile.getNodeName(node) + ' [';
+        var retval = XsdFile.getNodeName(node) + ' [';
         var attrs = node.attributes;
         if (attrs != undefined) {
             Object.keys(attrs).forEach(function (attr, index, array) {
@@ -296,7 +333,7 @@ xmlDoc=${this.xmlDoc}`
         debug('XML-TAG-NameSpace= ' + node.namespaceURI + '=' + node.namespaceURI);
         var text = node.textContent;
         if (text != undefined) {
-            const trimmed=text.trim();
+            const trimmed = text.trim();
             debug('XML-Text= [' + (trimmed.length > 0 ? trimmed : 'it was all whitespace') + ']');
         }
         this.dumpAttrs(node);

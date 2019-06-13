@@ -12,31 +12,41 @@ describe('XsdFileXmlDomFile Test -', function() {
 
     beforeEach(function() {
         example = new XsdFile({ 
-            uri: 'test/xmlSchemas/example/ExampleTypes.xsd'
+            uri: 'test/xmlSchemas/example/ExampleTypes.xsd',
+            xml: this.readfile('test/xmlSchemas/example/ExampleTypes.xsd')
         });
         base = new XsdFile({ 
-            uri: 'test/xmlSchemas/example/BaseTypes.xsd'
+            uri: 'test/xmlSchemas/example/BaseTypes.xsd',
+            xml: this.readfile('test/xmlSchemas/example/BaseTypes.xsd')
         });
         attr = new XsdFile({ 
-            uri: 'test/xmlschemas/unit/attributes.xsd'
+            uri: 'test/xmlschemas/unit/attributes.xsd',
+            xml: this.readfile('test/xmlschemas/unit/attributes.xsd')
         });
     });
 
     it('should return a fully constructed XsdFile instance', function() {
         expect(example).not.toBeUndefined();
         const uri = new URI('test/xmlSchemas/example/ExampleTypes.xsd');
-        uri.toString();
+        //uri.toString();
+        //example.uri.toString();
         expect(example.uri).toEqual(uri);
     });
 
     it('should fail argument checks', function() {
         expect(function() {
             example = new XsdFile();
-        }).toThrow(Error("Parameter 'options' is required"));
+        }).toThrow(Error('Parameter "options" is required'));
 
         expect(function() {
             base = new XsdFile({});
-        }).toThrow(Error("'options.uri' is required"));
+        }).toThrow(Error('"options.uri" is required'));
+
+        expect(function() {
+            base = new XsdFile({
+                uri: 'something'
+            });
+        }).toThrow(Error('"options.xml" is required'));
     });
 
     it('should setup the targetNamespace from the schema element attributes', function() {

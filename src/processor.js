@@ -18,6 +18,8 @@ const includeTextAndCommentNodes_NAME = Symbol();
  * {@link Processor#process|Processor.process()} method and a name that corresponds to one of the XML Schema element names
  * found in {@link module:XsdElements}.  For example, the choice handler method:\
  * <pre><code>choice(node, jsonSchema, xsd)</code></pre>
+ * 
+ * This base class provides
  */
 
  class Processor {
@@ -67,7 +69,7 @@ const includeTextAndCommentNodes_NAME = Symbol();
 	 * 
 	 * @returns {Boolean} - handler methods can return false to cancel traversal of {@link XsdFile|xsd}.  
      * 
-     * @see {@link BaseConverter#process|BaseConverter.process()}
+     * @see {@link ConverterDraft04#process|ConverterDraft04.process()}
 	 */
 	process(node, jsonSchema, xsd) {
 		// parsingState.dumpStates() will check for debug.enabled so it's okay to call unchecked.  This allows ParsingState logging to be enabled separately from Processor.
@@ -84,11 +86,12 @@ const includeTextAndCommentNodes_NAME = Symbol();
 
 	/**
 	 * This method is called after processing is complete to perform processing that couldn't be handled by
-	 * the XML Handler methods.  Subclasses should override this method.
+	 * the XML Handler methods.  Subclasses should override this method as needed.
      * 
-     * @see {@link BaseConverter#processSpecialCases|BaseConverter.processSpecialCases()}
+     * @see {@link ConverterDraft04#processSpecialCases|ConverterDraft04.processSpecialCases()}
 	 */
 	processSpecialCases() {
+		debug('Processing special cases')
 		//throw new Error('Please implement this method.  Processor.processSpecialCases()');
 	}
 }

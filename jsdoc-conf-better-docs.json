@@ -1,0 +1,28 @@
+{
+    "source": {
+        "includePattern": ".+\\.js(doc|x)?$",
+        "excludePattern": "(^|\\/|\\\\)_"
+    },
+    "plugins": [
+        "plugins/markdown"
+    ],
+    "templates": {
+        "default": {
+            "staticFiles": {
+                "include": [
+                    "./static"
+                ]
+            },
+            "includeDate": false
+        }
+    },
+    "opts": {
+        "encoding": "utf8",
+        "readme": "./README.md",
+        "destination": "docs-generated/",
+        "recurse": true,
+        "verbose": true,
+        "tutorials": "./tutorials",
+        "template": "node_modules/better-docs/"
+    }
+}

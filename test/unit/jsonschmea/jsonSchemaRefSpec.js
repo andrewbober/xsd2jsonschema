@@ -1,6 +1,6 @@
 'use strict'
 
-const JsonSchemaFile = require('xsd2jsonschema').JsonSchemaFile;
+const JsonSchemaFile = require('xsd2jsonschema').JsonSchemaFileDraft04;
 const JsonSchemaRef = require('xsd2jsonschema').JsonSchemaRef;
 
 describe('JsonSchemaRef Test -', function () {

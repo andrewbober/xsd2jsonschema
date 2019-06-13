@@ -2,13 +2,13 @@
 
 const BuiltInTypeConverter = require('xsd2jsonschema').BuiltInTypeConverter;
 const XsdFile = require('xsd2jsonschema').XsdFile;
-const JsonSchemaFile = require('xsd2jsonschema').JsonSchemaFile;
+const JsonSchemaFileDraft04 = require('xsd2jsonschema').JsonSchemaFileDraft04;
 const jsonSchemaTypes = require('xsd2jsonschema').JsonSchemaTypes;
 const jsonSchemaFormats = require('xsd2jsonschema').JsonSchemaFormats;
 const NamespaceManager = require('xsd2jsonschema').NamespaceManager;
 const JSON_SCHEMA_TYPES = require('xsd2jsonschema').JsonSchemaTypes;
-const ParsingState = require('xsd2jsonschema').ParsingState;
 const XsdElements = require('xsd2jsonschema').XsdElements;
+const ParsingState = require('xsd2jsonschema').ParsingState;
 
 describe('ParsingState Test - ', function() {
     var parsingState;

@@ -4,8 +4,114 @@ const debug = require('debug')('xsd2jsonschema:BaseSpecialCaseIdentifier:AnyOfCh
 
 const XsdFile = require('xsd2jsonschema').XsdFile;
 const BaseSpecialCaseIdentifier = require('xsd2jsonschema').BaseSpecialCaseIdentifier;
-const JsonSchemaFile = require('xsd2jsonschema').JsonSchemaFile;
+const JsonSchemaFile = require('xsd2jsonschema').JsonSchemaFileDraft04;
 
+const XML_SCHEMA = 
+`
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://www.xsd2jsonschema.org/example" version="1.1.0" 
+	xmlns="http://www.xsd2jsonschema.org/example" 
+	xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:annotation>
+		<xs:documentation>AnyOfChoice samples both valid and invalid.</xs:documentation>
+	</xs:annotation>
+	<xs:complexType name="AnyOfChoiceValid1">
+		<xs:sequence>
+			<xs:choice>
+				<xs:sequence>
+					<xs:element name="Option2" type="xs:string"/>
+					<xs:element name="Option1" type="xs:string" minOccurs="0"/>
+				</xs:sequence>
+				<xs:element name="Option1" type="xs:string"/>
+			</xs:choice>
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="AnyOfChoiceValid2">
+		<xs:sequence>
+			<xs:choice>
+				<xs:sequence>
+					<xs:element name="Option3" type="xs:string" />
+					<xs:element name="Option2" type="xs:string" minOccurs="0" />
+					<xs:element name="Option1" type="xs:string" minOccurs="0" />
+				</xs:sequence>
+				<xs:sequence>
+					<xs:element name="Option2" type="xs:string" />
+					<xs:element name="Option1" type="xs:string" minOccurs="0" />
+				</xs:sequence>
+				<xs:element name="Option1" type="xs:string" />
+			</xs:choice>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="AnyOfChoiceInvalidOptionsNotGroupedByAggregate">
+		<xs:sequence>
+			<xs:choice>
+				<xs:element name="Option1" type="xs:string" />
+				<xs:element name="Option2" type="xs:string" maxOccurs="unbounded" />
+				<xs:element name="Option3" type="xs:string" maxOccurs="unbounded" />
+				<xs:element name="Option4" type="xs:string" maxOccurs="unbounded" />
+				<xs:element name="Option5" type="xs:string" />
+				<xs:element name="Option6" type="xs:string" />
+			</xs:choice>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="AnyOfChoiceInvalidOptionsAggregatesNotProgresive1">
+		<xs:sequence>
+			<xs:choice>
+				<xs:sequence>
+					<xs:element name="Option4" type="xs:string" />
+					<xs:element name="Option3" type="xs:string" />
+					<xs:element name="Option2" type="xs:string" minOccurs="0" />
+					<xs:element name="Option1" type="xs:string" minOccurs="0" />
+				</xs:sequence>
+				<xs:sequence>
+					<xs:element name="Option2" type="xs:string" />
+					<xs:element name="Option1" type="xs:string" minOccurs="0" />
+				</xs:sequence>
+				<xs:element name="Option1" type="xs:string"/>
+			</xs:choice>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="AnyOfChoiceInvalidOptionsAggregatesNotProgresive2">
+		<xs:sequence>
+			<xs:choice>
+				<xs:sequence>
+					<xs:element name="Option3" type="xs:string" />
+					<xs:element name="Option2" type="xs:string" />
+					<xs:element name="Option1" type="xs:string" minOccurs="0" />
+				</xs:sequence>
+				<xs:sequence>
+					<xs:element name="Option2" type="xs:string" />
+					<xs:element name="Option1" type="xs:string" minOccurs="0" />
+				</xs:sequence>
+				<xs:element name="Option1" type="xs:string" />
+			</xs:choice>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="AnyOfChoiceInvalidOptionsAggregatesNotProgresive3">
+		<xs:sequence>
+			<xs:choice>
+				<xs:sequence>
+					<xs:element name="Option4" type="xs:string" />
+					<xs:element name="Option3" type="xs:string" minOccurs="0" />
+					<xs:element name="Option2" type="xs:string" minOccurs="0" />
+					<xs:element name="Option1" type="xs:string" minOccurs="0" />
+				</xs:sequence>
+				<xs:sequence>
+					<xs:element name="Option3" type="xs:string" />
+					<xs:element name="Option2" type="xs:string" minOccurs="0" />
+					<xs:element name="Option1" type="xs:string" minOccurs="0" />
+				</xs:sequence>
+				<xs:sequence>
+					<xs:element name="Option2" type="xs:string" />
+					<xs:element name="Option1" type="xs:string" minOccurs="0" />
+				</xs:sequence>
+				<xs:element name="Option1" type="xs:string" />
+			</xs:choice>
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>
+`;
 
 describe('BaseSpecialCaseIdentifier AnyOfChoice Test', function () {
     describe('AnyOfChoice', function () {
@@ -17,7 +123,10 @@ describe('BaseSpecialCaseIdentifier AnyOfChoice Test', function () {
         beforeEach(function () {
             sci = new BaseSpecialCaseIdentifier();
             node = null;
-            anyOfChoiceXsd = new XsdFile({ uri: 'test/xmlSchemas/functional/anyOfChoice.xsd' });
+            anyOfChoiceXsd = new XsdFile({ 
+                uri: 'test/xmlSchemas/functional/anyOfChoice.xsd',
+                xml: this.readfile('test/xmlSchemas/functional/anyOfChoice.xsd')
+            });
         });
 
         afterEach(function () {

@@ -1,7 +1,7 @@
 'use strict'
 
 const BuiltInTypeConverter = require("xsd2jsonschema").BuiltInTypeConverter;
-const JsonSchemaFile = require("xsd2jsonschema").JsonSchemaFile;
+const JsonSchemaFile = require("xsd2jsonschema").JsonSchemaFileDraft04;
 const jsonSchemaTypes = require("xsd2jsonschema").JsonSchemaTypes;
 const jsonSchemaFormats = require("xsd2jsonschema").JsonSchemaFormats;
 const Constants = require("xsd2jsonschema").Constants;

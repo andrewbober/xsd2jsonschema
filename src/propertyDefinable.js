@@ -4,7 +4,7 @@
  *  PropertyDefinable is a utility base class providing methods to create properties that are enumerable.
  */
 
- class PropertyDefinable {
+class PropertyDefinable {
 
 	/**
 	 * @param {Object} [options] - Used to configure a set of properties at once.
@@ -18,13 +18,13 @@
 		if (options == undefined) {
 			return;
 		}
-		if(options.propertyNames != undefined) {
+		if (options.propertyNames != undefined) {
 			this.definePropertiesFromArray(options.propertyNames, options.enumerable);
 		}
-		if(options.properties != undefined) {
+		if (options.properties != undefined) {
 			this.definePropertiesFromObject(options.properties)
 		}
-}
+	}
 
 	/**
 	 * Creates a set of accessor properties with the provided names and enumerable property.
@@ -33,11 +33,11 @@
 	 * @param {Boolean} [enumerable] - True if all the properties created from the provided propertyNames should be enumerable.  False otherwise.
 	 */
 	definePropertiesFromArray(propertyNames, enumerable) {
-		propertyNames.forEach(function(propertyName){
+		propertyNames.forEach(function (propertyName) {
 			this.defineAccessorProperty(propertyName, Symbol(propertyName), {
 				enumerable: enumerable == undefined ? true : enumerable
 			});
-	}, this);
+		}, this);
 	}
 
 	/**
@@ -46,7 +46,7 @@
 	 * {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty | Object.defineProperty()}
 	 */
 	definePropertiesFromObject(properties) {
-		Object.keys(properties).forEach(function(propertyName) {
+		Object.keys(properties).forEach(function (propertyName) {
 			Reflect.defineProperty(this, propertyName, properties[propertyName]);
 		}, this);
 	}
@@ -60,19 +60,19 @@
      * @param {Object} [descriptor] - Can be used to customize the property.as defined by 
 	 * {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty | Object.defineProperty()}
      */
-    defineAccessorProperty(propertyName, symbol, descriptor) {
-        var attributes = {
-            enumerable: true,
-            get: function() {
-                return this[symbol];
-            },
-            set: function(newVal) {
-                this[symbol] = newVal;
-            }
-        };
-        Object.assign(attributes, descriptor);
-        return Reflect.defineProperty(this, propertyName, attributes);
-    }
+	defineAccessorProperty(propertyName, symbol, descriptor) {
+		var attributes = {
+			enumerable: true,
+			get: function () {
+				return this[symbol];
+			},
+			set: function (newVal) {
+				this[symbol] = newVal;
+			}
+		};
+		Object.assign(attributes, descriptor);
+		return Reflect.defineProperty(this, propertyName, attributes);
+	}
 
 }
 

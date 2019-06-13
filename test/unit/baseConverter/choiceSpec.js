@@ -2,7 +2,7 @@
 
 const XsdFile = require("xsd2jsonschema").XsdFile;
 const BaseConverter = require("xsd2jsonschema").BaseConverter;
-const JsonSchemaFile = require("xsd2jsonschema").JsonSchemaFile;
+const JsonSchemaFileDraft04 = require("xsd2jsonschema").JsonSchemaFileDraft04;
 
 describe("BaseConverter <choice>", function() {
     var bc;
@@ -46,7 +46,7 @@ describe("BaseConverter <choice>", function() {
             uri: 'choice-in-choice-unit-test',
             xml: xml
         });
-        jsonSchema = new JsonSchemaFile({
+        jsonSchema = new JsonSchemaFileDraft04({
             baseFilename : xsd.baseFilename,
             baseId : "http://www.xsd2jsonschema.org/unittests/",
             targetNamespace: xsd.targetNamespace

@@ -17,7 +17,7 @@ const State = require('./../parsingState').State;
 	/**
 	 * Constructs an instance of BaseConversionVisiter.
 	 * @constructor
-	 * @param {Processor} processor - {@link BaseConverter} or a subclass of {@link Processor}
+	 * @param {Processor} processor - {@link ConverterDraft04} or a subclass of {@link Processor}
 	 */
 	constructor(processor) {
 		super(processor);
@@ -69,9 +69,7 @@ const State = require('./../parsingState').State;
 
 	/**
 	 * This method is called before conversion of {@link XsdFile|xsd} is started.  Subclasss can override this method to implement class 
-	 * specific pre-processing behavior.  The default implementation initializes a namespace for the XML Schema file's targetNamespace
-	 * and returns true to allow conversion to start.  And initializes the processor so it can identify the need to resolve forward
-	 * references with another pass over the xml schema.
+	 * specific pre-processing behavior.  The default implementation logs a message and returns true to allow conversion to start.
 	 * 
 	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema file that will represent converted XML Schema file {@link XsdFile|xsd}.
 	 * @param {XsdFile} xsd - The XML schema file about to be processed.
@@ -79,20 +77,15 @@ const State = require('./../parsingState').State;
 	 * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
 	 */
 	onBegin(jsonSchema, xsd) {
-		/*
-				console.log('\n\n****************************************************************************************************');
-				console.log('Converting ' + xsd.getBaseFilename());
-				console.log('****************************************************************************************************\n');
-		*/
-		// Initialize anotherPassNeeded so it can be used to identify the need to resolve forward
-		// references with another pass over the xml schema.
-		this.processor.anotherPassNeeded = false;
+		debug('\n\n****************************************************************************************************');
+		debug('Converting ' + xsd.filename);
+		debug('****************************************************************************************************\n');
 		return true;
 	}
 
 	/**
 	 * This method is called after conversion of {@link XsdFile|xsd} has completed.  Subclasss can override this method to implement 
-	 * class specific post-processing behavior.  The default implementation calls {@link BaseConverter#processSpecialCases|BaseConverter.processSpecialCases()}.
+	 * class specific post-processing behavior.  The default implementation calls {@link ConverterDraft04#processSpecialCases|ConverterDraft04.processSpecialCases()}.
 	 * 
 	 * @param {JsonSchemaFile} jsonSchema - The resulting JSON Schema file from the conversion.
 	 * @param {XsdFile} xsd - The XML Schema file {@link XsdFile|xsd} that was just converted.

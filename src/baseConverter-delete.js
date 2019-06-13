@@ -44,8 +44,8 @@ const anotherPassNeeded_NAME = Symbol();  // Hopefully this is never needed
 			this.namespaceManager = options.namespaceManager != undefined ? options.namespaceManager : new NamespaceManager();
 			this.specialCaseIdentifier = options.specialCaseIdentifier != undefined ? options.specialCaseIdentifier : new BaseSpecialCaseIdentifier();
 		} else {
-			this.namespaceManager = new NamespaceManager();
-			this.specialCaseIdentifier = new BaseSpecialCaseIdentifier();
+			//this.namespaceManager = new NamespaceManager();
+			//this.specialCaseIdentifier = new BaseSpecialCaseIdentifier();
 		}
 
 		// The working schema is initilized as needed through XML Handlers
@@ -103,7 +103,7 @@ const anotherPassNeeded_NAME = Symbol();  // Hopefully this is never needed
 	 *  2) calls super.process() to provide detailed logging
 	 *  3) calls the appropriate XML Handler method.
 	 * @param {Node} node - the current {@link https://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/core.html#ID-745549614 element} in xsd being converted.
-	 * @param {JsonSchemaFileV4} jsonSchema - the JSON Schema representing the current XML Schema file {@link XsdFile|xsd} being converted.
+	 * @param {JsonSchemaFile} jsonSchema - the JSON Schema representing the current XML Schema file {@link XsdFile|xsd} being converted.
 	 * @param {XsdFile} xsd - the XML schema file currently being converted.
 	 * 
 	 * @returns {Boolean} - handler methods can return false to cancel traversal of {@link XsdFile|xsd}.  An XML Schema handler method
@@ -225,12 +225,12 @@ const anotherPassNeeded_NAME = Symbol();  // Hopefully this is never needed
 		if (typeName !== undefined) {
 			var qualifiedTypeName = new Qname(typeName);
 			attributeJsonSchema = this.namespaceManager.getGlobalAttribute(name, jsonSchema);
-			jsonSchema.getGlobalAttributesSchema().addSubSchema(name, attributeJsonSchema);
+			jsonSchema.getGlobalAttributesSchema().setSubSchema(name, attributeJsonSchema);
 			return this.builtInTypeConverter[qualifiedTypeName.getLocal()](node, attributeJsonSchema);
 		} else {
 			// Setup the working schema and allow processing to continue for any contained simpleType or annotation nodes.
 			attributeJsonSchema = this.namespaceManager.getGlobalAttribute(name, jsonSchema);
-			jsonSchema.getGlobalAttributesSchema().addSubSchema(name, attributeJsonSchema);
+			jsonSchema.getGlobalAttributesSchema().setSubSchema(name, attributeJsonSchema);
 			this.workingJsonSchema = attributeJsonSchema;
 		}
 		return true;
@@ -420,7 +420,7 @@ const anotherPassNeeded_NAME = Symbol();  // Hopefully this is never needed
 		switch (state.name) {
 			case XsdElements.SCHEMA:
 				this.workingJsonSchema = this.namespaceManager.getType(nameAttr, jsonSchema, jsonSchema, xsd);
-				jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
+				jsonSchema.setSubSchema(nameAttr, this.workingJsonSchema);
 				this.workingJsonSchema.type = jsonSchemaTypes.OBJECT;
 				break;
 			case XsdElements.REDEFINE:
@@ -470,11 +470,11 @@ const anotherPassNeeded_NAME = Symbol();  // Hopefully this is never needed
 			//refType.id = jsonSchema.id;
 			this.namespaceManager.addTypeReference(nameAttr, refType, jsonSchema, xsd);
 			this.workingJsonSchema = refType;
-			jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
+			jsonSchema.setSubSchema(nameAttr, this.workingJsonSchema);
 			//workingJsonSchema.type = jsonSchemaTypes.OBJECT;
 		} else {
 			this.workingJsonSchema = this.namespaceManager.getType(nameAttr, jsonSchema, jsonSchema, xsd);
-			jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
+			jsonSchema.setSubSchema(nameAttr, this.workingJsonSchema);
 			this.workingJsonSchema.type = jsonSchemaTypes.OBJECT;
 		}
 		if (this.parsingState.inChoice()) {
@@ -698,7 +698,7 @@ const anotherPassNeeded_NAME = Symbol();  // Hopefully this is never needed
 		switch (state.name) {
 			case XsdElements.SCHEMA:
 				this.workingJsonSchema = this.namespaceManager.getType(nameAttr, jsonSchema, jsonSchema, xsd);
-				jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
+				jsonSchema.setSubSchema(nameAttr, this.workingJsonSchema);
 				this.workingJsonSchema.type = jsonSchemaTypes.OBJECT;
 				break;
 			case XsdElements.REDEFINE:
@@ -940,7 +940,7 @@ const anotherPassNeeded_NAME = Symbol();  // Hopefully this is never needed
 			this.parsingState.pushSchema(this.workingJsonSchema);
 			let typeRef = this.namespaceManager.getTypeReference(baseAttr, jsonSchema, jsonSchema, xsd);
 			if(XsdFile.isEmpty(node)) {
-				this.workingJsonSchema.$ref = typeRef.get$RefToSchema(this.workingJsonSchema).$ref;
+				jsonSchema.setSubSchema(XsdFile.getNameAttrValue(node.parentNode), typeRef);
 			} else {
 				this.workingJsonSchema = this.workingJsonSchema.extend(typeRef);
 			}
@@ -1029,7 +1029,7 @@ const anotherPassNeeded_NAME = Symbol();  // Hopefully this is never needed
 		// TODO: id, final
 
 		this.workingJsonSchema = this.namespaceManager.getType(nameAttr, jsonSchema, jsonSchema, xsd);
-		jsonSchema.addSubSchema(nameAttr, this.workingJsonSchema);
+		jsonSchema.setSubSchema(nameAttr, this.workingJsonSchema);
 		return true;
 	}
 

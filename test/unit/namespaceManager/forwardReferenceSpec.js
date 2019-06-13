@@ -5,9 +5,10 @@ const debug = require('debug')('xsd2jsonschema:ForwardReferenceSpec');
 const clone = require('clone');
 const BuiltInTypeConverter = require('xsd2jsonschema').BuiltInTypeConverter;
 const XsdFile = require('xsd2jsonschema').XsdFile;
-const JsonSchemaFile = require('xsd2jsonschema').JsonSchemaFile;
+const JsonSchemaFileDraft04 = require('xsd2jsonschema').JsonSchemaFileDraft04;
 const JsonSchemaRef = require('xsd2jsonschema').JsonSchemaRef;
 const NamespaceManager = require('xsd2jsonschema').NamespaceManager;
+const CONSTANTS = require('xsd2jsonschema').Constants;
 const ForwardReference = require('xsd2jsonschema').ForwardReference;
 
 describe('ForwardReference Test - ', function() {
@@ -17,12 +18,16 @@ describe('ForwardReference Test - ', function() {
     var xsd;
 
     beforeEach(function() {
-        namespaceManager = new NamespaceManager();
+		namespaceManager = new NamespaceManager({
+			jsonSchemaVersion: CONSTANTS.DRAFT_04,
+			builtInTypeConverter: new BuiltInTypeConverter()
+		});
         namespaceManager.addNamespace('http://www.xsd2jsonschema.org/example');
-        jsonSchema = new JsonSchemaFile();
-        parent = new JsonSchemaFile();
+        jsonSchema = new JsonSchemaFileDraft04();
+        parent = new JsonSchemaFileDraft04();
         xsd = new XsdFile({ 
-            uri: 'test/xmlSchemas/unit/choice.xsd'
+            uri: 'test/xmlSchemas/unit/choice.xsd',
+            xml: this.readfile('test/xmlSchemas/unit/choice.xsd')
         });
     });
 
@@ -32,7 +37,7 @@ describe('ForwardReference Test - ', function() {
     });
 
     it('should clone the forwardReference', function() {
-        const parent = new JsonSchemaFile();
+        const parent = new JsonSchemaFileDraft04();
         const forwardReference = namespaceManager.getTypeReference('anyType', jsonSchema, jsonSchema, xsd);
     
         const clone = forwardReference.clone(parent);

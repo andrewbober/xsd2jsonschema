@@ -4,10 +4,11 @@ const debug = require('debug')('xsd2jsonschema:NamespaceManager');
 
 const URI = require('urijs');
 const XsdAttributes = require('./xmlschema/xsdAttributes');
-const JsonSchemaFile = require('./jsonschema/jsonSchemaFile');
+const JsonSchemaFileDraft04 = require('./jsonschema/jsonSchemaFileDraft04');
+const JsonSchemaFileDraft06 = require('./jsonschema/jsonSchemaFileDraft06');
+const JsonSchemaFileDraft07 = require('./jsonschema/jsonSchemaFileDraft07');
 const Qname = require('./qname');
-const BuiltInTypeConverter = require('./builtInTypeConverter');
-const Constants = require('./constants');
+const CONSTANTS = require('./constants');
 const ForwardReference = require('./forwardReference');
 
 
@@ -16,6 +17,7 @@ const builtInTypeConverter_NAME = Symbol();
 const jsonSchema_NAME = Symbol();
 const xmlSchemas_NAME = Symbol();
 const forwardReferences_NAME = Symbol();
+const jsonSchemaVersion_NAME = Symbol();
 
 /**
  * Class responsible for managaging namespaces and types within those namespaces, which are defined as 
@@ -42,28 +44,21 @@ const forwardReferences_NAME = Symbol();
 
 class NamespaceManager {
 	constructor(options) {
-		/*
-				this.namespaces = {
-					globalAttributes: { 
-						types: {}
-					}
-				};
-				this.namespaces = {};
-				this.namespaces[Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME] = {
-					types: {}
-				}
-		*/
 		this.namespaces = {};
-		this.addNamespace(Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME);
-		this.addNamespace(Constants.XML_SCHEMA_NAMESPACE);
-		if (options != undefined) {
-			this.builtInTypeConverter = options.builtInTypeConverter != undefined ? options.builtInTypeConverter : new BuiltInTypeConverter();
-		} else {
-			this.builtInTypeConverter = new BuiltInTypeConverter();
+		this.addNamespace(CONSTANTS.GLOBAL_ATTRIBUTES_SCHEMA_NAME);
+		this.addNamespace(CONSTANTS.XML_SCHEMA_NAMESPACE);
+		if (options == undefined) {
+			throw new Error ('Parameter "options" is required');
 		}
-		this.jsonSchemas = {};
-		this.xmlSchemas = {};
-		this.forwardReferences = [];
+
+		if (options.jsonSchemaVersion == undefined) {
+				throw new Error('Parameter options.jsonSchemaVersion is required')
+		}
+		if (options.builtInTypeConverter != undefined) {
+			this.builtInTypeConverter = options.builtInTypeConverter;
+		}
+		this.jsonSchemaVersion = options.jsonSchemaVersion;
+		this.reset();
 	}
 
 	// Getters/Setters
@@ -116,16 +111,42 @@ class NamespaceManager {
 		this[forwardReferences_NAME] = newForwardReferences;
 	}
 
+	get jsonSchemaVersion() {
+		return this[jsonSchemaVersion_NAME];
+	}
+
+	set jsonSchemaVersion(newJsonSchemaVersion) {
+		this[jsonSchemaVersion_NAME] = newJsonSchemaVersion;
+	}
+
 	addNewJsonSchema(newJsonSchemaOptions) {
-		var jsonSchema = new JsonSchemaFile(newJsonSchemaOptions);
+		var jsonSchema;
+		switch (this.jsonSchemaVersion) {
+			case CONSTANTS.DRAFT_04:
+				jsonSchema = new JsonSchemaFileDraft04(newJsonSchemaOptions);
+				break;
+			case CONSTANTS.DRAFT_06:
+				jsonSchema = new JsonSchemaFileDraft06(newJsonSchemaOptions);
+				break;
+			case CONSTANTS.DRAFT_07:
+				jsonSchema = new JsonSchemaFileDraft07(newJsonSchemaOptions);
+				break;
+			default: throw new Error(`Unknown jsonSchemaVersion supplied [${jsonSchemaVersion}]`);
+		}
 		this.jsonSchemas[newJsonSchemaOptions.uri.toString()] = jsonSchema;
 	}
 
+	reset() {
+		this.jsonSchemas = {};
+		this.xmlSchemas = {};
+		this.forwardReferences = [];
+	}
+
 	/**
-	 * Adds a namespace to the to the collection.  The namespace is initially empty.
+	* Adds a namespace to the to the collection.  The namespace is initially empty.
 	 * 
 	 * @param {String} _namespace The name of the XML Namespace.
-	 * @see {@link BaseConverter#initializeNamespaces|BaseConverter.initializeNamespaces()}
+	 * @see {@link ConverterDraft04#initializeNamespaces|ConverterDraft04.initializeNamespaces()}
 	 */
 	addNamespace(_namespace) {
 		//var namespace = utils.getSafeNamespace(_namespace);
@@ -148,7 +169,7 @@ class NamespaceManager {
 	}
 
 	isWellKnownXmlNamespace(namespace) {
-		return namespace === Constants.XML_SCHEMA_NAMESPACE;
+		return namespace === CONSTANTS.XML_SCHEMA_NAMESPACE;
 	}
 
 	/**
@@ -162,15 +183,15 @@ class NamespaceManager {
 	getBuiltInType(fullTypeName, parent, xsd) {
 		const qname = new Qname(fullTypeName);
 		const typeName = qname.getLocal();
-		if (this.namespaces[Constants.XML_SCHEMA_NAMESPACE].types[typeName] === undefined) {
-			const newType = new JsonSchemaFile();
+		if (this.namespaces[CONSTANTS.XML_SCHEMA_NAMESPACE].types[typeName] === undefined) {
+			const newType = new JsonSchemaFileDraft04();
 			// The 'node' parameter to the builtInTypeConverter's xml handler methods is not currently
 			// used so it is safe to pass in null for now.  This is likely a future bug!
 			debug(`Returning JSON Schema type [${typeName}]`);
 			this.builtInTypeConverter[typeName](null, newType, xsd);
-			this.namespaces[Constants.XML_SCHEMA_NAMESPACE].types[typeName] = newType;
+			this.namespaces[CONSTANTS.XML_SCHEMA_NAMESPACE].types[typeName] = newType;
 		}
-		const builtInType = this.namespaces[Constants.XML_SCHEMA_NAMESPACE].types[typeName].clone();
+		const builtInType = this.namespaces[CONSTANTS.XML_SCHEMA_NAMESPACE].types[typeName].clone();
 		builtInType.parent = parent;
 		return builtInType;
 	}
@@ -194,7 +215,7 @@ class NamespaceManager {
 	isBuiltInType(fullTypeName, xsd) {
 		const qname = new Qname(fullTypeName);
 		const namespace = this.getNamespaceValue(qname, xsd);
-		return this.isWellKnownXmlNamespace(namespace) && (this.builtInTypeConverter[qname.getLocal()] != undefined);
+ 		return this.isWellKnownXmlNamespace(namespace) && (this.builtInTypeConverter[qname.getLocal()] != undefined);
 	}
 
 	createForwardReference(namespace, typeName, parent, baseJsonSchema, xsd) {
@@ -258,7 +279,7 @@ class NamespaceManager {
 		debug('Creating TYPE [' + typeName + '] in namespace [' + namespace + '] from [' + xsd.uri.toString() + ']');
 		// Create the type, which will be filled out later as the XSD is processed, and add it to the namespace.
 		const baseJsonSchemaForNamespace = this.jsonSchemas[xsd.imports[namespace]] == undefined ? baseJsonSchema : this.jsonSchemas[xsd.imports[namespace]];
-		const newType = new JsonSchemaFile({
+		const newType = new JsonSchemaFileDraft04({
 			ref: new URI(baseJsonSchemaForNamespace.id + '#' + baseJsonSchemaForNamespace.getSubschemaJsonPointer() + '/' + typeName)
 		});
 		this.namespaces[namespace].types[typeName] = newType;
@@ -335,13 +356,13 @@ class NamespaceManager {
 		}
 	}
 
-	compilePointer (pointer) {
+	compilePointer(pointer) {
 		if (typeof pointer === 'string') {
-		  	pointer = pointer.split('/')
-			  if (Array.isArray(pointer)) {
+			pointer = pointer.split('/')
+			if (Array.isArray(pointer)) {
 				return pointer
 			}
-		} 
+		}
 		throw new Error(`Invalid JSON pointer [${pointer}}]`)
 	}
 
@@ -350,12 +371,12 @@ class NamespaceManager {
 			return new Error(`ref expected but found ${type.toString()}`);
 		}
 		var pointer = this.compilePointer(type.$ref);
-		return pointer[pointer.length-1];
+		return pointer[pointer.length - 1];
 	}
 
 	/**
 	 * This method returns the requested type, which can be either a custom type or an 
-	 * XML built-in type.  If the type exists in the namesapce of xsd then the type is
+	 * XML built-in type.  If the type exists in the namesapce of the xsd the type is
 	 * retuned. If the type does not exist it is created and then returned.
 	 * 
 	 * @param {String} fullTypeName The name of the type to be returned.  The format of this
@@ -402,8 +423,8 @@ class NamespaceManager {
 				return type.get$RefToSchema(parent);
 			}
 		}
-	}	
-	
+	}
+
 	dumpForwardReferences() {
 		debug('Begin Forward References (' + this.forwardReferences.length + ')');
 		this.forwardReferences.forEach(function (fRef, index, array) {
@@ -421,7 +442,7 @@ class NamespaceManager {
 		const fromType = fRef.ref.$ref;
 		const toType = type.ref == undefined ? type.$ref : type.ref;
 		debug(`Resolving type [${fRef.ref.$ref}] to [${type.ref == undefined ? type.$ref : type.ref}]`);
-		if(type.resolved != undefined && type.resolved != true && fromType != toType) {
+		if (type.resolved != undefined && type.resolved != true && fromType != toType) {
 			this.resolveForwardReference(type.forwardReference);
 		}
 		let newRef = (type.ref != undefined ? type.ref : type.$ref)
@@ -434,7 +455,7 @@ class NamespaceManager {
 		const fromType = fRef.ref.$ref;
 		const toType = type.ref == undefined ? type.$ref : type.ref;
 		debug(`Resolving type [${fRef.ref.$ref}] to [${type.ref == undefined ? type.$ref : type.ref}]`);
-		if(type.resolved != undefined && type.resolved != true && fromType != toType) {
+		if (type.resolved != undefined && type.resolved != true && fromType != toType) {
 			this.resolveForwardReference(type.forwardReference);
 		}
 		debug(`'Updating [${fromType}] to [${toType}] from ${fRef.baseJsonSchema.filename}`);
@@ -449,9 +470,9 @@ class NamespaceManager {
 	}
 
 	cloneForwardReference(forwardRef) {
-		for(let i=0; i<this.forwardReferences.length; i++) {
+		for (let i = 0; i < this.forwardReferences.length; i++) {
 			let fRef = this.forwardReferences[i];
-			if(forwardRef.equals(fRef.ref)) {
+			if (forwardRef.equals(fRef.ref)) {
 				const cloneRef = this.getTypeReference(fRef.fullTypeName, fRef.parent, fRef.baseJsonSchema, fRef.xsd);
 				return cloneRef;
 			}
@@ -525,8 +546,8 @@ class NamespaceManager {
 		}
 		var globalAttributesNamespace = this.namespaces.globalAttributes;
 		if (globalAttributesNamespace.types[name] === undefined) {
-			globalAttributesNamespace.types[name] = new JsonSchemaFile({
-				ref: new URI(baseJsonSchema.id + '#/' + Constants.GLOBAL_ATTRIBUTES_SCHEMA_NAME + '/' + name)
+			globalAttributesNamespace.types[name] = new JsonSchemaFileDraft04({
+				ref: new URI(baseJsonSchema.id + '#/' + CONSTANTS.GLOBAL_ATTRIBUTES_SCHEMA_NAME + '/' + name)
 			});
 		}
 		return globalAttributesNamespace.types[name].clone();

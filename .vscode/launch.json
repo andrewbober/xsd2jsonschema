@@ -31,13 +31,13 @@
 		},
 		{
 			// Name of configuration; appears in the launch configuration drop down menu.
-			"name": "Example Conversion",
+			"name": "Convert and Save",
 			// Type of configuration. Possible values: "node", "mono".
 			"type": "node",
 			// Action to take
 			"request": "launch",
 			// Workspace relative or absolute path to the program.
-			"program": "${workspaceRoot}/example/example.js",
+			"program": "${workspaceRoot}/examples/convert-and-save.js",
 			// Automatically stop program after launch.
 			"stopOnEntry": false,
 			// Command line arguments passed to the program.
@@ -57,17 +57,17 @@
 		},
 		{
 			// Name of configuration; appears in the launch configuration drop down menu.
-			"name": "Example Validation",
+			"name": "Convert and Validate",
 			// Type of configuration. Possible values: "node", "mono".
 			"type": "node",
 			// Action to take
 			"request": "launch",
 			// Workspace relative or absolute path to the program.
-			"program": "${workspaceRoot}/example/example.js",
+			"program": "${workspaceRoot}/examples/convert-and-validate.js",
 			// Automatically stop program after launch.
 			"stopOnEntry": false,
 			// Command line arguments passed to the program.
-			"args": ["validate"],
+			"args": ["convert"],
 			"cwd": "${workspaceRoot}/",
 			// Workspace relative or absolute path to the runtime executable to be used. Default is the runtime executable on the PATH.
 			"runtimeExecutable": null,
@@ -75,20 +75,47 @@
 			"runtimeArgs": ["--nolazy"],
 			// Environment variables passed to the program.
 			"env": {
-				"NODE_ENV": "development"
+				"NODE_ENV": "development",
+				"DEBUG": "xsd2jsonschema:BaseConverter,xsd2jsonschema:ParsingState"
 			},
 			// Use JavaScript source maps (if they exist).
 			"sourceMaps": false
 		},
 		{
 			// Name of configuration; appears in the launch configuration drop down menu.
-			"name": "Example Xml Usage",
+			"name": "Hello World",
 			// Type of configuration. Possible values: "node", "mono".
 			"type": "node",
 			// Action to take
 			"request": "launch",
 			// Workspace relative or absolute path to the program.
-			"program": "${workspaceRoot}/example/example.js",
+			"program": "${workspaceRoot}/examples/hello-world.js",
+			// Automatically stop program after launch.
+			"stopOnEntry": false,
+			// Command line arguments passed to the program.
+			"args": ["convert"],
+			"cwd": "${workspaceRoot}/",
+			// Workspace relative or absolute path to the runtime executable to be used. Default is the runtime executable on the PATH.
+			"runtimeExecutable": null,
+			// Optional arguments passed to the runtime executable.
+			"runtimeArgs": ["--nolazy"],
+			// Environment variables passed to the program.
+			"env": {
+				"NODE_ENV": "development",
+				"DEBUG": "xsd2jsonschema:BaseConverter,xsd2jsonschema:ParsingState,xsd2jsonschema:Visitor"
+			},
+			// Use JavaScript source maps (if they exist).
+			"sourceMaps": false
+		},
+		{
+			// Name of configuration; appears in the launch configuration drop down menu.
+			"name": "Visitors",
+			// Type of configuration. Possible values: "node", "mono".
+			"type": "node",
+			// Action to take
+			"request": "launch",
+			// Workspace relative or absolute path to the program.
+			"program": "${workspaceRoot}/examples/visitors.js",
 			// Automatically stop program after launch.
 			"stopOnEntry": false,
 			// Command line arguments passed to the program.
@@ -101,7 +128,7 @@
 			// Environment variables passed to the program.
 			"env": {
 				"NODE_ENV": "development",
-				"DEBUG": "xsd2jsonschema:XmlUsageVisitorSum"
+				"DEBUG": "xsd2jsonschema:XmlUsageVisitor*"
 			},
 			// Use JavaScript source maps (if they exist).
 			"sourceMaps": false
@@ -205,7 +232,7 @@
 			// Environment variables passed to the program.
 			"env": {
 				"NODE_ENV": "development",
-				"DEBUG": "xxxxsd2jsonschema:*"
+				"DEBUG": "xsd2jsonschema:*"
 			},
 			// Use JavaScript source maps (if they exist).
 			"sourceMaps": false

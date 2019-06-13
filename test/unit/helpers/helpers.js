@@ -1,6 +1,7 @@
 'use strict';
 
-const JsonSchemaFile = require('xsd2jsonschema').JsonSchemaFile;
+const fs = require('fs-extra');
+const JsonSchemaFile = require('xsd2jsonschema').JsonSchemaFileDraft04;
 const JsonSchemaTypes = require('xsd2jsonschema').JsonSchemaTypes;
 const JsonSchemaFormats = require('xsd2jsonschema').JsonSchemaFormats;
 
@@ -32,7 +33,7 @@ beforeEach(function() {
 //        fullJsonSchema.title = 'something';
         fullJsonSchema.required = [ 'everything' ];
         fullJsonSchema.properties.everything = new JsonSchemaFile({ $ref: 'http://musicOfTheNight/unitTestSchema.json#/www.xsd2jsonschema.org/example/unit/test/everything' });
-        const everything = fullJsonSchema.addSubSchema('everything', new JsonSchemaFile());
+        const everything = fullJsonSchema.setSubSchema('everything', new JsonSchemaFile());
         everything.description = 'something';
         everything.default = { 'something': {} };
         everything.format = JsonSchemaFormats.URI;
@@ -63,7 +64,19 @@ beforeEach(function() {
         everything.oneOf = [ new JsonSchemaFile() ];
         everything.not = new JsonSchemaFile();
         everything.definitions = new JsonSchemaFile();
-        everything.definitions.addSubSchema( 'something', new JsonSchemaFile());
+        everything.definitions.setSubSchema( 'something', new JsonSchemaFile());
         return fullJsonSchema;
     };
+
+    this.readfile = function (filename) {
+        var data
+        try {
+            data = fs.readFileSync(filename);
+        } catch (error) {
+            //winston.info(error)
+            console.error(`Unable to load [${filename}]: ${error}`);
+        }
+        return data.toString();
+    }
+    
 });

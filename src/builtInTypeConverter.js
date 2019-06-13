@@ -5,7 +5,7 @@ const debug = require('debug')('xsd2jsonschema:BuiltInTypeConverter');
 const CONSTANTS = require('./constants');
 const JSON_SCHEMA_TYPES = require('./jsonschema/jsonSchemaTypes');
 const JSON_SCHEMA_FORMATS = require('./jsonschema/jsonSchemaFormats');
-const JsonSchemaFile = require('./jsonschema/jsonSchemaFile');
+const JsonSchemaFile = require('./jsonschema/JsonSchemaFileDraft04');
 
 
 const Options_NAME = Symbol();
@@ -170,10 +170,10 @@ const Options_NAME = Symbol();
 	 */
 	duration(node, jsonSchema, xsd) {
 		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		//jsonSchema.pattern = '^[-]?P(?!$)(?:\\d+Y)?(?:\\d+M)?(?:\\d+D)?(?:T(?!$)(?:\\d+H)?(?:\\d+M)?(?:\\d+(?:\\.\\d+)?S)?)?$';
+		jsonSchema.pattern = '^[-]?P(?!$)(?:\\d+Y)?(?:\\d+M)?(?:\\d+D)?(?:T(?!$)(?:\\d+H)?(?:\\d+M)?(?:\\d+(?:\\.\\d+)?S)?)?$';
 		// jsonSchema.description = 'Matches the XSD schema duration built in type as defined by http://www.w3.org/TR/xmlschema-2/#duration.  Source: http://www.regexlib.com/REDetails.aspx?regexp_id=1219';
 
-		jsonSchema.pattern = '-?P((( [0-9]+Y([0-9]+M)?([0-9]+D)?|([0-9]+M)([0-9]+D)?|([0-9]+D))(T(([0-9]+H)([0-9]+M)?([0-9]+(\\.[0-9]+)?S)?|([0-9]+M)([0-9]+(\\.[0-9]+)?S)?|([0-9]+(\\.[0-9]+)?S)))?)|(T(([0-9]+H)([0-9]+M)?([0-9]+(\\.[0-9]+)?S)?|([0-9]+M)([0-9]+(\\.[0-9]+)?S)?|([0-9]+(\\.[0-9]+)?S))))';
+		//jsonSchema.pattern = '-?P((( [0-9]+Y([0-9]+M)?([0-9]+D)?|([0-9]+M)([0-9]+D)?|([0-9]+D))(T(([0-9]+H)([0-9]+M)?([0-9]+(\\.[0-9]+)?S)?|([0-9]+M)([0-9]+(\\.[0-9]+)?S)?|([0-9]+(\\.[0-9]+)?S)))?)|(T(([0-9]+H)([0-9]+M)?([0-9]+(\\.[0-9]+)?S)?|([0-9]+M)([0-9]+(\\.[0-9]+)?S)?|([0-9]+(\\.[0-9]+)?S))))';
 		// jsonSchema.description = 'Source:  http://www.w3.org/TR/xmlschema-2/#duration';
 		return true;
 	}
@@ -269,8 +269,10 @@ const Options_NAME = Symbol();
 	// 3.3.16 base64Binary: http://www.w3.org/TR/xmlschema11-2/#base64Binary
 	base64Binary(node, jsonSchema, xsd) {
 		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		jsonSchema.pattern = '^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$';
+		// Removed because it doesn't ignore spaces in base64 encoded strings.  Going with just string validation for now.
+		// jsonSchema.pattern = '^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$';
 		// jsonSchema.description = 'Base64-encoded binary string; source: http://stackoverflow.com/questions/475074/regex-to-parse-or-validate-base64-data also see http://www.schemacentral.com/sc/xsd/t-xsd_base64Binary.html';
+		jsonSchema.contentEncoding = "base64"
 		return true;
 	}
 
