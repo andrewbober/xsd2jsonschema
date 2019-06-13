@@ -11,7 +11,7 @@
 
 ## Looking to convert schemas using a command line interface?
 
- If you want to convert XML Schemas into JSON Schemas without any coding please see the companion command line interface [xsd2jsonschema-cli](https://www.npmjs.org/package/xsd2jsonschema-cli).
+ If you want to convert XML Schemas into JSON Schemas without any coding please see the forthcoming companion command line interface [xsd2jsonschema-cli](https://www.npmjs.org/package/xsd2jsonschema-cli).
 
 ## Install
 
