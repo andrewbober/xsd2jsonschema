@@ -5,7 +5,7 @@ const debug = require('debug')('xsd2jsonschema:BuiltInTypeConverter');
 const CONSTANTS = require('./constants');
 const JSON_SCHEMA_TYPES = require('./jsonschema/jsonSchemaTypes');
 const JSON_SCHEMA_FORMATS = require('./jsonschema/jsonSchemaFormats');
-const JsonSchemaFile = require('./jsonschema/JsonSchemaFileDraft04');
+const JsonSchemaFile = require('./jsonschema/jsonSchemaFileDraft04');
 
 
 const Options_NAME = Symbol();
