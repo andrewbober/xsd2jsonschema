@@ -95,7 +95,7 @@ class JsonSchemaFile extends PropertyDefinable {
 		this.filename = undefined;
 		this.targetSchema = this;
 		this.targetNamespace = undefined;
-		this.ref = undefined; // used to hold a JSON Pointer reference to this named type (Not used for anonymous types)  (CHANGE THIS TO URI AND IMPLEMENT LOCAL REFERENCES) 
+		this.ref = undefined; // used to hold a JSON Pointer reference to this named type (Not used for anonymous types)
 		this.$ref = undefined; // used when this schema is an instance of a reference
 
 		// JSON Schema draft v4 (core definitions and terminology referenced)
@@ -203,21 +203,7 @@ class JsonSchemaFile extends PropertyDefinable {
 			}
 		}
 	}
-/*
-    get parent() {
-        return this[parent_NAME];
-    }
-    set parent(newParent) {
-        this[parent_NAME] = newParent;
-    }
 
-	get targetSchema() {
-        this[targetSchema_NAME];
-    }
-    set targetSchema(newTargetSchema) {
-        this[targetSchema_NAME] = newTargetSchema;
-    }
-*/
 	/**
 	 * Creates a child JsonSchemaFile using the given options. The parent is set automatically.
 	 * 
@@ -246,21 +232,6 @@ class JsonSchemaFile extends PropertyDefinable {
 		}
 	}
 */
-	/**
-	 * Creates all subschemas identified by an array of subschema names and initializes the targetSchema to the inner-most subschema.
-	 * 
-	 * @param {Object} _subschemas - An object who's properties are all JsonSchemaFile instances.
-	 * @param {Array} namespaces - An array of String values representing the components of a URL without the scheme.
-	 * @returns {void}
-	 */
-	createNestedSubschemaOld(_subschemas, namespaces) {
-		var subschemaName = namespaces.shift();
-		_subschemas[subschemaName] = new JsonSchemaFile();
-		this.targetSchema = _subschemas[subschemaName]; // Track the innermost schema as the target
-		if (namespaces.length > 0) {
-			this.createNestedSubschema(_subschemas[subschemaName].subSchemas, namespaces);
-		}
-	}
 
 	/**
 	 * Creates all subschemas identified by an array of subschema names and initializes the targetSchema to the inner-most subschema.
@@ -276,33 +247,6 @@ class JsonSchemaFile extends PropertyDefinable {
 		this.targetSchema = newSubSchema; // Track the innermost schema as the target
 		if (namespaces.length > 0) {
 			this.createNestedSubschema(newSubSchema, namespaces);
-		}
-	}
-
-	/**
-	 * Initializes the subschemas for this JsonSchemaFile from the previously initialized targetNamespace member.  The targetNamespace is
-	 * generally represented by a URL.  This URL is broken down into its constituent parts and each part becomes a subschema.
-	 * 
-	 * @returns {void}
-	 */
-	initializeSubschemasOrg() {
-		if (this.targetNamespace === undefined) {
-			return;
-		}
-		if (this.namespaceMode !== Constants.SUBSCHEMA) {
-			//this.createNestedSubschema(this, [Constants.DEFINITIONS]);
-			
-			//this.definitions = this.newJsonSchemaFile();
-			//this.targetSchema = this.definitions;
-			return;
-		}
-		var subschemaStr = utils.getSafeNamespace(this.targetNamespace);
-		if (!this.isEmpty(subschemaStr)) {
-			var namespaces = subschemaStr.split('/');
-			if (namespaces.length > 1) {
-				namespaces.shift();
-			}
-			this.createNestedSubschema(this, namespaces);
 		}
 	}
 
@@ -790,17 +734,6 @@ class JsonSchemaFile extends PropertyDefinable {
 		if (!this.isEmpty(this.definitions)) {
 			jsonSchema.definitions = this.definitions.getJsonSchema();
 		}
-/*
-		if (!this.isEmpty(this.definitions.subSchemas)) {
-			jsonSchema.definitions = {};
-			const propKeys = Object.keys(this.definitions.subSchemas);
-			propKeys.forEach(function (key, index, array) {
-				if (this.definitions.subSchemas[key] !== undefined) {
-					jsonSchema.definitions[key] = this.definitions.subSchemas[key].getJsonSchema();
-				}
-			}, this);
-		}
-*/
 		if (!this.isEmpty(this.subSchemas)) {
 			const subschemaNames = Object.keys(this.subSchemas);
 			subschemaNames.forEach(function (subschemaName, index, array) {
