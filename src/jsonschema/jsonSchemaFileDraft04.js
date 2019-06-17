@@ -3,7 +3,7 @@
 const debug = require('debug')('xsd2jsonschema:JsonSchemaFileDraft04');
 const path = require('path');
 const URI = require('urijs');
-const JsonSchemaFile = require('./JsonSchemaFile');
+const JsonSchemaFile = require('./jsonSchemaFile');
 
 /**
  * JSON Schema file operations.  This is based on the JSON Schema meta-schema located at http://json-schema.org/draft-04/schema#.  
