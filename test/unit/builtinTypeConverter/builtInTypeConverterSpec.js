@@ -79,7 +79,7 @@ describe("BuiltInTypeConverter Test -", function() {
         rc.dateTime(node, jsonSchema, xsd);
         expect(jsonSchema.type).toEqual(jsonSchemaTypes.STRING);
         // expect(jsonSchema.format).toEqual(jsonSchemaFormats.DATE_TIME);
-        expect(jsonSchema.pattern).not.toBeNull();
+        expect(jsonSchema.format).toEqual(jsonSchemaFormats.DATE_TIME);
     });
     
 // time
