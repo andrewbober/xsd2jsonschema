@@ -197,7 +197,7 @@ const Options_NAME = Symbol();
 	 */
 	dateTime(node, jsonSchema, xsd) {
 		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		jsonSchema.format = 'date-time';
+		jsonSchema.format = JSON_SCHEMA_FORMATS.DATE_TIME;
 		// jsonSchema.description = 'Source:  http://www.w3.org/TR/xmlschema11-2/#dateTime'
 		return true;
 	}
