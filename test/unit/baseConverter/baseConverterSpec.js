@@ -8,15 +8,23 @@ const NamespaceManager = require('xsd2jsonschema').NamespaceManager;
 const BuiltInTypeConverter = require('xsd2jsonschema').BuiltInTypeConverter;
 const CONSTANTS = require('xsd2jsonschema').Constants;
 
-const XML_SCHEMA = 
-`
+const XML_SCHEMA =
+	`
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://www.xsd2jsonschema.org/example" version="1.1.0" 
 	xmlns="http://www.xsd2jsonschema.org/example" 
+	xmlns:example="http://www.xsd2jsonschema.org/example" 
 	xmlns:xs="http://www.w3.org/2001/XMLSchema">
-	<xs:annotation>
-		<xs:documentation>AnyOfChoice samples both valid and invalid.</xs:documentation>
-	</xs:annotation>
+    <xs:annotation>
+		<xs:documentation>
+        	<whyIsItUsed>
+          		<usedBy>Used somewhere over a rainbow</usedBy>
+          		<usedFor>Used for the pot of gold</usedFor>
+        	</whyIsItUsed>
+        	<whenIsItUsed>Upon acquisition of the pot of gold</whenIsItUsed>
+        	Living on the edge outside a tag on the other side of the rainbow
+    	</xs:documentation>
+    </xs:annotation>
 	<xs:complexType name="optionalChoiceEverythingIsOptionalType">
 		<xs:sequence>
 			<xs:element name="Option6" type="xs:string" minOccurs="0"/>
@@ -69,42 +77,55 @@ const XML_SCHEMA =
 `;
 
 describe('BaseConverter Test -', function () {
-    var bc;
-    var xsd;
-    var jsonSchema;
-    
-    beforeEach(function () {
+	var converter;
+	var xsd;
+	var jsonSchema;
+
+	beforeEach(function () {
 		var namespaceManager = new NamespaceManager({
 			jsonSchemaVersion: CONSTANTS.DRAFT_04,
 			builtInTypeConverter: new BuiltInTypeConverter()
 		});
-        bc = new ConverterDraft04({
+		converter = new ConverterDraft04({
 			namespaceManager: namespaceManager,
 			specialCaseIdentifier: new BaseSpecialCaseIdentifier()
 		});
-		xsd = new XsdFile({ 
-            uri: 'optionalChoice.xsd',
-            xml: XML_SCHEMA
-        });
-        jsonSchema = new JsonSchemaFileDraft04({
-            baseFilename: xsd.baseFilename,
-            targetNamespace: xsd.targetNamespace,
-            baseId : "http://www.xsd2jsonschema.org/unittests/"
-        });
-    });
+		xsd = new XsdFile({
+			uri: 'optionalChoice.xsd',
+			xml: XML_SCHEMA
+		});
+		jsonSchema = new JsonSchemaFileDraft04({
+			baseFilename: xsd.baseFilename,
+			targetNamespace: xsd.targetNamespace,
+			baseId: "http://www.xsd2jsonschema.org/unittests/"
+		});
+	});
 
-    afterEach(function () {
+	afterEach(function () {
 
-    })
+	})
 
-    it('should confirm a newly allocated BaseConverter was properly initiialized', function () {
-        const blankNamespaces = {};
-        blankNamespaces[CONSTANTS.XML_SCHEMA_NAMESPACE] =  { types: {} }
-        blankNamespaces[CONSTANTS.GLOBAL_ATTRIBUTES_SCHEMA_NAME] =  { types: {} }
+	it('should confirm a newly allocated BaseConverter was properly initiialized', function () {
+		const blankNamespaces = {};
+		blankNamespaces[CONSTANTS.XML_SCHEMA_NAMESPACE] = { types: {} }
+		blankNamespaces[CONSTANTS.GLOBAL_ATTRIBUTES_SCHEMA_NAME] = { types: {} }
 
-        expect(bc.builtInTypeConverter).not.toBeUndefined();
-        expect(bc.specialCaseIdentifier).not.toBeUndefined();
-        expect(bc.namespaceManager.namespaces).toEqual(blankNamespaces);
-    });
+		expect(converter.builtInTypeConverter).not.toBeUndefined();
+		expect(converter.specialCaseIdentifier).not.toBeUndefined();
+		expect(converter.namespaceManager.namespaces).toEqual(blankNamespaces);
+	});
 
+	it('should skip processing xml tags that are outside the XML Schema specficication', function () {
+		const unknownNode = xsd.select1('//example:whyIsItUsed');
+		spyOn(converter, 'skippingUnknownNode').and.callThrough();
+		converter.process(unknownNode, jsonSchema, xsd);
+		expect(converter.skippingUnknownNode).toHaveBeenCalled();
+	})
+
+	it('should not skip processing xml tags that are defined by the XML Schema specficication', function () {
+		const schemaNode = xsd.select1('//xs:schema');
+		spyOn(converter, 'skippingUnknownNode').and.callThrough();
+		converter.process(schemaNode, jsonSchema, xsd);
+		expect(converter.skippingUnknownNode).not.toHaveBeenCalled();
+	})
 });

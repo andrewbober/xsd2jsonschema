@@ -129,9 +129,18 @@ const includeTextAndCommentNodes_NAME = Symbol();
 				+ (valueAttr == undefined ? '' : '[' + valueAttr + ']')				
 			);
 		}
-		const keepProcessing = this[fnName](node, jsonSchema, xsd);
+		let keepProcessing = true;
+		if (this[fnName] != undefined) {
+			keepProcessing = this[fnName](node, jsonSchema, xsd);
+		} else {
+			this.skippingUnknownNode(fnName, node, jsonSchema, xsd);
+		}
 		super.process(node, jsonSchema, xsd);
 		return keepProcessing
+	}
+
+	skippingUnknownNode(fnName, node, jsonSchema, xsd) {
+		debug(`Skipping unknown node [${fnName}]`);
 	}
 
 	all(node, jsonSchema, xsd) {
@@ -1058,9 +1067,8 @@ const includeTextAndCommentNodes_NAME = Symbol();
 
 	text(node, jsonSchema, xsd) {
 		if (this.parsingState.inDocumentation()) {
-			return true;
 			// TODO: This should be a configurable option
-			// workingJsonSchema.description = node.text();
+			this.workingJsonSchema.description = node.parentNode.childNodes.toString().replace(/\s+/g, ' ').trim();
 		} else if (this.parsingState.inAppInfo()) {
 			//this.workingJsonSchema.concatDescription(node.parentNode.nodeName + '=' + node.textContent + ' ');
 			this.workingJsonSchema.description += node.parentNode.nodeName + '=' + node.textContent + ' ';

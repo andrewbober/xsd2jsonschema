@@ -57,6 +57,32 @@
 		},
 		{
 			// Name of configuration; appears in the launch configuration drop down menu.
+			"name": "Annotation",
+			// Type of configuration. Possible values: "node", "mono".
+			"type": "node",
+			// Action to take
+			"request": "launch",
+			// Workspace relative or absolute path to the program.
+			"program": "${workspaceRoot}/examples/annotation.js",
+			// Automatically stop program after launch.
+			"stopOnEntry": false,
+			// Command line arguments passed to the program.
+			"args": [],
+			"cwd": "${workspaceRoot}/",
+			// Workspace relative or absolute path to the runtime executable to be used. Default is the runtime executable on the PATH.
+			"runtimeExecutable": null,
+			// Optional arguments passed to the runtime executable.
+			"runtimeArgs": ["--nolazy"],
+			// Environment variables passed to the program.
+			"env": {
+				"NODE_ENV": "development",
+				"DEBUG": "xsd2jsonschema:BaseConverter,xsd2jsonschema:ParsingState"
+			},
+			// Use JavaScript source maps (if they exist).
+			"sourceMaps": false
+		},
+		{
+			// Name of configuration; appears in the launch configuration drop down menu.
 			"name": "Convert and Validate",
 			// Type of configuration. Possible values: "node", "mono".
 			"type": "node",
