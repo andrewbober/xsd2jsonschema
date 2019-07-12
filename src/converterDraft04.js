@@ -124,9 +124,9 @@ const includeTextAndCommentNodes_NAME = Symbol();
 
 			const nameAttr = XsdFile.getAttrValue(node,XsdAttributes.NAME);
 			const valueAttr = XsdFile.getValueAttr(node);
-			debug('Processing [' + fnName + '] ' 
-				+ (nameAttr == undefined ? '' : '[' + nameAttr + ']')
-				+ (valueAttr == undefined ? '' : '[' + valueAttr + ']')				
+			debug('Processing [' + fnName + '] ' + 
+				(nameAttr == undefined ? '' : '[' + nameAttr + ']') +
+				(valueAttr == undefined ? '' : '[' + valueAttr + ']')				
 			);
 		}
 		let keepProcessing = true;
@@ -313,8 +313,8 @@ const includeTextAndCommentNodes_NAME = Symbol();
 	}
 
 	handleChoiceArray(node, jsonSchema, xsd) {
-		var minOccursAttr = XsdFile.getAttrValue(node, XsdAttributes.MIN_OCCURS);
-		var maxOccursAttr = XsdFile.getAttrValue(node, XsdAttributes.MAX_OCCURS);
+		var minOccursAttr = XsdFile.getNumberValueAttr(node, XsdAttributes.MIN_OCCURS);
+		var maxOccursAttr = XsdFile.getNumberValueAttr(node, XsdAttributes.MAX_OCCURS);
 		// TODO: id
 		// (TBD Don't forget to support singles)
 		throw new Error('choice array needs to be implemented!!');
@@ -326,7 +326,7 @@ const includeTextAndCommentNodes_NAME = Symbol();
 		const children = Array.from(node.childNodes);
 		children.forEach(function (childNode) {
 			if (childNode.nodeType != XsdNodeTypes.TEXT_NODE) {
-				const minOccursAttr = XsdFile.getAttrValue(childNode, XsdAttributes.MIN_OCCURS);
+				const minOccursAttr = XsdFile.getNumberValueAttr(childNode, XsdAttributes.MIN_OCCURS);
 				if (minOccursAttr != 0) {
 					retval = false;
 				}
@@ -337,8 +337,8 @@ const includeTextAndCommentNodes_NAME = Symbol();
 
 	choice(node, jsonSchema, xsd) {
 		// TODO: id
-		const minOccursAttr = XsdFile.getAttrValue(node, XsdAttributes.MIN_OCCURS);
-		const maxOccursAttr = XsdFile.getAttrValue(node, XsdAttributes.MAX_OCCURS);
+		const minOccursAttr = XsdFile.getNumberValueAttr(node, XsdAttributes.MIN_OCCURS);
+		const maxOccursAttr = XsdFile.getNumberValueAttr(node, XsdAttributes.MAX_OCCURS);
 		const isAnyOfChoice = this.specialCaseIdentifier.isAnyOfChoice(node, xsd);
 		if (isAnyOfChoice === true) {
 			this.specialCaseIdentifier.addSpecialCase(SpecialCases.ANY_OF_CHOICE, this.workingJsonSchema, node);
@@ -536,8 +536,8 @@ const includeTextAndCommentNodes_NAME = Symbol();
 	handleElementLocal(node, jsonSchema, xsd) {
 		var nameAttr = XsdFile.getAttrValue(node, XsdAttributes.NAME);
 		var typeAttr = XsdFile.getAttrValue(node, XsdAttributes.TYPE);
-		var minOccursAttr = XsdFile.getAttrValue(node, XsdAttributes.MIN_OCCURS);
-		var maxOccursAttr = XsdFile.getAttrValue(node, XsdAttributes.MAX_OCCURS);
+		var minOccursAttr = XsdFile.getNumberValueAttr(node, XsdAttributes.MIN_OCCURS);
+		var maxOccursAttr = XsdFile.getNumberValueAttr(node, XsdAttributes.MAX_OCCURS);
 		// TODO: id, form, defaut, fixed, nillable, block, targetNamespace
 
 		var lookupName;
@@ -594,15 +594,15 @@ const includeTextAndCommentNodes_NAME = Symbol();
 	}
 
 	handleElementReference(node, jsonSchema, xsd) {
-		var minOccursAttr = XsdFile.getAttrValue(node, XsdAttributes.MIN_OCCURS);
-		var maxOccursAttr = XsdFile.getAttrValue(node, XsdAttributes.MAX_OCCURS);
+		var minOccursAttr = XsdFile.getNumberValueAttr(node, XsdAttributes.MIN_OCCURS);
+		var maxOccursAttr = XsdFile.getNumberValueAttr(node, XsdAttributes.MAX_OCCURS);
 		var refAttr = XsdFile.getAttrValue(node, XsdAttributes.REF);
 		// TODO: id
 
 		// An element within a model group (such as 'group') may be a reference.  References have neither
 		// a name nor a type attribute - just a ref attribute.  This is awkward when the reference elmenent
 		// is a property of an object in JSON.  With no other options to name the property ref is used.
-		var propertyName = refAttr;  // ref attribute is required for an element reference
+		var propertyName = refAttr; // ref attribute is required for an element reference
 		var ref = this.namespaceManager.getTypeReference(propertyName, this.workingJsonSchema, jsonSchema, xsd);
 		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED));
 		var state = this.parsingState.getCurrentState();
@@ -670,17 +670,17 @@ const includeTextAndCommentNodes_NAME = Symbol();
 		switch (state.name) {
 			case XsdElements.COMPLEX_CONTENT:
 				this.parsingState.pushSchema(this.workingJsonSchema);
-				let typeRef = this.namespaceManager.getTypeReference(baseAttr, this.workingJsonSchema, jsonSchema, xsd);
+				const typeRef = this.namespaceManager.getTypeReference(baseAttr, this.workingJsonSchema, jsonSchema, xsd);
 				this.workingJsonSchema = this.workingJsonSchema.extend(typeRef) //, jsonSchemaTypes.OBJECT);
 				break;
 			case XsdElements.SIMPLE_CONTENT:
 				if (this.namespaceManager.isBuiltInType(baseAttr, xsd)) {
-					let baseType = new Qname(baseAttr);
-					let baseTypeName = baseType.getLocal();
+					const baseType = new Qname(baseAttr);
+					const baseTypeName = baseType.getLocal();
 					return this.builtInTypeConverter[baseTypeName](node, this.workingJsonSchema);
 				} else {
 					this.parsingState.pushSchema(this.workingJsonSchema);
-					let typeRef = this.namespaceManager.getTypeReference(baseAttr, this.workingJsonSchema, jsonSchema, xsd);
+					const typeRef = this.namespaceManager.getTypeReference(baseAttr, this.workingJsonSchema, jsonSchema, xsd);
 					this.workingJsonSchema = this.workingJsonSchema.extend(typeRef) //, jsonSchemaTypes.OBJECT);
 				}
 				break;
@@ -724,7 +724,7 @@ const includeTextAndCommentNodes_NAME = Symbol();
 	}
 
 	handleGroupReferenceOld(node, jsonSchema, xsd) {
-		var minOccursAttr = XsdFile.getAttrValue(node, XsdAttributes.MIN_OCCURS);
+		var minOccursAttr = XsdFile.getNumberValueAttr(node, XsdAttributes.MIN_OCCURS);
 		var refName = XsdFile.getAttrValue(node, XsdAttributes.REF);
 		// TODO: id, maxOccurs
 
@@ -751,12 +751,12 @@ const includeTextAndCommentNodes_NAME = Symbol();
 	}
 
 	handleGroupReference(node, jsonSchema, xsd) {
-		const minOccursAttr = XsdFile.getAttrValue(node, XsdAttributes.MIN_OCCURS);
-		const maxOccursAttr = XsdFile.getAttrValue(node, XsdAttributes.MAX_OCCURS);
+		const minOccursAttr = XsdFile.getNumberValueAttr(node, XsdAttributes.MIN_OCCURS);
+		const maxOccursAttr = XsdFile.getNumberValueAttr(node, XsdAttributes.MAX_OCCURS);
 		const refAttr = XsdFile.getAttrValue(node, XsdAttributes.REF);
 		// TODO: id
 
-		const propertyName = refAttr;  // ref attribute is required for group reference
+		const propertyName = refAttr; // ref attribute is required for group reference
 		const ref = this.namespaceManager.getTypeReference(propertyName, this.workingJsonSchema, jsonSchema, xsd);
 		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED));
 		var state = this.parsingState.getCurrentState();
@@ -950,7 +950,7 @@ const includeTextAndCommentNodes_NAME = Symbol();
 			return this.builtInTypeConverter[baseTypeName](node, this.workingJsonSchema);
 		} else {
 			this.parsingState.pushSchema(this.workingJsonSchema);
-			let typeRef = this.namespaceManager.getTypeReference(baseAttr, jsonSchema, jsonSchema, xsd);
+			const typeRef = this.namespaceManager.getTypeReference(baseAttr, jsonSchema, jsonSchema, xsd);
 			if(XsdFile.isEmpty(node)) {
 				jsonSchema.setSubSchema(XsdFile.getNameAttrValue(node.parentNode), typeRef);
 			} else {
@@ -976,8 +976,8 @@ const includeTextAndCommentNodes_NAME = Symbol();
 	}
 
 	sequence(node, jsonSchema, xsd) {
-		var minOccursAttr = XsdFile.getAttrValue(node, XsdAttributes.MIN_OCCURS);
-		var maxOccursAttr = XsdFile.getAttrValue(node, XsdAttributes.MAX_OCCURS);
+		var minOccursAttr = XsdFile.getNumberValueAttr(node, XsdAttributes.MIN_OCCURS);
+		var maxOccursAttr = XsdFile.getNumberValueAttr(node, XsdAttributes.MAX_OCCURS);
 		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED));
 		if (isArray) {
 			throw new Error('sequence arrays need to be implemented!');
