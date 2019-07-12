@@ -162,7 +162,7 @@ class XsdFile {
 
     isMissingXmlSchemaNamespace() {
         const keys = Object.keys(this.namespaces);
-        for(let key of keys) {
+        for(const key of keys) {
             if(this.namespaces[key] == Constants.XML_SCHEMA_NAMESPACE) {
                 return false;
             }
@@ -264,7 +264,7 @@ xmlDoc=${this.xmlDoc}`
         var attrs = node.attributes;
         if (attrs != undefined) {
             Object.keys(attrs).forEach(function (attr, index, array) {
-                if (attrs[attr].nodeType === XsdNodeTypes.ATTRIBUTE_NODE) {  // 2
+                if (attrs[attr].nodeType === XsdNodeTypes.ATTRIBUTE_NODE) { // 2
                     retval += attrs[attr].localName + '=' + attrs[attr].value + ' ';
                 }
             }, this);
@@ -277,7 +277,7 @@ xmlDoc=${this.xmlDoc}`
         debug('XML-TAG-Attributes:');
         if (attrs != undefined) {
             Object.keys(attrs).forEach(function (attr, index, array) {
-                if (attrs[attr].nodeType === XsdNodeTypes.ATTRIBUTE_NODE) {  // 2
+                if (attrs[attr].nodeType === XsdNodeTypes.ATTRIBUTE_NODE) { // 2
                     debug('\t' + index + ') ' + attrs[attr].localName + '=' + attrs[attr].value);
                 }
             }, this);
@@ -312,7 +312,10 @@ xmlDoc=${this.xmlDoc}`
         if (node == XsdAttributeValues.UNBOUNDED) {
             return undefined;
         }
-        var retval = Number(this.getAttrValue(node, XsdAttributes.VALUE));
+        const val = this.getAttrValue(node, XsdAttributes.VALUE);
+        if(val == null) { return val;}
+        
+        var retval = Number(val);
         if (isNaN(retval)) {
             throw new Error('Unable create a Number from [' + this.getAttrValue(node, XsdAttributes.VALUE) + ']');
         }
