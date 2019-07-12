@@ -463,8 +463,7 @@ const Options_NAME = Symbol();
 	// 3.4.15 negativeInteger: http://www.w3.org/TR/xmlschema11-2/#negativeInteger
 	negativeInteger(node, jsonSchema, xsd) {
 		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.maximum = 0;
-		jsonSchema.exclusiveMinimum = true;
+		jsonSchema.exclusiveMaximum = 0;
 		return true;
 	}
 
@@ -542,9 +541,7 @@ const Options_NAME = Symbol();
 	// 3.4.25 positiveInteger: http://www.w3.org/TR/xmlschema11-2/#positiveInteger
 	positiveInteger(node, jsonSchema, xsd) {
 		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.minimum = 0;
-		jsonSchema.maximum = 4294967295;
-		jsonSchema.exclusiveMinimum = true;
+		jsonSchema.exclusiveMinimum = 0;
 		return true;
 	}
 

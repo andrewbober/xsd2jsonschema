@@ -304,8 +304,7 @@ describe("BuiltInTypeConverter Test -", function() {
     it("should convert negativeInteger tags to JSON Schema integer type", function() {
         rc.negativeInteger(node, jsonSchema, xsd);
         expect(jsonSchema.type).toEqual(jsonSchemaTypes.INTEGER);
-        expect(jsonSchema.maximum).toEqual(0);
-        expect(jsonSchema.exclusiveMinimum).toBe(true);
+        expect(jsonSchema.exclusiveMaximum).toBe(0);
     });
 
 // long
@@ -383,9 +382,7 @@ describe("BuiltInTypeConverter Test -", function() {
     it("should convert positiveInteger tags to JSON Schema integer type", function() {
         rc.positiveInteger(node, jsonSchema, xsd);
         expect(jsonSchema.type).toEqual(jsonSchemaTypes.INTEGER);
-        expect(jsonSchema.minimum).toEqual(0);
-        expect(jsonSchema.maximum).toEqual(4294967295);
-        expect(jsonSchema.exclusiveMinimum).toBe(true);
+        expect(jsonSchema.exclusiveMinimum).toBe(0);
     });
 
 // yearMonthDuration
