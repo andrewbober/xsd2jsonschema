@@ -3,6 +3,7 @@
 const debug = require('debug')('xsd2jsonschema:ConverterDraft06')
 
 const ConverterDraft04 = require('./converterDraft04');
+const XsdFile = require('./xmlschema/xsdFileXmlDom');
 
 class ConverterDraft06 extends ConverterDraft04 {
 	/**
