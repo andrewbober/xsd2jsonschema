@@ -13,6 +13,20 @@ class ConverterDraft06 extends ConverterDraft04 {
 		super(options);
 		// The working schema is initilized as needed through XML Handlers
 	}
+
+	maxExclusive(node, jsonSchema, xsd) {
+		var val = XsdFile.getNumberValueAttr(node);
+
+		this.workingJsonSchema.exlusiveMaximum = val;
+		return true;
+	}
+
+	minExclusive(node, jsonSchema, xsd) {
+		var val = XsdFile.getNumberValueAttr(node);
+
+		this.workingJsonSchema.exclusiveMinimum = val;
+		return true;
+	}
 }
 
 module.exports = ConverterDraft06;
