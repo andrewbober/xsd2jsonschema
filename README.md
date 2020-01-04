@@ -1,6 +1,6 @@
 
 
-<img src="400dpiLogoCropped.png" style="display:block;margin:0 auto;">
+<img src="static/400dpiLogoCropped.png" style="display:block;margin:0 auto;">
 
 ###  A pure JavaScript library for translating complex XML Schemas into JSON Schemas.
 
