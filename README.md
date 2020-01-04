@@ -1,6 +1,6 @@
 
 
-<img src="static/400dpiLogoCropped.png" style="display:block;margin:0 auto;">
+![Xsd2JsonSchema](static/400dpiLogoCropped.png)
 
 ###  A pure JavaScript library for translating complex XML Schemas into JSON Schemas.
 
