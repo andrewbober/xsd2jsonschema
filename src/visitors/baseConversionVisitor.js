@@ -29,6 +29,8 @@ const State = require('./../parsingState').State;
 	 * @param {Node} node - The current element in xsd being converted.
 	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current XML Schema file {@link XsdFile|xsd} being converted.
 	 * @param {XsdFile} xsd - The XML schema file currently being converted.
+	 * 
+	 * @return {undefined}
 	 */
 	enterState(node, jsonSchema, xsd) {
 		var state = new State({
@@ -44,6 +46,8 @@ const State = require('./../parsingState').State;
 	 * @param {Node} node - The current element in xsd being converted.
 	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current XML Schema file {@link XsdFile|xsd} being converted.
 	 * @param {XsdFile} xsd - The XML schema file currently being converted.
+	 * 
+	 * @return {undefined}
 	 */
 	exitState(node, jsonSchema, xsd) {
 		var state = this.processor.parsingState.exitState();
