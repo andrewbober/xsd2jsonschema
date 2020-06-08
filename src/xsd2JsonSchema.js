@@ -74,7 +74,7 @@ class Xsd2JsonSchema {
             this.visitor.processor = converter;
 
             // Generate Title
-            this.generateTitle = options.generateTitle;
+            this.generateTitle = options.generateTitle == undefined ? defaultXsd2JsonSchemaOptions.generateTitle : options.generateTitle;
         } else {
             this.baseId = defaultXsd2JsonSchemaOptions.baseId;
 
@@ -95,6 +95,9 @@ class Xsd2JsonSchema {
             // visitor
             this.visitor = new BaseConversionVisitor(converter);
             //JsonSchemaFile.setVersion(defaultXsd2JsonSchemaOptions.jsonSchemaVersion);
+
+            // Generate Title
+            this.generateTitle = defaultXsd2JsonSchemaOptions.generateTitle;
         }
     }
 

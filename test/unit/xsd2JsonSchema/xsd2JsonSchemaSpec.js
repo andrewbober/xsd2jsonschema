@@ -85,4 +85,14 @@ describe('Xsd2JsonSchema Test -', function() {
         });
         expect(xs2js.generateTitle).toBeFalsy();
     })
+
+    it('should create a xsd2JsonSchema instance with the generateTitle options set to true', function() {
+        var xs2js = new Xsd2JsonSchema();
+        expect(xs2js.generateTitle).toBeTruthy();
+
+        xs2js = new Xsd2JsonSchema({
+            baseId: 'anything'
+        });
+        expect(xs2js.generateTitle).toBeTruthy();
+    })
 });
