@@ -3,6 +3,7 @@
 
 const debug = require('debug')('xsd2jsonschema:JsonSchemaRef');
 const JsonSchemaFile = require('./jsonSchemaFile');
+const JsonSchemaSerializerDraft04 = require('./jsonSchemaSerializerDraft04');
 
 
 const references_NAME = Symbol();
@@ -90,6 +91,23 @@ class JsonSchemaRef extends JsonSchemaFile {
 
 	isForwardRef() {
 		return true;
+	}
+
+	/**
+	 * Returns a POJO of this jsonSchema.  Items are added in the order we wouild like them to appear in the resulting JsonSchema.
+	 * 
+	 * @returns {Object} - POJO of this jsonSchema.
+	 */
+	getJsonSchema(serializer) {
+		if (serializer == undefined) {
+            // Any of the serializers are fine for a JsonSchemaRef.
+			serializer = new JsonSchemaSerializerDraft04();
+		}
+		return super.getJsonSchema(serializer);
+	}
+
+	toString() {
+		return JSON.stringify(this.getJsonSchema(), null, '\t');
 	}
 }
 
