@@ -83,7 +83,7 @@ describe('The Library Test -', function () {
     const jsonSchemaFileDraft06 = new JsonSchemaFileDraft06();
     const jsonSchemaFileDraft07 = new JsonSchemaFileDraft07();
     const jsonSchemaRef = new JsonSchemaRef({
-        ref: 'anything',
+        ref: {},
         forwardReference: {}
     });
 
@@ -113,12 +113,12 @@ describe('The Library Test -', function () {
         attribute: 'anything'
     });
     const forwardReference = new ForwardReference(
-        'anything',
-        'anything',
-        'anything',
-        'anything',
-        'anything',
-        'anything'
+        'anything', // namespaceManager
+        'anything', // namespace
+        'anything', // fullTypeName
+        {},         // parent
+        'anything', // baseJsonSchema
+        'anything'  // xsd
     );
 
     it('xsdFile should be an instantOf the XsdFile class', function () {
