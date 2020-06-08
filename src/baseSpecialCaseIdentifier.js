@@ -7,7 +7,6 @@ const XsdAttributes = require('./xmlschema/xsdAttributes');
 const XsdAttributeValues = require('./xmlschema/xsdAttributeValues');
 const XsdNodeTypes = require('./xmlschema/xsdNodeTypes');
 const XsdElements = require('./xmlschema/xsdElements');
-const JsonSchemaFile = require('./jsonschema/jsonSchemaFile');
 
 const specialCases_NAME = Symbol();
 
@@ -260,12 +259,11 @@ class BaseSpecialCaseIdentifier {
         debug('Optional choice: ' + jsonSchema.toString());
         const originalOneOf = jsonSchema.newJsonSchemaFile();
         originalOneOf.oneOf = jsonSchema.oneOf.slice(0);
-        originalOneOf.description = 'originalOneOf';
+        //originalOneOf.description = 'originalOneOf';
         jsonSchema.anyOf.push(originalOneOf);
         const theOptionalPart = jsonSchema.newJsonSchemaFile();
-        theOptionalPart.description = 'theOptionalPart';
+        //theOptionalPart.description = 'theOptionalPart';
         jsonSchema.oneOf.forEach(function(option, index, array) {
-//            const theOptionalPart = jsonSchema.newJsonSchemaFile();
             const notSchema = theOptionalPart.newJsonSchemaFile();
             notSchema.not = option;
             debug('Pushing not schema');
@@ -273,7 +271,7 @@ class BaseSpecialCaseIdentifier {
         });
         jsonSchema.anyOf.push(theOptionalPart);
         jsonSchema.oneOf = [];
-        jsonSchema.description = 'This is the NOT solution';
+        //jsonSchema.description = 'This is the NOT solution';
         debug('Parent: ' + jsonSchema.parent.toString());
     }
 
@@ -301,8 +299,8 @@ class BaseSpecialCaseIdentifier {
 
     fixOptionalChoice(jsonSchema, node) {
         // switch (options)
-        this.fixOptionalChoiceTruthy(jsonSchema, node)
-        //this.fixOptionalChoiceNot(jsonSchema, node)
+        //this.fixOptionalChoiceTruthy(jsonSchema, node)
+        this.fixOptionalChoiceNot(jsonSchema, node)
         return;
     }
 
