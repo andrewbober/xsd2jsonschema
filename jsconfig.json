@@ -8,6 +8,6 @@
 	"files": [
 		"src/**/*",
 		"test/**/*",
-		"example/**/*"
+		"examples/**/*"
 	]
 }
