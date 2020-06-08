@@ -20,12 +20,14 @@ const baseId_NAME = Symbol();
 
 const namespaceManager_NAME = Symbol();
 const visitor_NAME = Symbol();
+const generateTitle_NAME = Symbol();
 
 const defaultXsd2JsonSchemaOptions = {
     baseId: undefined,
     namespaceMode: undefined,
     jsonSchemaVersion: CONSTANTS.DRAFT_07,
-    uriStandard: CONSTANTS.RFC_3986
+    uriStandard: CONSTANTS.RFC_3986,
+    generateTitle: true
 }
 
 /**
@@ -39,9 +41,10 @@ class Xsd2JsonSchema {
      * @param {Object} options - An object used to override default options.
      * @param {string} options.baseId - The base value for the 'id' in any generated JSON Schema files.  The default value is undefined.
      * @param {string} options.builtInTypeConverter - An instance of a subclass of {@link BuiltInTypeConverter|BuiltInTypeConverter}.
-     * @param {string} options.converter - A subclass of {@link ConverterDraft04|ConverterDraft04}.  This is the class NOT an instance of the class.
-     * @param {string} options.visitor - A subclass of {@link BaseConversionVisitor|BaseConversionVisitor}.  This is the class NOT an instance of the class.
+     * @param {string} options.converter - An intance of a subclass of {@link ConverterDraft04|ConverterDraft04}.
+     * @param {string} options.visitor - A instance of a subclass of {@link BaseConversionVisitor|BaseConversionVisitor}.
      * @param {string} options.namespaceMode - The method of handling namespaces. Must be one of: undefined, SUBSCHEMA, or FILENAME.  The default value is undefined.
+     * @param {boolean} options.generateTitle - If true a default title will be generated for top level JSON Schemas.  If false it will not be generated. Default: true.
      */
     constructor(options) {
         var builtInTypeConverter;
@@ -69,6 +72,9 @@ class Xsd2JsonSchema {
             // Visitor
             this.visitor = this.getVisitor(jsonSchemaVersion, options.visitor);
             this.visitor.processor = converter;
+
+            // Generate Title
+            this.generateTitle = options.generateTitle;
         } else {
             this.baseId = defaultXsd2JsonSchemaOptions.baseId;
 
@@ -98,6 +104,13 @@ class Xsd2JsonSchema {
     }
     set baseId(newBaseId) {
         this[baseId_NAME] = newBaseId;
+    }
+
+    get generateTitle() {
+        return this[generateTitle_NAME];
+    }
+    set generateTitle(newGenerateTitle) {
+        this[generateTitle_NAME] = newGenerateTitle;
     }
 
     // BuiltInTypeConverter
@@ -165,53 +178,55 @@ class Xsd2JsonSchema {
     getConverter(jsonSchemaVersion, converter) {
         var customConverterMsg = 'Converting XML Schema to JSON Schema using custom converter';
         var defaultConverterMsg = 'Convertering XML Schema to JSON Schema using default converter for';
-
+        var conv;
         switch (jsonSchemaVersion) {
             case CONSTANTS.DRAFT_04:
                 if (this.validateConverter(CONSTANTS.DRAFT_04, ConverterDraft04, converter)) {
                     debug(`${customConverterMsg} [${converter.constructor.name}] for ${CONSTANTS.DRAFT_04}`);
-                    return converter;
+                    conv = converter;
                 } else {
                     debug(`${defaultConverterMsg} ${CONSTANTS.DRAFT_04}`);
-                    return new ConverterDraft04();
+                    conv = new ConverterDraft04();
                 }
                 break;
             case CONSTANTS.DRAFT_06:
                 if (this.validateConverter(CONSTANTS.DRAFT_06, ConverterDraft06, converter)) {
                     debug(`${customConverterMsg} [${converter.constructor.name}] for ${CONSTANTS.DRAFT_06}`);
-                    return converter;
+                    conv = converter;
                 } else {
                     debug(`${defaultConverterMsg} ${CONSTANTS.DRAFT_06}`);
-                    return new ConverterDraft06();
+                    conv = new ConverterDraft06();
                 }
                 break;
             case CONSTANTS.DRAFT_07:
                 if (this.validateConverter(CONSTANTS.DRAFT_07, ConverterDraft07, converter)) {
                     debug(`${customConverterMsg} [${converter.constructor.name}] for ${CONSTANTS.DRAFT_07}`);
-                    return converter;
+                    conv = converter;
                 } else {
                     debug(`${defaultConverterMsg} ${CONSTANTS.DRAFT_07}`);
-                    return new ConverterDraft07();
+                    conv = new ConverterDraft07();
                 }
                 break;
             default: throw new Error(`Unknown JSON Schema Version supplied [${jsonSchemaVersion}]`);
         }
+        return conv;
     }
 
     getVisitor(jsonSchemaVersion, visitor) {
+        var vis;
         switch (jsonSchemaVersion) {
             case CONSTANTS.DRAFT_04:
             case CONSTANTS.DRAFT_06:
             case CONSTANTS.DRAFT_07:
                 if (visitor != undefined) {
-                    return visitor;
+                    vis = visitor;
                 } else {
-                    visitor = new BaseConversionVisitor();
+                    vis = new BaseConversionVisitor();
                 }
                 break;
             default: throw new Error(`Unknown JSON Schema Version supplied [${jsonSchemaVersion}]`);
         }
-        return visitor;
+        return vis;
     }
 
     loadSchema(uri, xml) {
@@ -259,7 +274,8 @@ class Xsd2JsonSchema {
                 namespaceMode: this.namespaceMode,
                 baseFilename: filename,
                 targetNamespace: xsd.targetNamespace,
-                baseId: this.baseId
+                baseId: this.baseId,
+                title: this.generateTitle ? undefined : ''
             });
         }, this);
 

@@ -41,6 +41,8 @@ describe('Xsd2JsonSchema Test -', function() {
         expect(xsd2JsonSchema.visitor.processor).toEqual(new ConverterDraft07());
         // visitor
         expect(xsd2JsonSchema.visitor).toEqual(new BaseConversionVisitor());
+        // generateTitle
+        expect(xsd2JsonSchema.getBuiltInTypeConverter).toBeTruthy();
     });
 
     it('should create a xsd2JsonSchema instance with the given parameters', function() {
@@ -76,4 +78,11 @@ describe('Xsd2JsonSchema Test -', function() {
         });
         expect(xsd2jsonschema.visitor).toBe(visitor);
     });
+
+    it('should create a xsd2JsonSchema instance with the generateTitle options set to false', function() {
+        const xs2js = new Xsd2JsonSchema({
+            generateTitle : false
+        });
+        expect(xs2js.generateTitle).toBeFalsy();
+    })
 });
