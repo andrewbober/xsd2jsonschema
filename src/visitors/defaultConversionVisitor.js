@@ -1,6 +1,6 @@
 'use strict';
 
-var ConverterDraft04 = require('./../converterDraft04');
+var ConverterDraft07 = require('./../converterDraft07');
 var BaseConvertionVisitor = require('./baseConversionVisitor');
 
 /**
@@ -14,11 +14,11 @@ var BaseConvertionVisitor = require('./baseConversionVisitor');
 
 class DefaultConversionVisitor extends BaseConvertionVisitor {
 	/**
-	 * Constructs an instance of DefaultConversionVisitor.  Allocates a {@link ConverterDraft04} and passes it to the super constructor.
+	 * Constructs an instance of DefaultConversionVisitor.  Allocates a {@link ConverterDraft07} and passes it to the super constructor.
 	 * @constructor
 	 */
 	constructor() {
-		super(new ConverterDraft04());
+		super(new ConverterDraft07());
 	}
 }
 
