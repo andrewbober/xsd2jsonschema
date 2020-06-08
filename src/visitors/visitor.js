@@ -31,7 +31,7 @@ class Visitor {
 		if (processor != undefined) {
 			this.processor = processor;
 		} else {
-			//this.processor = new Processor();
+			this.processor = new Processor();
 		}
 	}
 
