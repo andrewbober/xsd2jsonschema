@@ -1,5 +1,6 @@
 'use strict'
 
+const URI = require('urijs');
 const JsonSchemaFile = require('xsd2jsonschema').JsonSchemaFileDraft04;
 const JsonSchemaRef = require('xsd2jsonschema').JsonSchemaRef;
 
@@ -20,8 +21,9 @@ describe('JsonSchemaRef Test -', function () {
     });
 
     it('should create a JsonSchemaRef instance', function () {
+        const uri = new URI('something');
         const jsonSchemaRef = new JsonSchemaRef({
-            ref: 'something',
+            ref: uri,
             forwardReference: {}
         });
         expect(jsonSchemaRef instanceof JsonSchemaRef).toBeTruthy();
@@ -43,9 +45,10 @@ describe('JsonSchemaRef Test -', function () {
     });
 
     it('should create a ref and save an store a reference to it', function () {
+        const uri = new URI('something');
         const parent = new JsonSchemaFile();
         const jsonSchemaRef = new JsonSchemaRef({
-            ref: 'something',
+            ref: uri,
             forwardReference: {}
         });
         expect(jsonSchemaRef.references.length).toEqual(0);

@@ -15,6 +15,7 @@ const XsdAttributeValues = require('../xmlschema/xsdAttributeValues');
 //const parent_NAME = Symbol();
 //const targetSchema_NAME = Symbol();
 
+/*
 const properties = [
 	'namespaceMode',
 	'parent',
@@ -59,6 +60,8 @@ const properties = [
 	'not',
 	'definitions'
 ]
+*/
+
 
 /**
  * JSON Schema file operations.  This is based on the JSON Schema meta-schema located at http://json-schema.org/draft-04/schema#.  
@@ -77,10 +80,11 @@ class JsonSchemaFile extends PropertyDefinable {
 	 * @param {string} options.title - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.ref - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.$ref - The directory from which xml schema's should be loaded.  The default value is the current directory.
-	 * @param {JsonSchmeaFileV4} options.parent - A reference to the parent JSON Schema.
+	 * @param {JsonSchmeaFile} options.parent - A reference to the parent JSON Schema.
 	 * @param {string} options.namespaceMode - The method of handling namespaces. Must be one of: undefined, SUBSCHEMA, or FILENAME
 	 */
 	constructor(options) {
+/*
 		var superProperties;
 		if (options != undefined && options.properties !== undefined) {
 			superProperties = [ ... new Set(properties.concat(options.properties))];
@@ -90,6 +94,50 @@ class JsonSchemaFile extends PropertyDefinable {
 		super({
 			propertyNames: superProperties
 		});
+*/
+		super();
+		super.defineStringProperty('namespaceMode');
+		super.defineObjectProperty('parent');
+		super.defineStringProperty('filename');
+		super.defineObjectProperty('targetSchema');
+		super.defineStringProperty('targetNamespace');
+		super.defineObjectProperty('ref');
+		super.defineStringProperty('$ref');
+		super.defineStringProperty('id');
+		super.defineStringProperty('schemaId');
+		super.defineObjectProperty('subSchemas');
+		super.defineStringProperty('$schema');
+		super.defineStringProperty('title');
+		super.defineStringProperty('description');
+		super.defineProperty('default');
+		super.defineStringProperty('format');
+		super.defineNumericProperty('multipleOf');
+		super.defineNumericProperty('maximum');
+		super.defineBooleanProperty('exclusiveMaximum');
+		super.defineNumericProperty('minimum');
+		super.defineBooleanProperty('exclusiveMinimum');
+		super.defineNumericProperty('maxLength');
+		super.defineNumericProperty('minLength');
+		super.defineStringProperty('pattern');
+		super.defineProperty('additionalItems');
+		super.defineProperty('items');
+		super.defineNumericProperty('maxItems');
+		super.defineNumericProperty('minItems');
+		super.defineBooleanProperty('uniqueItems');
+		super.defineNumericProperty('maxProperties');
+		super.defineNumericProperty('minProperties');
+		super.defineArrayProperty('required');
+		super.defineProperty('additionalProperties');
+		super.defineObjectProperty('properties');
+		super.defineObjectProperty('patternProperties');
+		super.defineObjectProperty('dependencies');
+		super.defineArrayProperty('enum')
+		super.defineProperty('type');
+		super.defineArrayProperty('allOf');
+		super.defineArrayProperty('anyOf');
+		super.defineArrayProperty('oneOf');
+		super.defineObjectProperty('not');
+		super.defineObjectProperty('definitions');
 
 		this.parent = undefined;
 		this.filename = undefined;
@@ -203,35 +251,6 @@ class JsonSchemaFile extends PropertyDefinable {
 			}
 		}
 	}
-
-	/**
-	 * Creates a child JsonSchemaFile using the given options. The parent is set automatically.
-	 * 
-	 * @param {Object} options - And object used to override default options.
-	 * @param {string} options.baseFilename - The directory from which xml schema's should be loaded.  The default value is the current directory.
-	 * @param {string} options.baseId - The directory from which xml schema's should be loaded.  The default value is the current directory.
-	 * @param {string} options.targetNamespace - The directory from which xml schema's should be loaded.  The default value is the current directory.
-	 * @param {string} options.title - The directory from which xml schema's should be loaded.  The default value is the current directory.
-	 * @param {string} options.ref - The directory from which xml schema's should be loaded.  The default value is the current directory.
-	 * @param {string} options.$ref - The directory from which xml schema's should be loaded.  The default value is the current directory.
-	 * @param (JsonSchemaFile) options.parent - this parameter is set to the current JsonSchemaFile.
-	 * 
-	 * @returns {JsonSchemaFile} - Returns a new JsonSchemaFile that has the current JsonSchemaFile.
-	 */
-/*
-	newJsonSchemaFile(options) {
-		debug('Warning: JsonSchemaFile.newJsonSchemaFile() should only be called from JsonSchemaFile and only when ');
-		if (this.newJsonSchemaFile.caller != 'JsonSchemaFile') {
-			throw new Error('You a junkie or what dude?');
-		}
-		if (options != undefined) {
-			options.parent = this; 
-			return new JsonSchemaFile(options);
-		} else {
-			return new JsonSchemaFile({ parent: this });
-		}
-	}
-*/
 
 	/**
 	 * Creates all subschemas identified by an array of subschema names and initializes the targetSchema to the inner-most subschema.
@@ -494,7 +513,7 @@ class JsonSchemaFile extends PropertyDefinable {
 	/**
 	 * Returns a $ref limited to the JSON Pointer in the ref URI fragement if the $ref is being used internally to this file.  Otherwise, the full ref URI is returned.
 	 * 
-	 * @param {JsonSchemaFile} - the parent of this $ref
+	 * @param {JsonSchemaFile} parent - the parent of this $ref
 	 * @returns {JsonSchemaFile} - a JsonSchemaFile representing a $ref to itself.
 	 */
 	get$RefToSchema(parent) {
@@ -561,193 +580,15 @@ class JsonSchemaFile extends PropertyDefinable {
 	/**
 	 * Returns a POJO of this jsonSchema.  Items are added in the order we wouild like them to appear in the resulting JsonSchema.
 	 * 
+	 * @param {JsonSchemaSerializer} serializer - the serializer to be used to serialize this JsonSchemaFile into a POJO
 	 * @returns {Object} - POJO of this jsonSchema.
 	 */
-	getJsonSchema(jsonSchema) {
-		if (jsonSchema == undefined) {
-			jsonSchema = {};
-		}
-
-		if (!this.isEmpty(this.$ref)) {
-			jsonSchema.$ref = this.$ref;
-		}
-
-		if (!this.isEmpty(this.id)) {
-			//jsonSchema.id = this.id;
-			jsonSchema[this.schemaId] = this.id
-		}
-		if (!this.isEmpty(this.$schema)) {
-			jsonSchema.$schema = this.$schema;
-		}
-
-		// 6.1 Metadata keywords 'title' and 'description'
-		if (!this.isEmpty(this.title)) {
-			jsonSchema.title = this.title;
-		}
-		if (!this.isEmpty(this.description)) {
-			jsonSchema.description = this.description;
-		}
-
-		// 5.5.  Validation keywords for any instance type (Type moved up here from the rest of 5.5 below for output formatting)
-		if (!this.isEmpty(this.type)) {
-			jsonSchema.type = this.type;
-		}
-
-		// 5.1.  Validation keywords for numeric instances (number and integer)
-		if (!this.isEmpty(this.multipleOf)) {
-			jsonSchema.multipleOf = this.multipleOf;
-		}
-		if (!this.isEmpty(this.minimum)) {
-			jsonSchema.minimum = this.minimum;
-		}
-		if (!this.isEmpty(this.exclusiveMinimum) && this.exclusiveMinimum !== false) {
-			jsonSchema.exclusiveMinimum = this.exclusiveMinimum;
-		}
-		if (!this.isEmpty(this.maximum)) {
-			jsonSchema.maximum = this.maximum;
-		}
-		if (!this.isEmpty(this.exclusiveMaximum) && this.exclusiveMaximum !== false) {
-			jsonSchema.exclusiveMaximum = this.exclusiveMaximum;
-		}
-
-		// 5.2.  Validation keywords for strings
-		if (!this.isEmpty(this.minLength) && this.minLength !== 0) {
-			jsonSchema.minLength = this.minLength;
-		}
-		if (!this.isEmpty(this.maxLength)) {
-			jsonSchema.maxLength = this.maxLength;
-		}
-		if (!this.isEmpty(this.pattern)) {
-			jsonSchema.pattern = this.pattern;
-		}
-
-		// 5.5.  Validation keywords for any instance type
-		if (!this.isEmpty(this.enum)) {
-			jsonSchema.enum = this.enum;
-		}
-		if (!this.isEmpty(this.allOf)) {
-			jsonSchema.allOf = [];
-			for (let i = 0; i < this.allOf.length; i++) {
-				jsonSchema.allOf[i] = this.allOf[i].getJsonSchema();
-			}
-		}
-		if (!this.isEmpty(this.anyOf)) {
-			jsonSchema.anyOf = [];
-			for (let i = 0; i < this.anyOf.length; i++) {
-				jsonSchema.anyOf[i] = this.anyOf[i].getJsonSchema();
-			}
-		}
-		if (!this.isEmpty(this.oneOf)) {
-			jsonSchema.oneOf = [];
-			for (let i = 0; i < this.oneOf.length; i++) {
-				jsonSchema.oneOf[i] = this.oneOf[i].getJsonSchema();
-			}
-		}
-		if (!this.isEmpty(this.not)) {
-			jsonSchema.not = this.not.getJsonSchema();
-		}
-
-		// 6.2 Default
-		if (!this.isEmpty(this.default)) {
-			jsonSchema.default = this.default;
-		}
-
-		// 7 Semantic validation with 'format'
-		if (!this.isEmpty(this.format)) {
-			jsonSchema.format = this.format;
-		}
-
-		// 5.4.5.  Dependencies
-		if (!this.isEmpty(this.dependencies)) {
-			jsonSchema.dependencies = {}
-			const propKeys = Object.keys(this.dependencies);
-			propKeys.forEach(function (key, index, array) {
-				if (Array.isArray(this.dependencies[key])) {
-					jsonSchema.dependencies[key] = this.dependencies[key]; // property dependency
-				} else {
-					if (this.dependencies[key] !== undefined) {
-						jsonSchema.dependencies[key] = this.dependencies[key].getJsonSchema(); // schema dependency
-					}
-				}
-			}, this);
-		}
-
-		// 5.3.  Validation keywords for arrays
-		if (!this.isEmpty(this.additionalItems)) {
-			if (typeof (this.additionalItems) === 'boolean') {
-				jsonSchema.additionalItems = this.additionalItems;
-			} else {
-				jsonSchema.additionalItems = this.additionalItems.getJsonSchema();
-			}
-		}
-		if (!this.isEmpty(this.maxItems)) {
-			jsonSchema.maxItems = this.maxItems;
-		}
-		if (!this.isEmpty(this.minItems) && this.minItems != 0) {
-			jsonSchema.minItems = this.minItems;
-		}
-		if (!this.isEmpty(this.uniqueItems) && this.uniqueItems !== false) {
-			jsonSchema.uniqueItems = this.uniqueItems;
-		}
-		if (!this.isEmpty(this.items)) {
-			if (Array.isArray(this.items)) {
-				jsonSchema.items = [];
-				this.items.forEach(function (item, index, array) {
-					jsonSchema.items[index] = item.getJsonSchema();
-				}, this);
-			} else {
-				jsonSchema.items = this.items.getJsonSchema();
-			}
-		}
-
-		// 5.4.  Validation keywords for objects
-		if (!this.isEmpty(this.maxProperties)) {
-			jsonSchema.maxProperties = this.maxProperties;
-		}
-		if (!this.isEmpty(this.minProperties) && this.minProperties !== 0) {
-			jsonSchema.minProperties = this.minProperties;
-		}
-		if (!this.isEmpty(this.additionalProperties)) {
-			jsonSchema.additionalProperties = this.additionalProperties;
-		}
-		if (!this.isEmpty(this.properties)) {
-			jsonSchema.properties = {};
-			const propKeys = Object.keys(this.properties);
-			propKeys.forEach(function (key, index, array) {
-				if (this.properties[key] !== undefined) {
-					jsonSchema.properties[key] = this.properties[key].getJsonSchema();
-				}
-			}, this);
-		}
-		if (!this.isEmpty(this.patternProperties)) {
-			jsonSchema.patternProperties = {};
-			const propKeys = Object.keys(this.patternProperties);
-			propKeys.forEach(function (key, index, array) {
-				if (this.patternProperties[key] !== undefined) {
-					jsonSchema.patternProperties[key] = this.patternProperties[key].getJsonSchema();
-				}
-			}, this);
-		}
-		if (!this.isEmpty(this.required)) {
-			jsonSchema.required = this.required;
-		}
-		if (!this.isEmpty(this.definitions)) {
-			jsonSchema.definitions = this.definitions.getJsonSchema();
-		}
-		if (!this.isEmpty(this.subSchemas)) {
-			const subschemaNames = Object.keys(this.subSchemas);
-			subschemaNames.forEach(function (subschemaName, index, array) {
-				try {
-					jsonSchema[subschemaName] = this.subSchemas[subschemaName].getJsonSchema();
-				} catch (err) {
-					debug(err);
-					debug(this.subSchemas);
-					throw err;
-				}
-			}, this);
-		}
-
-		return jsonSchema;
+	getJsonSchema(serializer) {
+        if(serializer == undefined) {
+            throw new Error('Parameter "serializer" is required');
+        }
+		const pojo = serializer.serialize(this);
+		return pojo;
 	}
 
 	/**
@@ -983,10 +824,6 @@ class JsonSchemaFile extends PropertyDefinable {
 		this.removeEmptySchemasFromArray(this.allOf);
 		this.removeEmptySchemasFromArray(this.anyOf);
 		this.removeEmptySchemasFromArray(this.oneOf);
-	}
-
-	toString() {
-		return JSON.stringify(this.getJsonSchema(), null, '\t');
 	}
 
 	isForwardRef() {

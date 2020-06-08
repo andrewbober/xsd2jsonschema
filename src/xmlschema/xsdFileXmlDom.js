@@ -3,7 +3,6 @@
 const debug = require('debug')('xsd2jsonschema:XsdFile');
 
 const DOMParser = require('xmldom').DOMParser;
-const fs = require('fs');
 const xpathProcessor = require('xpath');
 const URI = require('urijs');
 const XsdAttributes = require('./xsdAttributes');
@@ -162,7 +161,7 @@ class XsdFile {
 
     isMissingXmlSchemaNamespace() {
         const keys = Object.keys(this.namespaces);
-        for(let key of keys) {
+        for(const key of keys) {
             if(this.namespaces[key] == Constants.XML_SCHEMA_NAMESPACE) {
                 return false;
             }
@@ -264,7 +263,7 @@ xmlDoc=${this.xmlDoc}`
         var attrs = node.attributes;
         if (attrs != undefined) {
             Object.keys(attrs).forEach(function (attr, index, array) {
-                if (attrs[attr].nodeType === XsdNodeTypes.ATTRIBUTE_NODE) {  // 2
+                if (attrs[attr].nodeType === XsdNodeTypes.ATTRIBUTE_NODE) {
                     retval += attrs[attr].localName + '=' + attrs[attr].value + ' ';
                 }
             }, this);
@@ -277,11 +276,28 @@ xmlDoc=${this.xmlDoc}`
         debug('XML-TAG-Attributes:');
         if (attrs != undefined) {
             Object.keys(attrs).forEach(function (attr, index, array) {
-                if (attrs[attr].nodeType === XsdNodeTypes.ATTRIBUTE_NODE) {  // 2
+                if (attrs[attr].nodeType === XsdNodeTypes.ATTRIBUTE_NODE) {
                     debug('\t' + index + ') ' + attrs[attr].localName + '=' + attrs[attr].value);
                 }
             }, this);
         }
+    }
+
+    static convertToNumber(value) {
+        var retval = Number(value);
+        if (isNaN(retval)) {
+            throw new Error(`Unable create a Number from [${value}]`);
+        }
+        return retval;
+
+    }    
+
+    static getAttrValueAsNumber(node, attrName) {
+        var value;
+        if (this.hasAttribute(node, attrName)) {
+            value = node.getAttribute(attrName);
+        }
+        return this.convertToNumber(value);
     }
 
     static getAttrValue(node, attrName) {
@@ -308,15 +324,11 @@ xmlDoc=${this.xmlDoc}`
         return this.getAttrValue(node, XsdAttributes.VALUE);
     }
 
-    static getNumberValueAttr(node) {
+    static getValueAttrAsNumber(node) {
         if (node == XsdAttributeValues.UNBOUNDED) {
             return undefined;
         }
-        var retval = Number(this.getAttrValue(node, XsdAttributes.VALUE));
-        if (isNaN(retval)) {
-            throw new Error('Unable create a Number from [' + this.getAttrValue(node, XsdAttributes.VALUE) + ']');
-        }
-        return retval;
+        return this.getAttrValueAsNumber(node, XsdAttributes.VALUE);
     }
 
     static getTypeNode(node) {

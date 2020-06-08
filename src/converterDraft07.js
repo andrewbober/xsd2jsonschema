@@ -11,7 +11,6 @@ class ConverterDraft07 extends ConverterDraft06 {
 	 */
 	constructor(options) {
 		super(options);
-		// The working schema is initilized as needed through XML Handlers
 	}
 }
 

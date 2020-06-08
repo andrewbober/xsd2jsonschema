@@ -1,6 +1,7 @@
 'use strict';
 
 const debug = require('debug')('xsd2jsonschema:JsonSchemaFileDraft07');
+
 const path = require('path');
 const URI = require('urijs');
 const JsonSchemaFileDraft06 = require('./jsonSchemaFileDraft06');
@@ -23,14 +24,14 @@ class JsonSchemaFileDraft07 extends JsonSchemaFileDraft06 {
 	/**
 	 * Creates a child JsonSchemaFile using the given options. The parent is set automatically.
 	 * 
-	 * @param {Object} options - And object used to override default options.
+	 * @param {Object} options - An object used to override default options.
 	 * @param {string} options.baseFilename - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.baseId - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.targetNamespace - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.title - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.ref - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.$ref - The directory from which xml schema's should be loaded.  The default value is the current directory.
-	 * @param (JsonSchemaFile) options.parent - this parameter is set to the current JsonSchemaFile.
+	 * @param {JsonSchemaFile} options.parent - If this parameter is not set the parent will be the current JsonSchemaFile.
 	 * 
 	 * @returns {JsonSchemaFileDraft07} - Returns a new JsonSchemaFileDraft07 that has the current JsonSchemaFile as its parent.
 	 */
@@ -43,6 +44,10 @@ class JsonSchemaFileDraft07 extends JsonSchemaFileDraft06 {
 		} else {
 			return new JsonSchemaFileDraft07({ parent: this });
 		}
+	}
+
+	toString() {
+		return JSON.stringify(this.getJsonSchema(), null, '\t');
 	}
 }
 

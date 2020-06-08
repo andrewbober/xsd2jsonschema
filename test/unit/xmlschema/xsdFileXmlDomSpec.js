@@ -139,13 +139,13 @@ xmlDoc=﻿<?xml version="1.0" encoding="UTF-8"?>
 
     it('should return the value of the numeric attribute named value', function() {
         const node = base.select1('//xs:minLength');
-        expect(XsdFile.getNumberValueAttr(node)).toEqual(1);
+        expect(XsdFile.getValueAttrAsNumber(node)).toEqual(1);
     })
 
     it('should throw and error if the value of the numeric attribute named value is not numeric', function() {
         const node = base.select1('//xs:pattern');
         expect(function() {
-            XsdFile.getNumberValueAttr(node)
+            XsdFile.getValueAttrAsNumber(node)
         }).toThrow(Error('Unable create a Number from [[\\p{IsBasicLatin}]*]'));
     });
 

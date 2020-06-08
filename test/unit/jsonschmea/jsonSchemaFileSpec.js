@@ -1,5 +1,6 @@
 'use strict'
 
+const URI = require('urijs');
 const JsonSchemaFile = require('xsd2jsonschema').JsonSchemaFileDraft04;
 const XsdFile = require('xsd2jsonschema').XsdFile;
 const XsdAttributeValues = require('xsd2jsonschema').XsdAttributeValues;
@@ -71,14 +72,6 @@ describe('JsonSchemaFile Test -', function () {
         expect(testJsonSchema.definitions).toBeUndefined();
     });
 
-    it('should create a JsonSchemaFile instance with two additional properties', function () {
-        const jsonSchema = new JsonSchemaFile({
-            properties: ['something', 'something else']
-        });
-
-        expect(Object.entries(jsonSchema).length).toEqual(44);
-    });
-
     it('should create a JsonSchemaFile instance and ignore the duplicate properties sent in to the constructor', function () {
         const jsonSchema = new JsonSchemaFile({
             properties: ['$schema', 'id', 'allOf']
@@ -87,10 +80,14 @@ describe('JsonSchemaFile Test -', function () {
     });
 
     it('should create a ref JsonSchemaFile instance', function () {
+        const uri = new URI('something');
         const jsonSchemaRef = new JsonSchemaFile({
-            ref: 'something'
+            ref: uri
         });
-        expect(jsonSchemaRef.ref).toEqual('something');
+        expect(jsonSchemaRef.ref).toEqual(uri);
+        expect(jsonSchemaRef.ref).not.toEqual(new URI());
+        expect(jsonSchemaRef.ref).toBe(uri);
+        expect(jsonSchemaRef.ref).not.toBe(new URI('something'));
     });
 
     it('should create a $ref JsonSchemaFile instance', function () {
@@ -379,19 +376,22 @@ describe('JsonSchemaFile Test -', function () {
 
     // RefToSchema
     it('should return a JsonSchemaFile representing a $ref to itself with parent initialized', function () {
+        const uri = new URI('happy/andy');
         const jsonSchema = new JsonSchemaFile({
-            ref: 'baseJsonSchema.id#subschemaStr/typeName'
+            ref: uri
         });
+        expect(jsonSchema.ref).toBe(uri);
+
         const refToSchema = jsonSchema.get$RefToSchema(fullJsonSchemaSubSchema);
-        expect(refToSchema.$ref).toEqual(jsonSchema.ref);
-        expect(refToSchema.$ref).toEqual('baseJsonSchema.id#subschemaStr/typeName');
+        expect(refToSchema.$ref).toEqual('happy/andy');
         expect(refToSchema.parent).toBe(fullJsonSchemaSubSchema);
     });
 
     // RefToSchema
-    it('should return an error because parent parameter was not suppliced', function () {
+    it('should return an error because parent parameter was not supplied', function () {
+        const uri = new URI('baseJsonSchema.id#subschemaStr/typeName');
         const jsonSchema = new JsonSchemaFile({
-            ref: 'baseJsonSchema.id#subschemaStr/typeName'
+            ref: uri
         });
         expect(function () {
             const refToSchema = jsonSchema.get$RefToSchema();
@@ -564,13 +564,14 @@ describe('JsonSchemaFile Test -', function () {
         fullJsonSchemaSubSchema.setSubSchema('invalid', {});
         expect(function () {
             fullJsonSchemaSubSchema.getJsonSchema()
-        }).toThrow(TypeError('this.subSchemas[subschemaName].getJsonSchema is not a function'));
+        }).toThrow(TypeError('jsonSchema.subSchemas[subschemaName].getJsonSchema is not a function'));
     });
 
     // clone
     it('should return a deep copy of a JsonSchemaFile', function () {
+        const uri = new URI('baseJsonSchema.id#subschemaStr/typeName');
         const secondSchema = new JsonSchemaFile({
-            ref: 'baseJsonSchema.id#subschemaStr/typeName'
+            ref: uri
         });
         const copy = fullJsonSchemaSubSchema.clone();
         expect(copy).toEqual(fullJsonSchemaSubSchema);

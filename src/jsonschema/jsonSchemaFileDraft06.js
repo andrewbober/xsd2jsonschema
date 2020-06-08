@@ -1,9 +1,11 @@
 'use strict';
 
 const debug = require('debug')('xsd2jsonschema:JsonSchemaFileDraft06');
+
 const path = require('path');
 const URI = require('urijs');
 const JsonSchemaFileDraft04 = require('./jsonSchemaFileDraft04');
+const JsonSchemaSerializerDraft06 = require('./jsonSchemaSerializerDraft06');
 
 /**
  * JSON Schema file operations.  This is based on the JSON Schema meta-schema located at http://json-schema.org/draft-04/schema#.  
@@ -19,19 +21,28 @@ class JsonSchemaFileDraft06 extends JsonSchemaFileDraft04 {
 			options.schemaId = options.schemaId != undefined ? options.schemaId : '$id';
 		}
 		super(options);
-    }
+
+		// Redefine exclusiveMaximum & exclusiveMinimum as numeric to comply with the new draft-v6 definition.
+		super.defineNumericProperty('exclusiveMaximum');
+		super.defineNumericProperty('exclusiveMinimum');
+
+		super.defineObjectProperty('propertyNames');
+		super.defineArrayProperty('contains');
+		super.defineArrayProperty('const');
+		super.defineArrayProperty('examples');
+	}
 
 	/**
 	 * Creates a child JsonSchemaFile using the given options. The parent is set automatically.
 	 * 
-	 * @param {Object} options - And object used to override default options.
+	 * @param {Object} options - An object used to override default options.
 	 * @param {string} options.baseFilename - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.baseId - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.targetNamespace - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.title - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.ref - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.$ref - The directory from which xml schema's should be loaded.  The default value is the current directory.
-	 * @param (JsonSchemaFile) options.parent - this parameter is set to the current JsonSchemaFile.
+	 * @param {JsonSchemaFile} options.parent - If this parameter is not set the parent will be the current JsonSchemaFile.
 	 * 
 	 * @returns {JsonSchemaFileDraft06} - Returns a new JsonSchemaFileDraft06 that has the current JsonSchemaFile as its parent.
 	 */
@@ -47,31 +58,21 @@ class JsonSchemaFileDraft06 extends JsonSchemaFileDraft04 {
     }
 
 	/**
-	 * Returns true if the all members of the JsonSchemaFile are empty as defined by isEmpty().
+	 * Returns a POJO of this jsonSchema.  Items are added in the order we wouild like them to appear in the resulting JsonSchema.
 	 * 
-	 * @returns {Boolean} - Returns true if the all members of the JsonSchemaFile are empty.
+	 * @returns {Object} - POJO of this jsonSchema.
 	 */
-	isBlankDead() {
-		if (!this.isEmpty(this.$id)) {
-			return false;
+	getJsonSchema(serializer) {
+		if (serializer == undefined) {
+			serializer = new JsonSchemaSerializerDraft06();
 		}
-		return super.isBlank();
+		return super.getJsonSchema(serializer);
 	}
 
-    /**
-     * Returns a POJO of this jsonSchema.  Items are added in the order we wouild like them to appear in the resulting JsonSchema.
-     * 
-     * @returns {Object} - POJO of this jsonSchema.
-     */
-    getJsonSchemaDEAD(jsonSchema) {
-		if (jsonSchema == undefined) {
-			jsonSchema = {};
-		}
-        if (!this.isEmpty(this.$id)) {
-            jsonSchema.$id = this.$id;
-        }
-        return super.getJsonSchema(jsonSchema);
-    }
+	toString() {
+		return JSON.stringify(this.getJsonSchema(), null, '\t');
+	}
+
 }
 
 module.exports = JsonSchemaFileDraft06;

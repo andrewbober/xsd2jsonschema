@@ -1,9 +1,11 @@
 'use strict';
 
 const debug = require('debug')('xsd2jsonschema:JsonSchemaFileDraft04');
+
 const path = require('path');
 const URI = require('urijs');
 const JsonSchemaFile = require('./jsonSchemaFile');
+const JsonSchemaSerializerDraft04 = require('./jsonSchemaSerializerDraft04');
 
 /**
  * JSON Schema file operations.  This is based on the JSON Schema meta-schema located at http://json-schema.org/draft-04/schema#.  
@@ -24,14 +26,14 @@ class JsonSchemaFileDraft04 extends JsonSchemaFile {
 	/**
 	 * Creates a child JsonSchemaFile using the given options. The parent is set automatically.
 	 * 
-	 * @param {Object} options - And object used to override default options.
+	 * @param {Object} options - An object used to override default options.
 	 * @param {string} options.baseFilename - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.id - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.targetNamespace - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.title - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.ref - The directory from which xml schema's should be loaded.  The default value is the current directory.
 	 * @param {string} options.$ref - The directory from which xml schema's should be loaded.  The default value is the current directory.
-	 * @param {JsonSchemaFile} options.parent - this parameter is set to the current JsonSchemaFile.
+	 * @param {JsonSchemaFile} options.parent - If this parameter is not set the parent will be the current JsonSchemaFile.
 	 * 
 	 * @returns {JsonSchemaFileDraft04} - Returns a new JsonSchemaFileDraft04 that has the current JsonSchemaFile as its parent.
 	 */
@@ -44,6 +46,22 @@ class JsonSchemaFileDraft04 extends JsonSchemaFile {
 		} else {
 			return new JsonSchemaFileDraft04({ parent: this });
 		}
+	}
+
+	/**
+	 * Returns a POJO of this jsonSchema.  Items are added in the order we wouild like them to appear in the resulting JsonSchema.
+	 * 
+	 * @returns {Object} - POJO of this jsonSchema.
+	 */
+	getJsonSchema(serializer) {
+		if (serializer == undefined) {
+			serializer = new JsonSchemaSerializerDraft04();
+		}
+		return super.getJsonSchema(serializer);
+	}
+
+	toString() {
+		return JSON.stringify(this.getJsonSchema(), null, '\t');
 	}
 
 }
