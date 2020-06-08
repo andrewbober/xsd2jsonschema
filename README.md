@@ -56,12 +56,12 @@ console.log(JSON.stringify(jsonSchema, null, 2));
 4. Conversion logic has several configurable options and can be customized with your own code.
 5. A companion command line interface is planned.  Please see [xsd2jsonschema-cli](https://www.npmjs.org/package/xsd2jsonschema-cli). 
 
-## Documentation 
+## Documentation (TBD)
 [Options](www.xsd2jsonschema.org/quickstartvideos)
 
 [Videos](www.xsd2jsonschema.org/quickstartvideos)
 
-[Referencehttps://www.xsd2jsonschema.org/documentation](https://www.xsd2jsonschema.org/documentation)
+[Reference](https://www.xsd2jsonschema.org/documentation)
 
 ## Where to file issues 
 [https://github.com/andrewbober/xsd2jsonschema/issues](https://github.com/andrewbober/xsd2jsonschema/issues)
