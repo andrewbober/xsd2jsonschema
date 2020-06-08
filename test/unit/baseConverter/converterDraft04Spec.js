@@ -128,8 +128,4 @@ describe('BaseConverter Test -', function () {
 		converter.process(schemaNode, jsonSchema, xsd);
 		expect(converter.skippingUnknownNode).not.toHaveBeenCalled();
     })
-    
-    it('should evaluate min/max as numbers', function() {
-        
-    })
 });
