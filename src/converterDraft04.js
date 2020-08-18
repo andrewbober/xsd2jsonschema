@@ -520,8 +520,10 @@ const includeTextAndCommentNodes_NAME = Symbol();
 	addPropertyAsArray(targetSchema, propertyName, customType, minOccursAttr, maxOccursAttr) {
 		const oneOfSchema = targetSchema.newJsonSchemaFile();
 		const arraySchema = oneOfSchema.newJsonSchemaFile();
-		const min = minOccursAttr === undefined ? '1' : minOccursAttr;
-		const max = maxOccursAttr === undefined ? '1' : maxOccursAttr;
+		const isList = minOccursAttr || maxOccursAttr;
+		const defaultValueMinMaxOccur = isList ? 1 : undefined;
+		const min = minOccursAttr === undefined ? defaultValueMinMaxOccur  : minOccursAttr;
+		const max = maxOccursAttr === undefined ? defaultValueMinMaxOccur : maxOccursAttr;
 
 		arraySchema.type = jsonSchemaTypes.ARRAY;
 		arraySchema.minItems = min;
