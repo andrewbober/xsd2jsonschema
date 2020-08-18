@@ -51,6 +51,8 @@ jspm_packages
 !.vscode/tasks.json
 !.vscode/launch.json
 
+### IDEA ###
+.idea
 
 ### OSX ###
 *.DS_Store
