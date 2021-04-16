@@ -54,6 +54,8 @@
     "deep-eql": "^4.0.0",
     "fs-extra": "^3.0.1",
     "get-uri": "^2.0.3",
+    "path-browserify": "1.0.1",
+    "save": "^2.4.0",
     "urijs": "^1.19.1",
     "validator": "^9.4.1",
     "xml2js": "^0.4.19",
