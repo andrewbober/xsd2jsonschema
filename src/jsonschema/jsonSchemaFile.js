@@ -2,7 +2,7 @@
 
 const debug = require('debug')('xsd2jsonschema:JsonSchemaFile');
 
-const path = require('path');
+const path = (process && typeof process.platform === 'string') ? require('path') : require('path-browserify');
 const URI = require('urijs');
 const clone = require('clone');
 const deepEql = require('deep-eql');

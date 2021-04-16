@@ -2,7 +2,7 @@
 
 const debug = require('debug')('xsd2jsonschema:JsonSchemaFileDraft06');
 
-const path = require('path');
+const path = (process && typeof process.platform === 'string') ? require('path') : require('path-browserify');
 const URI = require('urijs');
 const JsonSchemaFileDraft04 = require('./jsonSchemaFileDraft04');
 const JsonSchemaSerializerDraft06 = require('./jsonSchemaSerializerDraft06');
