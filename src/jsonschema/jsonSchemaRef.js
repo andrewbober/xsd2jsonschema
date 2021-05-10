@@ -82,7 +82,7 @@ class JsonSchemaRef extends JsonSchemaFile {
             ref.resolveRef(type);
         })
         if (type.ref == undefined) {
-            this.$ref = type.$ref.toString();
+            this.$ref = "";
         } else {
             this.$ref = type.ref.toString();
         }
