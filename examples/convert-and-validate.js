@@ -16,8 +16,8 @@ const xs2js = new Xsd2JsonSchema();
 const xsdSchemas = {
   'BaseTypes.xsd': `
 					<?xml version="1.0" encoding="UTF-8"?>
-					<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="https://ForceDevelopmentServices.ServiceCode.SOA.Accessions.DataContracts" 
-					targetNamespace="https://ForceDevelopmentServices.ServiceCode.SOA.Accessions.DataContracts"
+					<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="https://someurl.data" 
+					targetNamespace="https://someurl.data"
 					 elementFormDefault="qualified" attributeFormDefault="unqualified" version="1.0.0">
 						<!--Character-->
 						<xs:simpleType name="C">
@@ -78,10 +78,10 @@ const xsdSchemas = {
 						xmlns="http://www.xsd2jsonschema.org/example"
 						
 						 targetNamespace="http://www.xsd2jsonschema.org/example" elementFormDefault="qualified" attributeFormDefault="unqualified" version="1.0.0">
-							<xs:import namespace="https://ForceDevelopmentServices.ServiceCode.SOA.Accessions.DataContracts"/>
+							<xs:import namespace="https://someurl.data"/>
 							<xs:complexType name="PersonInfoType">
 								<xs:sequence>
-									<xs:element name="PersonName" type="q1:PersonNameType" xmlns:q1="https://ForceDevelopmentServices.ServiceCode.SOA.Accessions.DataContracts" />
+									<xs:element name="PersonName" type="q1:PersonNameType" xmlns:q1="https://someurl.data" />
 									<xs:element name="Age" type="Integer" minOccurs="0"/>
 									<xs:element name="BirthDate" type="Date"/>
 								</xs:sequence>
