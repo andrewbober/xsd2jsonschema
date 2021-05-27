@@ -2,21 +2,23 @@
  *  Basic Xsd2JsonSchema usage sample.
  */
 
-"use strict";
+'use strict';
 
 const Xsd2JsonSchema = require('xsd2jsonschema').Xsd2JsonSchema;
 const Ajv = require('ajv');
 
 const ajv = new Ajv({
-	allErrors: true,
-	verbose: false
+  allErrors: true,
+  verbose: false,
 });
 
 const xs2js = new Xsd2JsonSchema();
 const xsdSchemas = {
-	'BaseTypes.xsd': `
+  'BaseTypes.xsd': `
 					<?xml version="1.0" encoding="UTF-8"?>
-					<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.xsd2jsonschema.org/example" targetNamespace="http://www.xsd2jsonschema.org/example" elementFormDefault="qualified" attributeFormDefault="unqualified" version="1.0.0">
+					<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="https://someurl.data" 
+					targetNamespace="https://someurl.data"
+					 elementFormDefault="qualified" attributeFormDefault="unqualified" version="1.0.0">
 						<!--Character-->
 						<xs:simpleType name="C">
 							<xs:restriction base="xs:string">
@@ -70,13 +72,16 @@ const xsdSchemas = {
 							</xs:restriction>
 						</xs:simpleType>
 					</xs:schema>`,
-	'ExampleTypes.xsd': `
+  'ExampleTypes.xsd': `
 						<?xml version="1.0" encoding="UTF-8"?>
-						<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.xsd2jsonschema.org/example" targetNamespace="http://www.xsd2jsonschema.org/example" elementFormDefault="qualified" attributeFormDefault="unqualified" version="1.0.0">
-							<xs:import schemaLocation="BaseTypes.xsd"/>
+						<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+						xmlns="http://www.xsd2jsonschema.org/example"
+						
+						 targetNamespace="http://www.xsd2jsonschema.org/example" elementFormDefault="qualified" attributeFormDefault="unqualified" version="1.0.0">
+							<xs:import namespace="https://someurl.data"/>
 							<xs:complexType name="PersonInfoType">
 								<xs:sequence>
-									<xs:element name="PersonName" type="PersonNameType"/>
+									<xs:element name="PersonName" type="q1:PersonNameType" xmlns:q1="https://someurl.data" />
 									<xs:element name="Age" type="Integer" minOccurs="0"/>
 									<xs:element name="BirthDate" type="Date"/>
 								</xs:sequence>
@@ -89,18 +94,18 @@ const xsdSchemas = {
 									<xs:element name="AliasName" type="Char_20" minOccurs="0" maxOccurs="unbounded"/>
 								</xs:sequence>
 							</xs:complexType>
-						</xs:schema>`
-}
+						</xs:schema>`,
+};
 
 // First, convert the XML Schema's into JSON Schema
 let jsonSchemas = xs2js.processAllSchemas({
-		schemas: xsdSchemas
+  schemas: xsdSchemas,
 });
 
 // Then use the converted schemas to validate JSON instances
 ajv.addSchema([
-	jsonSchemas['BaseTypes.xsd'].getJsonSchema(),
-	jsonSchemas['ExampleTypes.xsd'].getJsonSchema()
+  jsonSchemas['BaseTypes.xsd'].getJsonSchema(),
+  jsonSchemas['ExampleTypes.xsd'].getJsonSchema(),
 ]);
 
 const validate = ajv.getSchema(jsonSchemas['ExampleTypes.xsd'].filename);
@@ -108,50 +113,61 @@ var valid = false;
 
 // PersonInfo
 const examplePersonInfo = {
-	PersonInfoType: {
-		PersonName: {
-			FirstName: "Carrie",
-			MiddleName: "B",
-			LastName: "Brown"
-		},
-		Age: 19,
-		BirthDate: "2000-01-01"
-	}
-}
+  PersonInfoType: {
+    PersonName: {
+      FirstName: 'Carrie',
+      MiddleName: 'B',
+      LastName: 'Brown',
+    },
+    Age: 19,
+    BirthDate: '2000-01-01',
+  },
+};
 valid = validate(examplePersonInfo);
 if (valid) {
-	console.log("examplePersonInfo is VALID!");
+  console.log('examplePersonInfo is VALID!');
 } else {
-	console.log("examplePersonInfo is INVALID\n" + JSON.stringify(validate.errors, null, "\t") + "\n");
+  console.log(
+    'examplePersonInfo is INVALID\n' +
+      JSON.stringify(validate.errors, null, '\t') +
+      '\n'
+  );
 }
 
 // PersonName
 const examplePersonName = {
-	PersonNameType: {
-		FirstName: "Kevin",
-		MiddleName: "J",
-		LastName: "Darley"
-	}
-}	
+  PersonNameType: {
+    FirstName: 'Kevin',
+    MiddleName: 'J',
+    LastName: 'Darley',
+  },
+};
 valid = validate(examplePersonName);
 if (valid) {
-	console.log("examplePersonName is VALID!");
+  console.log('examplePersonName is VALID!');
 } else {
-	console.log("examplePersonName is INVALID\n" + JSON.stringify(validate.errors, null, "\t") + "\n");
+  console.log(
+    'examplePersonName is INVALID\n' +
+      JSON.stringify(validate.errors, null, '\t') +
+      '\n'
+  );
 }
 
 // PersonName
 const errorPersonName = {
-	PersonNameType: {
-		errorName: "Kevin",
-		MiddleName: "J",
-		LastName: "Darley"
-	}
-}	
+  PersonNameType: {
+    errorName: 'Kevin',
+    MiddleName: 'J',
+    LastName: 'Darley',
+  },
+};
 valid = validate(errorPersonName);
 if (valid) {
-	console.log("errorPersonName is VALID but should be INVALID!");
+  console.log('errorPersonName is VALID but should be INVALID!');
 } else {
-	console.log("errorPersonName is INVALID as expected\n" + JSON.stringify(validate.errors, null, "\t") + "\n");
+  console.log(
+    'errorPersonName is INVALID as expected\n' +
+      JSON.stringify(validate.errors, null, '\t') +
+      '\n'
+  );
 }
-

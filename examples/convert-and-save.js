@@ -10,82 +10,131 @@ const URI = require('urijs');
 const Xsd2JsonSchema = require('xsd2jsonschema').Xsd2JsonSchema;
 
 const xsdSchemas = {
-	'BaseTypes.xsd': `
-					<?xml version="1.0" encoding="UTF-8"?>
-					<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.xsd2jsonschema.org/example" targetNamespace="http://www.xsd2jsonschema.org/example" elementFormDefault="qualified" attributeFormDefault="unqualified" version="1.0.0">
-						<!--Character-->
-						<xs:simpleType name="C">
-							<xs:restriction base="xs:string">
-								<xs:minLength value="1"/>
-							</xs:restriction>
-						</xs:simpleType>
-						<!--Boolean-->
-						<xs:simpleType name="Boolean">
-							<xs:restriction base="xs:boolean"/>
-						</xs:simpleType>
-						<!--Year, YrMon, Date, Time, DateTime, Timestamp-->
-						<xs:simpleType name="Year">
-							<xs:restriction base="xs:gYear"/>
-						</xs:simpleType>
-						<xs:simpleType name="YrMon">
-							<xs:restriction base="xs:gYearMonth"/>
-						</xs:simpleType>
-						<xs:simpleType name="Date">
-							<xs:restriction base="xs:date"/>
-						</xs:simpleType>
-						<xs:simpleType name="Time">
-							<xs:restriction base="xs:time"/>
-						</xs:simpleType>
-						<xs:simpleType name="DateTime">
-							<xs:restriction base="xs:dateTime"/>
-						</xs:simpleType>
-						<xs:simpleType name="Timestamp">
-							<xs:restriction base="xs:dateTime"/>
-						</xs:simpleType>
-						<!--Integer-->
-						<xs:simpleType name="Integer">
-							<xs:restriction base="xs:integer"/>
-						</xs:simpleType>
-						<!--Universal Resource Identifier (URI)-->
-						<xs:simpleType name="URI">
-							<xs:restriction base="xs:anyURI">
-								<xs:minLength value="1"/>
-							</xs:restriction>
-						</xs:simpleType>
-						<!--Binary-->
-						<xs:simpleType name="Binary">
-							<xs:restriction base="xs:base64Binary"/>
-						</xs:simpleType>
-						<xs:simpleType name="Duration">
-							<xs:restriction base="xs:duration"/>
-						</xs:simpleType>
-						<xs:simpleType name="Char_20">
-							<xs:restriction base="C">
-								<xs:minLength value="1"/>
-								<xs:maxLength value="20"/>
-							</xs:restriction>
-						</xs:simpleType>
-					</xs:schema>`,
-	'ExampleTypes.xsd': `
-						<?xml version="1.0" encoding="UTF-8"?>
-						<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.xsd2jsonschema.org/example" targetNamespace="http://www.xsd2jsonschema.org/example" elementFormDefault="qualified" attributeFormDefault="unqualified" version="1.0.0">
-							<xs:import schemaLocation="BaseTypes.xsd"/>
-							<xs:complexType name="PersonInfoType">
-								<xs:sequence>
-									<xs:element name="PersonName" type="PersonNameType"/>
-									<xs:element name="Age" type="Integer" minOccurs="0"/>
-									<xs:element name="BirthDate" type="Date"/>
-								</xs:sequence>
-							</xs:complexType>
-							<xs:complexType name="PersonNameType">
-								<xs:sequence>
-									<xs:element name="FirstName" type="Char_20"/>
-									<xs:element name="MiddleName" type="Char_20" minOccurs="0"/>
-									<xs:element name="LastName" type="Char_20"/>
-									<xs:element name="AliasName" type="Char_20" minOccurs="0" maxOccurs="unbounded"/>
-								</xs:sequence>
-							</xs:complexType>
-						</xs:schema>`
+	'BaseTypes.xsd': `"<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"http://www.example.com/interfaces/parking/operatorServices/v1/data\" xmlns:tns=\"http://www.example.com/interfaces/parking/operatorServices/v1\" elementFormDefault=\"qualified\">
+    <element name=\"SetCountingCategoryMode\">
+        <complexType>
+            <sequence>
+                <element name=\"facilityId\" type=\"long\"></element>
+                <element name=\"carParkNumber\" type=\"int\"></element>
+                <element name=\"countingCategoryType\" type=\"tns:countingCategoryType\"></element>
+                <element name=\"trafficSignalMode\" type=\"tns:trafficSignalMode\"></element>
+            </sequence>
+        </complexType>
+    </element>
+    <element name=\"SetCountingCategoryModeOut\">
+        <complexType>
+            <sequence>
+                <element name=\"SetCountingCategoryModeResponse\" type=\"tns:SetCountingCategoryModeResponse\"></element>
+            </sequence>
+        </complexType>
+    </element>
+    <element name=\"SetCountingCategoryLevel\">
+        <complexType>
+            <sequence>
+                <element name=\"facilityId\" type=\"long\"></element>
+                <element name=\"carParkNumber\" type=\"int\"></element>
+                <element name=\"countingCategoryType\" type=\"tns:countingCategoryType\"></element>
+                <element name=\"currentLevel\" type=\"int\"></element>
+            </sequence>
+        </complexType>
+    </element>
+    <element name=\"SetCountingCategoryLevelOut\">
+        <complexType>
+            <sequence>
+                <element name=\"SetCountingCategoryLevelResponse\" type=\"tns:SetCountingCategoryLevelResponse\"></element>
+            </sequence>
+        </complexType>
+    </element>
+    <element name=\"SetExternalCountingMode\">
+        <complexType>
+            <sequence>
+                <element name=\"facilityId\" type=\"long\"></element>
+            </sequence>
+        </complexType>
+    </element>
+    <element name=\"SetExternalCountingModeOut\">
+        <complexType>
+            <sequence>
+                <element name=\"SetExternalCountingModeResponse\" type=\"tns:SetExternalCountingModeResponse\"></element>
+            </sequence>
+        </complexType>
+    </element>
+    <complexType name=\"SetCountingCategoryModeResponse\">
+        <sequence></sequence>
+    </complexType>
+    <complexType name=\"SetCountingCategoryLevelResponse\">
+        <sequence></sequence>
+    </complexType>
+    <complexType name=\"SetExternalCountingModeResponse\">
+        <sequence></sequence>
+    </complexType>
+    <simpleType name=\"trafficSignalMode\">
+        <restriction base=\"string\">
+            <enumeration value=\"AUTOMATIC\"></enumeration>
+            <enumeration value=\"MANUAL_GREEN_FREE\"></enumeration>
+            <enumeration value=\"MANUAL_RED_FULL\"></enumeration>
+        </restriction>
+    </simpleType>
+    <simpleType name=\"countingCategoryType\">
+        <restriction base=\"string\">
+            <enumeration value=\"DEFAULT_COUNTING_CATEGORY_00\"></enumeration>
+            <enumeration value=\"SHORT_TERM_PARKER_01\"></enumeration>
+            <enumeration value=\"CONTRACT_PARKER_02\"></enumeration>
+            <enumeration value=\"TOTAL_03\"></enumeration>
+            <enumeration value=\"USER_DEFINED_04\"></enumeration>
+            <enumeration value=\"USER_DEFINED_05\"></enumeration>
+            <enumeration value=\"USER_DEFINED_06\"></enumeration>
+            <enumeration value=\"USER_DEFINED_07\"></enumeration>
+            <enumeration value=\"USER_DEFINED_08\"></enumeration>
+            <enumeration value=\"USER_DEFINED_09\"></enumeration>
+            <enumeration value=\"USER_DEFINED_10\"></enumeration>
+            <enumeration value=\"USER_DEFINED_11\"></enumeration>
+            <enumeration value=\"USER_DEFINED_12\"></enumeration>
+            <enumeration value=\"USER_DEFINED_13\"></enumeration>
+            <enumeration value=\"USER_DEFINED_14\"></enumeration>
+            <enumeration value=\"USER_DEFINED_15\"></enumeration>
+            <enumeration value=\"USER_DEFINED_16\"></enumeration>
+            <enumeration value=\"USER_DEFINED_17\"></enumeration>
+            <enumeration value=\"USER_DEFINED_18\"></enumeration>
+            <enumeration value=\"USER_DEFINED_19\"></enumeration>
+            <enumeration value=\"USER_DEFINED_20\"></enumeration>
+            <enumeration value=\"USER_DEFINED_21\"></enumeration>
+            <enumeration value=\"USER_DEFINED_22\"></enumeration>
+            <enumeration value=\"USER_DEFINED_23\"></enumeration>
+            <enumeration value=\"USER_DEFINED_24\"></enumeration>
+            <enumeration value=\"USER_DEFINED_25\"></enumeration>
+            <enumeration value=\"USER_DEFINED_26\"></enumeration>
+            <enumeration value=\"USER_DEFINED_27\"></enumeration>
+            <enumeration value=\"USER_DEFINED_28\"></enumeration>
+            <enumeration value=\"USER_DEFINED_29\"></enumeration>
+            <enumeration value=\"USER_DEFINED_30\"></enumeration>
+            <enumeration value=\"USER_DEFINED_31\"></enumeration>
+            <enumeration value=\"USER_DEFINED_32\"></enumeration>
+            <enumeration value=\"USER_DEFINED_33\"></enumeration>
+            <enumeration value=\"USER_DEFINED_34\"></enumeration>
+            <enumeration value=\"USER_DEFINED_35\"></enumeration>
+            <enumeration value=\"USER_DEFINED_36\"></enumeration>
+            <enumeration value=\"USER_DEFINED_37\"></enumeration>
+            <enumeration value=\"USER_DEFINED_38\"></enumeration>
+            <enumeration value=\"USER_DEFINED_39\"></enumeration>
+            <enumeration value=\"USER_DEFINED_40\"></enumeration>
+            <enumeration value=\"USER_DEFINED_41\"></enumeration>
+            <enumeration value=\"USER_DEFINED_42\"></enumeration>
+            <enumeration value=\"USER_DEFINED_43\"></enumeration>
+            <enumeration value=\"USER_DEFINED_44\"></enumeration>
+            <enumeration value=\"USER_DEFINED_45\"></enumeration>
+            <enumeration value=\"USER_DEFINED_46\"></enumeration>
+            <enumeration value=\"USER_DEFINED_47\"></enumeration>
+            <enumeration value=\"USER_DEFINED_48\"></enumeration>
+            <enumeration value=\"USER_DEFINED_49\"></enumeration>
+            <enumeration value=\"USER_DEFINED_50\"></enumeration>
+            <enumeration value=\"USER_DEFINED_51\"></enumeration>
+            <enumeration value=\"USER_DEFINED_52\"></enumeration>
+            <enumeration value=\"USER_DEFINED_53\"></enumeration>
+        </restriction>
+    </simpleType>
+</schema>"
+`
 }
 
 function writeJsonSchemas(jsonSchemas, outputDir, spacing) {

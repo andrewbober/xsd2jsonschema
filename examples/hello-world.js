@@ -6,19 +6,19 @@
 
 const XML_SCHEMA = `
 <?xml version="1.0" encoding="UTF-8"?>
-<xs:schema  xmlns:xs="http://www.w3.org/2001/XMLSchema">
-	<xs:simpleType name="C">
-		<xs:restriction base="xs:string">
-			<xs:minLength value="1"/>
-		</xs:restriction>
-	</xs:simpleType>
-	<xs:simpleType name="Char_20">
-		<xs:restriction base="C">
-			<xs:minLength value="1"/>
-			<xs:maxLength value="20"/>
-		</xs:restriction>
-	</xs:simpleType>
-</xs:schema>
+<schema  xmlns="http://www.w3.org/2001/XMLSchema">
+	<simpleType name="C">
+		<restriction base="string">
+			<minLength value="1"/>
+		</restriction>
+	</simpleType>
+	<simpleType name="Char_20">
+		<restriction base="C">
+			<minLength value="1"/>
+			<maxLength value="20"/>
+		</restriction>
+	</simpleType>
+</schema>
 `;
 
 const Xsd2JsonSchema = require('xsd2jsonschema').Xsd2JsonSchema;

@@ -1,8 +1,13 @@
 {
-    "version": "0.1.0",
+    "version": "2.0.0",
     "command": "${workspaceRoot}/SOMETHING_INTERSTING",
-    "isShellCommand": true,
     "tasks": [
-        
+        {
+            "label": "${workspaceRoot}/SOMETHING_INTERSTING",
+            "type": "shell",
+            "command": "${workspaceRoot}/SOMETHING_INTERSTING",
+            "problemMatcher": [],
+            "group": "build"
+        }
     ]
 }
