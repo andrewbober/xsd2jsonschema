@@ -15963,67 +15963,71 @@ const JSON_SCHEMA_TYPES = require('./jsonschema/jsonSchemaTypes');
 const JSON_SCHEMA_FORMATS = require('./jsonschema/jsonSchemaFormats');
 const JsonSchemaFile = require('./jsonschema/jsonSchemaFileDraft04');
 
-
 const Options_NAME = Symbol();
 
 /**
  * Class representing a collection of XML Handler methods for converting XML Schema built-in types to JSON Schema.
- * Handler methods convert XML Schema built-in simple types to JSON Schema types.  Each hander minimally sets the 
+ * Handler methods convert XML Schema built-in simple types to JSON Schema types.  Each hander minimally sets the
  * JSON Schema *type* attribute to the appropriate JSON Schema built-in type.  Many handlers will further restrict
  * the *type* using a JSON Schmea {@link http://json-schema.org/latest/json-schema-validation.html#rfc.section.7|format},
  * a regular expression, or a numeric restriction such as JSON Schema
  * {@link http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4\minimum} or
  * {@link http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4\maximum}.
- * 
- * Please see: 
- * {@link http://www.w3.org/TR/xmlschema11-2/ |W3C XML Schema Definition Language (XSD) 1.1 Part 2: Datatypes} for 
- * more information.  Section 3 {@link http://www.w3.org/TR/xmlschema11-2/#built-in-datatypes |XML Schema built-in 
- * Datatypes and Their Definitions} has a nice diagram showing the built-in type hierarchy.  Also, 
- * {@link http://www.w3.org/TR/xmlschema-0/ |XML Schema Part 0: Primer Second Edition} has a 
+ *
+ * Please see:
+ * {@link http://www.w3.org/TR/xmlschema11-2/ |W3C XML Schema Definition Language (XSD) 1.1 Part 2: Datatypes} for
+ * more information.  Section 3 {@link http://www.w3.org/TR/xmlschema11-2/#built-in-datatypes |XML Schema built-in
+ * Datatypes and Their Definitions} has a nice diagram showing the built-in type hierarchy.  Also,
+ * {@link http://www.w3.org/TR/xmlschema-0/ |XML Schema Part 0: Primer Second Edition} has a
  * {@link http://www.w3.org/TR/xmlschema-0/#simpleTypesTable |reference table} summarizing the XML Schema built-in types.
  */
 
- class BuiltInTypeConverter {
-	constructor(params) {
-		if(params != undefined && params.uri != undefined) {
-			this.options = {
-				uri: params.uri
-			}
-		} else {
-			this.options = {
-				uri: CONSTANTS.RFC_3986
-			}
-		}
-	}
+class BuiltInTypeConverter {
+  constructor(params) {
+    if (params != undefined && params.uri != undefined) {
+      this.options = {
+        uri: params.uri,
+      };
+    } else {
+      this.options = {
+        uri: CONSTANTS.RFC_3986,
+      };
+    }
+  }
 
-	// Getters/Setters
+  // Getters/Setters
 
-	get options() {
-		return this[Options_NAME];
-	}
-	set options(newOptions) {
-		this[Options_NAME] = newOptions;
-	}
+  get options() {
+    return this[Options_NAME];
+  }
+  set options(newOptions) {
+    this[Options_NAME] = newOptions;
+  }
 
-	// 3.3 Primitive Datatypes: http://www.w3.org/TR/xmlschema11-2/#built-in-primitive-datatypes
-	// *****************************************************************************************
+  // 3.3 Primitive Datatypes: http://www.w3.org/TR/xmlschema11-2/#built-in-primitive-datatypes
+  // *****************************************************************************************
 
-	// 3.3.1 string: http://www.w3.org/TR/xmlschema11-2/#string
-	/**
-	 * XML handler method to convert a {@link http://www.w3.org/TR/xmlschema11-2/#string |XML Schema String} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema String}.
-	 * 
-	 * @param {Node} node - The current element in xsd being converted.
-	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current type from the XML schema file {@link XsdFile|xsd}.
-	 * @param {XsdFile} xsd - The XML schema file currently being converted.
-	 * 
-	 * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
-	 */
-	string(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		return true;
-	}
+  // 3.3.1 string: http://www.w3.org/TR/xmlschema11-2/#string
+  /**
+   * XML handler method to convert a {@link http://www.w3.org/TR/xmlschema11-2/#string |XML Schema String} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema String}.
+   *
+   * @param {Node} node - The current element in xsd being converted.
+   * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current type from the XML schema file {@link XsdFile|xsd}.
+   * @param {XsdFile} xsd - The XML schema file currently being converted.
+   *
+   * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
+   */
+  string(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    return true;
+  }
 
-	/*
+  anyType(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    return true;
+  }
+
+  /*
 		// 3.3.2 boolean: http://www.w3.org/TR/xmlschema11-2/#boolean
 		/ **
 		 * XML handler method to convert a {@link http://www.w3.org/TR/xmlschema11-2/#boolean |XML Schema Boolean} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema Boolean}.
@@ -16040,495 +16044,503 @@ const Options_NAME = Symbol();
 		}
 	*/
 
-	/**
-	 * XML handler method to convert a {@link http://www.w3.org/TR/xmlschema11-2/#boolean |XML Schema Boolean} to either a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema Boolean} or {@link http://www.w3.org/TR/xmlschema11-2/#integer JSON Schema Integer} with values limited to 0 or 1.
-	 * 
-	 * @param {Node} node - The current element in xsd being converted.
-	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current type from the XML schema file {@link XsdFile|xsd}.
-	 * @param {XsdFile} xsd - The XML schema file currently being converted.
-	 * 
-	 * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
-	 */
-	boolean(node, jsonSchema, xsd) {
-		var booleanSchema = jsonSchema.newJsonSchemaFile();
-		booleanSchema.type = JSON_SCHEMA_TYPES.BOOLEAN;
+  /**
+   * XML handler method to convert a {@link http://www.w3.org/TR/xmlschema11-2/#boolean |XML Schema Boolean} to either a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema Boolean} or {@link http://www.w3.org/TR/xmlschema11-2/#integer JSON Schema Integer} with values limited to 0 or 1.
+   *
+   * @param {Node} node - The current element in xsd being converted.
+   * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current type from the XML schema file {@link XsdFile|xsd}.
+   * @param {XsdFile} xsd - The XML schema file currently being converted.
+   *
+   * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
+   */
+  boolean(node, jsonSchema, xsd) {
+    var booleanSchema = jsonSchema.newJsonSchemaFile();
+    booleanSchema.type = JSON_SCHEMA_TYPES.BOOLEAN;
 
-		var integerSchema = jsonSchema.newJsonSchemaFile();
-		integerSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		integerSchema.maximum = 1;
-		integerSchema.minimum = 0;
+    var integerSchema = jsonSchema.newJsonSchemaFile();
+    integerSchema.type = JSON_SCHEMA_TYPES.INTEGER;
+    integerSchema.maximum = 1;
+    integerSchema.minimum = 0;
 
-		jsonSchema.oneOf.push(booleanSchema);
-		jsonSchema.oneOf.push(integerSchema);
-		return true;
-	}
+    jsonSchema.oneOf.push(booleanSchema);
+    jsonSchema.oneOf.push(integerSchema);
+    return true;
+  }
 
-	// 3.3.3 decimal: http://www.w3.org/TR/xmlschema11-2/#decimal
-	/**
-	 * XML handler method to convert a {@link http://www.w3.org/TR/xmlschema11-2/#decimal |XML Schema Decimal} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema Number}.
-	 * 
-	 * @param {Node} node - The current element in xsd being converted.
-	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current type from the XML schema file {@link XsdFile|xsd}.
-	 * @param {XsdFile} xsd - The XML schema file currently being converted.
-	 * 
-	 * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
-	 */
-	decimal(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.NUMBER;
-		return true;
-	}
+  // 3.3.3 decimal: http://www.w3.org/TR/xmlschema11-2/#decimal
+  /**
+   * XML handler method to convert a {@link http://www.w3.org/TR/xmlschema11-2/#decimal |XML Schema Decimal} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema Number}.
+   *
+   * @param {Node} node - The current element in xsd being converted.
+   * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current type from the XML schema file {@link XsdFile|xsd}.
+   * @param {XsdFile} xsd - The XML schema file currently being converted.
+   *
+   * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
+   */
+  decimal(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.NUMBER;
+    return true;
+  }
 
-	// 3.3.4 float: http://www.w3.org/TR/xmlschema11-2/#float
-	/**
-	 * XML handler method to convert a {@link http://www.w3.org/TR/xmlschema11-2/#float |XML Schema Float} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema Number}.
-	 * 
-	 * @param {Node} node - The current element in xsd being converted.
-	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current type from the XML schema file {@link XsdFile|xsd}.
-	 * @param {XsdFile} xsd - The XML schema file currently being converted.
-	 * 
-	 * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
-	 */
-	float(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.NUMBER;
-		return true;
-	}
+  // 3.3.4 float: http://www.w3.org/TR/xmlschema11-2/#float
+  /**
+   * XML handler method to convert a {@link http://www.w3.org/TR/xmlschema11-2/#float |XML Schema Float} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema Number}.
+   *
+   * @param {Node} node - The current element in xsd being converted.
+   * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current type from the XML schema file {@link XsdFile|xsd}.
+   * @param {XsdFile} xsd - The XML schema file currently being converted.
+   *
+   * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
+   */
+  float(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.NUMBER;
+    return true;
+  }
 
-	// 3.3.5 double: http://www.w3.org/TR/xmlschema11-2/#double
-	/**
-	 * XML handler method to convert a {@link http://www.w3.org/TR/xmlschema11-2/#double |XML Schema Double} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema Number}.
-	 * 
-	 * @param {Node} node - The current element in xsd being converted.
-	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current type from the XML schema file {@link XsdFile|xsd}.
-	 * @param {XsdFile} xsd - The XML schema file currently being converted.
-	 * 
-	 * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
-	 */
-	double(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.NUMBER;
-		return true;
-	}
+  // 3.3.5 double: http://www.w3.org/TR/xmlschema11-2/#double
+  /**
+   * XML handler method to convert a {@link http://www.w3.org/TR/xmlschema11-2/#double |XML Schema Double} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema Number}.
+   *
+   * @param {Node} node - The current element in xsd being converted.
+   * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current type from the XML schema file {@link XsdFile|xsd}.
+   * @param {XsdFile} xsd - The XML schema file currently being converted.
+   *
+   * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
+   */
+  double(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.NUMBER;
+    return true;
+  }
 
-	// 3.3.6 duration: http://www.w3.org/TR/xmlschema11-2/#duration
-	/**
-	 * XML handler method to convert a {@link http://www.w3.org/TR/xmlschema11-2/#duration |XML Schema Duration} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema String} 
-	 * and utilizes regex to validate the string against the XML Schema duration specification.
-	 * 
-	 * <pre>
-	 * 		jsonSchema.pattern = '^[-]?P(?!$)(?:\d+Y)?(?:\d+M)?(?:\d+D)?(?:T(?!$)(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?$';
-	 * </pre>
-	 * Source: {@link http://www.regexlib.com/REDetails.aspx?regexp_id=1219};
-	 * 
-	 * @param {Node} node - The current element in xsd being converted.
-	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current type from the XML schema file {@link XsdFile|xsd}.
-	 * @param {XsdFile} xsd - The XML schema file currently being converted.
-	 * 
-	 * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
-	 */
-	duration(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		jsonSchema.pattern = '^[-]?P(?!$)(?:\\d+Y)?(?:\\d+M)?(?:\\d+D)?(?:T(?!$)(?:\\d+H)?(?:\\d+M)?(?:\\d+(?:\\.\\d+)?S)?)?$';
-		// jsonSchema.description = 'Matches the XSD schema duration built in type as defined by http://www.w3.org/TR/xmlschema-2/#duration.  Source: http://www.regexlib.com/REDetails.aspx?regexp_id=1219';
+  // 3.3.6 duration: http://www.w3.org/TR/xmlschema11-2/#duration
+  /**
+   * XML handler method to convert a {@link http://www.w3.org/TR/xmlschema11-2/#duration |XML Schema Duration} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema String}
+   * and utilizes regex to validate the string against the XML Schema duration specification.
+   *
+   * <pre>
+   * 		jsonSchema.pattern = '^[-]?P(?!$)(?:\d+Y)?(?:\d+M)?(?:\d+D)?(?:T(?!$)(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?$';
+   * </pre>
+   * Source: {@link http://www.regexlib.com/REDetails.aspx?regexp_id=1219};
+   *
+   * @param {Node} node - The current element in xsd being converted.
+   * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current type from the XML schema file {@link XsdFile|xsd}.
+   * @param {XsdFile} xsd - The XML schema file currently being converted.
+   *
+   * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
+   */
+  duration(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    jsonSchema.pattern =
+      '^[-]?P(?!$)(?:\\d+Y)?(?:\\d+M)?(?:\\d+D)?(?:T(?!$)(?:\\d+H)?(?:\\d+M)?(?:\\d+(?:\\.\\d+)?S)?)?$';
+    // jsonSchema.description = 'Matches the XSD schema duration built in type as defined by http://www.w3.org/TR/xmlschema-2/#duration.  Source: http://www.regexlib.com/REDetails.aspx?regexp_id=1219';
 
-		//jsonSchema.pattern = '-?P((( [0-9]+Y([0-9]+M)?([0-9]+D)?|([0-9]+M)([0-9]+D)?|([0-9]+D))(T(([0-9]+H)([0-9]+M)?([0-9]+(\\.[0-9]+)?S)?|([0-9]+M)([0-9]+(\\.[0-9]+)?S)?|([0-9]+(\\.[0-9]+)?S)))?)|(T(([0-9]+H)([0-9]+M)?([0-9]+(\\.[0-9]+)?S)?|([0-9]+M)([0-9]+(\\.[0-9]+)?S)?|([0-9]+(\\.[0-9]+)?S))))';
-		// jsonSchema.description = 'Source:  http://www.w3.org/TR/xmlschema-2/#duration';
-		return true;
-	}
+    //jsonSchema.pattern = '-?P((( [0-9]+Y([0-9]+M)?([0-9]+D)?|([0-9]+M)([0-9]+D)?|([0-9]+D))(T(([0-9]+H)([0-9]+M)?([0-9]+(\\.[0-9]+)?S)?|([0-9]+M)([0-9]+(\\.[0-9]+)?S)?|([0-9]+(\\.[0-9]+)?S)))?)|(T(([0-9]+H)([0-9]+M)?([0-9]+(\\.[0-9]+)?S)?|([0-9]+M)([0-9]+(\\.[0-9]+)?S)?|([0-9]+(\\.[0-9]+)?S))))';
+    // jsonSchema.description = 'Source:  http://www.w3.org/TR/xmlschema-2/#duration';
+    return true;
+  }
 
-	// 3.3.7 dateTime: http://www.w3.org/TR/xmlschema11-2/#dateTime
-	/**
-	 * XML handler method to convert a {@link http://www.w3.org/TR/xmlschema11-2/#dateTime |XML Schema dateTime} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema String} 
-	 * and utilizes regex to validate the string against the XML Schema dateTime specification.  Note XML Schema dateTime values are based on ISO 8601 whereas JSON Schema date-time values are based on RFC 3339.
-	 * Because of this the regular expression below is used to validate dateTime values converted from XML Schema.
-	 * 
-	 * <pre>
-	 * 		jsonSchema.pattern = ^(-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(\.[0-9]+)?(Z|[+-](?:2[0-3]|[01][0-9]):[0-5][0-9])?$
-	 * </pre>
-	 * Source: {@link http://www.regexlib.com/REDetails.aspx?regexp_id=1219};
-	 * 
-	 * @param {Node} node - The current element in xsd being converted.
-	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current type from the XML schema file {@link XsdFile|xsd}.
-	 * @param {XsdFile} xsd - The XML schema file currently being converted.
-	 * 
-	 * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
-	 */
-	dateTime(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		jsonSchema.pattern = '-?([1-9][0-9]{3,}|0[0-9]{3})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T(([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?|(24:00:00(\\.0+)?))(Z|(\\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))?';
-		// jsonSchema.description = 'Source:  http://www.w3.org/TR/xmlschema11-2/#dateTime'
-		return true;
-	}
+  // 3.3.7 dateTime: http://www.w3.org/TR/xmlschema11-2/#dateTime
+  /**
+   * XML handler method to convert a {@link http://www.w3.org/TR/xmlschema11-2/#dateTime |XML Schema dateTime} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema String}
+   * and utilizes regex to validate the string against the XML Schema dateTime specification.  Note XML Schema dateTime values are based on ISO 8601 whereas JSON Schema date-time values are based on RFC 3339.
+   * Because of this the regular expression below is used to validate dateTime values converted from XML Schema.
+   *
+   * <pre>
+   * 		jsonSchema.pattern = ^(-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(\.[0-9]+)?(Z|[+-](?:2[0-3]|[01][0-9]):[0-5][0-9])?$
+   * </pre>
+   * Source: {@link http://www.regexlib.com/REDetails.aspx?regexp_id=1219};
+   *
+   * @param {Node} node - The current element in xsd being converted.
+   * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current type from the XML schema file {@link XsdFile|xsd}.
+   * @param {XsdFile} xsd - The XML schema file currently being converted.
+   *
+   * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
+   */
+  dateTime(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    jsonSchema.pattern =
+      '-?([1-9][0-9]{3,}|0[0-9]{3})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T(([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?|(24:00:00(\\.0+)?))(Z|(\\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))?';
+    // jsonSchema.description = 'Source:  http://www.w3.org/TR/xmlschema11-2/#dateTime'
+    return true;
+  }
 
-	// 3.3.8 time: http://www.w3.org/TR/xmlschema11-2/#time
-	time(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		jsonSchema.pattern = '(([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?|(24:00:00(\\.0+)?))(Z|(\\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))?';
-		// jsonSchema.description = 'Source:  http://www.w3.org/TR/xmlschema11-2/#time'
-		return true;
-	}
+  // 3.3.8 time: http://www.w3.org/TR/xmlschema11-2/#time
+  time(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    jsonSchema.pattern =
+      '(([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?|(24:00:00(\\.0+)?))(Z|(\\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))?';
+    // jsonSchema.description = 'Source:  http://www.w3.org/TR/xmlschema11-2/#time'
+    return true;
+  }
 
-	// 3.3.9 date: http://www.w3.org/TR/xmlschema11-2/#date
-	date(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		jsonSchema.pattern = '-?([1-9][0-9]{3,}|0[0-9]{3})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])(Z|(\\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))?';
-		// jsonSchema.description = 'Source:  http://www.w3.org/TR/xmlschema11-2/#date'
-		return true;
-	}
+  // 3.3.9 date: http://www.w3.org/TR/xmlschema11-2/#date
+  date(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    jsonSchema.pattern =
+      '-?([1-9][0-9]{3,}|0[0-9]{3})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])(Z|(\\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))?';
+    // jsonSchema.description = 'Source:  http://www.w3.org/TR/xmlschema11-2/#date'
+    return true;
+  }
 
-	// 3.3.10 gYearMonth: http://www.w3.org/TR/xmlschema11-2/#gYearMonth
-	gYearMonth(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		jsonSchema.pattern = '^(-?[0-9]+-[0-9][0-9])(Z|[+-][0-9][0-9]:[0-9][0-9])?$';
-		// jsonSchema.description = 'Source: saxon.sourceforge.net. See net.sf.saxon.value.GYearMonthValue.java';
-		return true;
-	}
+  // 3.3.10 gYearMonth: http://www.w3.org/TR/xmlschema11-2/#gYearMonth
+  gYearMonth(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    jsonSchema.pattern =
+      '^(-?[0-9]+-[0-9][0-9])(Z|[+-][0-9][0-9]:[0-9][0-9])?$';
+    // jsonSchema.description = 'Source: saxon.sourceforge.net. See net.sf.saxon.value.GYearMonthValue.java';
+    return true;
+  }
 
-	// 3.3.11 gYear: http://www.w3.org/TR/xmlschema11-2/#gYear
-	gYear(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		jsonSchema.pattern = '^(-?[0-9]+)(Z|[+-][0-9][0-9]:[0-9][0-9])?$';
-		// jsonSchema.description = 'Source: saxon.sourceforge.net. See net.sf.saxon.value.GYearValue.java';
-		return true;
-	}
+  // 3.3.11 gYear: http://www.w3.org/TR/xmlschema11-2/#gYear
+  gYear(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    jsonSchema.pattern = '^(-?[0-9]+)(Z|[+-][0-9][0-9]:[0-9][0-9])?$';
+    // jsonSchema.description = 'Source: saxon.sourceforge.net. See net.sf.saxon.value.GYearValue.java';
+    return true;
+  }
 
-	// 3.3.12 gMonthDay: http://www.w3.org/TR/xmlschema11-2/#gMonthDay
-	gMonthDay(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		jsonSchema.pattern = '^--([0-9][0-9]-[0-9][0-9])(Z|[+-][0-9][0-9]:[0-9][0-9])?$';
-		// jsonSchema.description = 'Source: saxon.sourceforge.net. See net.sf.saxon.value.GMonthDayValue.java';
-		return true;
-	}
+  // 3.3.12 gMonthDay: http://www.w3.org/TR/xmlschema11-2/#gMonthDay
+  gMonthDay(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    jsonSchema.pattern =
+      '^--([0-9][0-9]-[0-9][0-9])(Z|[+-][0-9][0-9]:[0-9][0-9])?$';
+    // jsonSchema.description = 'Source: saxon.sourceforge.net. See net.sf.saxon.value.GMonthDayValue.java';
+    return true;
+  }
 
-	// 3.3.13 gDay: http://www.w3.org/TR/xmlschema11-2/#gDay
-	gDay(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		jsonSchema.pattern = '^---([0-9][0-9])(Z|[+-][0-9][0-9]:[0-9][0-9])?$';
-		// jsonSchema.description = 'Source: saxon.sourceforge.net. See net.sf.saxon.value.GDateValue.java';
-		return true;
-	}
+  // 3.3.13 gDay: http://www.w3.org/TR/xmlschema11-2/#gDay
+  gDay(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    jsonSchema.pattern = '^---([0-9][0-9])(Z|[+-][0-9][0-9]:[0-9][0-9])?$';
+    // jsonSchema.description = 'Source: saxon.sourceforge.net. See net.sf.saxon.value.GDateValue.java';
+    return true;
+  }
 
-	// 3.3.14 gMonth: http://www.w3.org/TR/xmlschema11-2/#gMonth
-	gMonth(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		jsonSchema.pattern = '^--([0-9][0-9])(Z|[+-][0-9][0-9]:[0-9][0-9])?$';
-		// jsonSchema.description = 'Source: saxon.sourceforge.net. See net.sf.saxon.value.GMonthValue.java';
-		return true;
-	}
+  // 3.3.14 gMonth: http://www.w3.org/TR/xmlschema11-2/#gMonth
+  gMonth(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    jsonSchema.pattern = '^--([0-9][0-9])(Z|[+-][0-9][0-9]:[0-9][0-9])?$';
+    // jsonSchema.description = 'Source: saxon.sourceforge.net. See net.sf.saxon.value.GMonthValue.java';
+    return true;
+  }
 
-	// 3.3.15 hexBinary: http://www.w3.org/TR/xmlschema11-2/#hexBinary
-	hexBinary(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		jsonSchema.pattern = '^([0-9a-fA-F])*$';
-		// jsonSchema.description = 'Hex string of any length; source: http://www.regexlib.com/REDetails.aspx?regexp_id=886 also see http://www.datypic.com/sc/xsd/t-xsd_hexBinary.html';
-		return true;
-	}
+  // 3.3.15 hexBinary: http://www.w3.org/TR/xmlschema11-2/#hexBinary
+  hexBinary(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    jsonSchema.pattern = '^([0-9a-fA-F])*$';
+    // jsonSchema.description = 'Hex string of any length; source: http://www.regexlib.com/REDetails.aspx?regexp_id=886 also see http://www.datypic.com/sc/xsd/t-xsd_hexBinary.html';
+    return true;
+  }
 
-	// 3.3.16 base64Binary: http://www.w3.org/TR/xmlschema11-2/#base64Binary
-	base64Binary(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		// Removed because it doesn't ignore spaces in base64 encoded strings.  Going with just string validation for now.
-		// jsonSchema.pattern = '^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$';
-		// jsonSchema.description = 'Base64-encoded binary string; source: http://stackoverflow.com/questions/475074/regex-to-parse-or-validate-base64-data also see http://www.schemacentral.com/sc/xsd/t-xsd_base64Binary.html';
-		jsonSchema.contentEncoding = "base64"
-		return true;
-	}
+  // 3.3.16 base64Binary: http://www.w3.org/TR/xmlschema11-2/#base64Binary
+  base64Binary(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    // Removed because it doesn't ignore spaces in base64 encoded strings.  Going with just string validation for now.
+    // jsonSchema.pattern = '^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$';
+    // jsonSchema.description = 'Base64-encoded binary string; source: http://stackoverflow.com/questions/475074/regex-to-parse-or-validate-base64-data also see http://www.schemacentral.com/sc/xsd/t-xsd_base64Binary.html';
+    jsonSchema.contentEncoding = 'base64';
+    return true;
+  }
 
-	// 3.3.17 anyURI: http://www.w3.org/TR/xmlschema11-2/#anyURI
-	/**
-	 * XML handler method to convert a {@link  http://www.w3.org/TR/xmlschema11-2/#anyURI |XML Schema dateTime} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema String} 
-	 * and utilizes regex to validate the string against the XML Schema anyURI specification.  Note XML Schema URI values are based on {@link  https://tools.ietf.org/html/rfc2396|RFC2396} whereas JSON Schema URI values are based on {@link  https://tools.ietf.org/html/rfc3986|RFC3986}.
-	 * Because of this the regular expression below is used to validate dateTime values converted from XML Schema.
-	 * 
-	 * <pre>
-	 * 		jsonSchema.pattern = ^(([a-zA-Z][0-9a-zA-Z+\\-\\.]*:)?\/{0,2}[0-9a-zA-Z;/?:@&=+$\\.\\-_!~*'()%]+)?(#[0-9a-zA-Z;/?:@&=+$\\.\\-_!~*'()%]+)?$
-	 * </pre>
-	 * Source: {@link http://lists.xml.org/archives/xml-dev/200108/msg00891.html | Regular expression for URI matching} (28);
-	 * 
-	 * @param {Node} node - The current element in xsd being converted.
-	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current type from the XML schema file {@link XsdFile|xsd}.
-	 * @param {XsdFile} xsd - The XML schema file currently being converted.
-	 * 
-	 * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
-	 */
-	anyURI_RFC2396(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		jsonSchema.pattern = '^(([a-zA-Z][0-9a-zA-Z+\\-\\.]*:)?\\/{0,2}[0-9a-zA-Z;/?:@&=+$\\.\\-_!~*\'()%]+)?(#[0-9a-zA-Z;/?:@&=+$\\.\\-_!~*\'()%]+)?$'
-		return true;
-	}
-	/**
-	 * TODO Make this an option for the above implementation
-	 * 
-	 * @param {Node} node - The current element in xsd being converted.
-	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current type from the XML schema file {@link XsdFile|xsd}.
-	 * @param {XsdFile} xsd - The XML schema file currently being converted.
-	 * 
-	 * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
-	 */
-	anyURI_RFC3986(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		jsonSchema.format = JSON_SCHEMA_FORMATS.URI;
-		return true;
-	}
+  // 3.3.17 anyURI: http://www.w3.org/TR/xmlschema11-2/#anyURI
+  /**
+   * XML handler method to convert a {@link  http://www.w3.org/TR/xmlschema11-2/#anyURI |XML Schema dateTime} to a {@link https://tools.ietf.org/html/draft-wright-json-schema-00#section-4.2 |JSON Schema String}
+   * and utilizes regex to validate the string against the XML Schema anyURI specification.  Note XML Schema URI values are based on {@link  https://tools.ietf.org/html/rfc2396|RFC2396} whereas JSON Schema URI values are based on {@link  https://tools.ietf.org/html/rfc3986|RFC3986}.
+   * Because of this the regular expression below is used to validate dateTime values converted from XML Schema.
+   *
+   * <pre>
+   * 		jsonSchema.pattern = ^(([a-zA-Z][0-9a-zA-Z+\\-\\.]*:)?\/{0,2}[0-9a-zA-Z;/?:@&=+$\\.\\-_!~*'()%]+)?(#[0-9a-zA-Z;/?:@&=+$\\.\\-_!~*'()%]+)?$
+   * </pre>
+   * Source: {@link http://lists.xml.org/archives/xml-dev/200108/msg00891.html | Regular expression for URI matching} (28);
+   *
+   * @param {Node} node - The current element in xsd being converted.
+   * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current type from the XML schema file {@link XsdFile|xsd}.
+   * @param {XsdFile} xsd - The XML schema file currently being converted.
+   *
+   * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
+   */
+  anyURI_RFC2396(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    jsonSchema.pattern =
+      "^(([a-zA-Z][0-9a-zA-Z+\\-\\.]*:)?\\/{0,2}[0-9a-zA-Z;/?:@&=+$\\.\\-_!~*'()%]+)?(#[0-9a-zA-Z;/?:@&=+$\\.\\-_!~*'()%]+)?$";
+    return true;
+  }
+  /**
+   * TODO Make this an option for the above implementation
+   *
+   * @param {Node} node - The current element in xsd being converted.
+   * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current type from the XML schema file {@link XsdFile|xsd}.
+   * @param {XsdFile} xsd - The XML schema file currently being converted.
+   *
+   * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
+   */
+  anyURI_RFC3986(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    jsonSchema.format = JSON_SCHEMA_FORMATS.URI;
+    return true;
+  }
 
-	/**
-	 * TODO Make this an option for the above implementation
-	 * 
-	 * @param {Node} node - The current element in xsd being converted.
-	 * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current type from the XML schema file {@link XsdFile|xsd}.
-	 * @param {XsdFile} xsd - The XML schema file currently being converted.
-	 * 
-	 * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
-	 */
-	anyURI(node, jsonSchema, xsd) {
-		if(this.options.uri === CONSTANTS.RFC_3986) {
-			return this.anyURI_RFC3986(node, jsonSchema, xsd);
-		} 
-		if (this.options.uri === CONSTANTS.RFC_2396) {
-			return this.anyURI_RFC2396(node, jsonSchema, xsd);
-		}
-		debug('Unknown value for options.uri [' + this.options.uri + ']');
-		return false;
-	}
+  /**
+   * TODO Make this an option for the above implementation
+   *
+   * @param {Node} node - The current element in xsd being converted.
+   * @param {JsonSchemaFile} jsonSchema - The JSON Schema representing the current type from the XML schema file {@link XsdFile|xsd}.
+   * @param {XsdFile} xsd - The XML schema file currently being converted.
+   *
+   * @returns {Boolean} - True.  Subclasses can return false to cancel traversal of {@link XsdFile|xsd}
+   */
+  anyURI(node, jsonSchema, xsd) {
+    if (this.options.uri === CONSTANTS.RFC_3986) {
+      return this.anyURI_RFC3986(node, jsonSchema, xsd);
+    }
+    if (this.options.uri === CONSTANTS.RFC_2396) {
+      return this.anyURI_RFC2396(node, jsonSchema, xsd);
+    }
+    debug('Unknown value for options.uri [' + this.options.uri + ']');
+    return false;
+  }
 
-	// 3.3.18 QName: http://www.w3.org/TR/xmlschema11-2/#QName
-	QName(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		//jsonSchema.description = 'TODO: This should have a regex applied to validate the QName format.';
-		return true;
-	}
+  // 3.3.18 QName: http://www.w3.org/TR/xmlschema11-2/#QName
+  QName(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    //jsonSchema.description = 'TODO: This should have a regex applied to validate the QName format.';
+    return true;
+  }
 
-	// 3.3.19 NOTATION: http://www.w3.org/TR/xmlschema11-2/#NOTATION
-	NOTATION(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		//jsonSchema.description = 'TODO: This should have a regex applied to validate the NOTATION format.';
-		return true;
-	}
+  // 3.3.19 NOTATION: http://www.w3.org/TR/xmlschema11-2/#NOTATION
+  NOTATION(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    //jsonSchema.description = 'TODO: This should have a regex applied to validate the NOTATION format.';
+    return true;
+  }
 
-	// 3.4 Other Built-in Datatypes: http://www.w3.org/TR/xmlschema11-2/#ordinary-built-ins
-	// ************************************************************************************
+  // 3.4 Other Built-in Datatypes: http://www.w3.org/TR/xmlschema11-2/#ordinary-built-ins
+  // ************************************************************************************
 
-	// 3.4.1 normalizedString: http://www.w3.org/TR/xmlschema11-2/#normalizedString
-	normalizedString(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		//jsonSchema.description = 'TODO: This should have a regex applied to validate the normalizedString format.';
-		return true;
-	}
+  // 3.4.1 normalizedString: http://www.w3.org/TR/xmlschema11-2/#normalizedString
+  normalizedString(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    //jsonSchema.description = 'TODO: This should have a regex applied to validate the normalizedString format.';
+    return true;
+  }
 
-	// 3.4.2 token: http://www.w3.org/TR/xmlschema11-2/#token
-	token(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		//jsonSchema.description = 'TODO: This should have a regex applied to validate the token format.';
-		return true;
-	}
+  // 3.4.2 token: http://www.w3.org/TR/xmlschema11-2/#token
+  token(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    //jsonSchema.description = 'TODO: This should have a regex applied to validate the token format.';
+    return true;
+  }
 
-	// 3.4.3 language: http://www.w3.org/TR/xmlschema11-2/#language
-	language(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		jsonSchema.pattern = '[a-zA-Z]{1,8}(-[a-zA-Z0-9]{1,8})*';
-		// jsonSchema.description = 'Source: saxon.sourceforge.net. See net.sf.saxon.type.StringConverter.java#StringToLanguage';
-		return true;
-	}
+  // 3.4.3 language: http://www.w3.org/TR/xmlschema11-2/#language
+  language(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    jsonSchema.pattern = '[a-zA-Z]{1,8}(-[a-zA-Z0-9]{1,8})*';
+    // jsonSchema.description = 'Source: saxon.sourceforge.net. See net.sf.saxon.type.StringConverter.java#StringToLanguage';
+    return true;
+  }
 
-	// 3.4.4 NMTOKEN: http://www.w3.org/TR/xmlschema11-2/#NMTOKEN
-	NMTOKEN(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		//jsonSchema.description = 'TODO: This should have a regex applied to validate the NMTOKEN format.';
-		return true;
-	}
+  // 3.4.4 NMTOKEN: http://www.w3.org/TR/xmlschema11-2/#NMTOKEN
+  NMTOKEN(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    //jsonSchema.description = 'TODO: This should have a regex applied to validate the NMTOKEN format.';
+    return true;
+  }
 
-	// 3.4.5 NMTOKENS: http://www.w3.org/TR/xmlschema11-2/#NMTOKENS
-	NMTOKENS(node, jsonSchema, xsd) {
-		var items = jsonSchema.newJsonSchemaFile();
+  // 3.4.5 NMTOKENS: http://www.w3.org/TR/xmlschema11-2/#NMTOKENS
+  NMTOKENS(node, jsonSchema, xsd) {
+    var items = jsonSchema.newJsonSchemaFile();
 
-		items.type = JSON_SCHEMA_TYPES.STRING
-		//items.description = 'TODO: This should have a regex applied to validate the NMTOKEN format.';
-		jsonSchema.items = items;
-		jsonSchema.type = JSON_SCHEMA_TYPES.ARRAY;
-		return true;
-	}
+    items.type = JSON_SCHEMA_TYPES.STRING;
+    //items.description = 'TODO: This should have a regex applied to validate the NMTOKEN format.';
+    jsonSchema.items = items;
+    jsonSchema.type = JSON_SCHEMA_TYPES.ARRAY;
+    return true;
+  }
 
-	// 3.4.6 Name: http://www.w3.org/TR/xmlschema11-2/#Name
-	Name(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		//jsonSchema.description = 'TODO: This should have a regex applied to validate the Name format.';
-		return true;
-	}
+  // 3.4.6 Name: http://www.w3.org/TR/xmlschema11-2/#Name
+  Name(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    //jsonSchema.description = 'TODO: This should have a regex applied to validate the Name format.';
+    return true;
+  }
 
-	// 3.4.7 NCName: http://www.w3.org/TR/xmlschema11-2/#NCName
-	NCName(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		//jsonSchema.description = 'TODO: This should have a regex applied to validate the NCName format.';
-		return true;
-	}
+  // 3.4.7 NCName: http://www.w3.org/TR/xmlschema11-2/#NCName
+  NCName(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    //jsonSchema.description = 'TODO: This should have a regex applied to validate the NCName format.';
+    return true;
+  }
 
-	// 3.4.8 ID: http://www.w3.org/TR/xmlschema11-2/#ID
-	ID(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		//jsonSchema.description = 'TODO: This should have a regex applied to validate the ID format.';
-		return true;
-	}
+  // 3.4.8 ID: http://www.w3.org/TR/xmlschema11-2/#ID
+  ID(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    //jsonSchema.description = 'TODO: This should have a regex applied to validate the ID format.';
+    return true;
+  }
 
-	// 3.4.9 IDREF: http://www.w3.org/TR/xmlschema11-2/#IDREF
-	IDREF(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		//jsonSchema.description = 'TODO: This should have a regex applied to validate the IDREF format.';
-		return true;
-	}
+  // 3.4.9 IDREF: http://www.w3.org/TR/xmlschema11-2/#IDREF
+  IDREF(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    //jsonSchema.description = 'TODO: This should have a regex applied to validate the IDREF format.';
+    return true;
+  }
 
-	// 3.4.10 IDREFS: http://www.w3.org/TR/xmlschema11-2/#IDREFS
-	IDREFS(node, jsonSchema, xsd) {
-		var items = jsonSchema.newJsonSchemaFile();
+  // 3.4.10 IDREFS: http://www.w3.org/TR/xmlschema11-2/#IDREFS
+  IDREFS(node, jsonSchema, xsd) {
+    var items = jsonSchema.newJsonSchemaFile();
 
-		items.type = JSON_SCHEMA_TYPES.STRING
-		//items.description = 'TODO: This should have a regex applied to validate the IDREFS format.';
-		jsonSchema.items = items;
-		jsonSchema.type = JSON_SCHEMA_TYPES.ARRAY;
-		return true;
-	}
+    items.type = JSON_SCHEMA_TYPES.STRING;
+    //items.description = 'TODO: This should have a regex applied to validate the IDREFS format.';
+    jsonSchema.items = items;
+    jsonSchema.type = JSON_SCHEMA_TYPES.ARRAY;
+    return true;
+  }
 
-	// 3.4.11 ENTITY: http://www.w3.org/TR/xmlschema11-2/#ENTITY
-	ENTITY(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		//jsonSchema.description = 'TODO: This should have a regex applied to validate the ENTITY format.';
-		return true;
-	}
+  // 3.4.11 ENTITY: http://www.w3.org/TR/xmlschema11-2/#ENTITY
+  ENTITY(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    //jsonSchema.description = 'TODO: This should have a regex applied to validate the ENTITY format.';
+    return true;
+  }
 
-	// 3.4.12 ENTITIES: http://www.w3.org/TR/xmlschema11-2/#ENTITIES
-	ENTITIES(node, jsonSchema, xsd) {
-		var items = jsonSchema.newJsonSchemaFile();
+  // 3.4.12 ENTITIES: http://www.w3.org/TR/xmlschema11-2/#ENTITIES
+  ENTITIES(node, jsonSchema, xsd) {
+    var items = jsonSchema.newJsonSchemaFile();
 
-		items.type = JSON_SCHEMA_TYPES.STRING
-		//items.description = 'TODO: This should have a regex applied to validate the ENTITIES format.';
-		jsonSchema.items = items;
-		jsonSchema.type = JSON_SCHEMA_TYPES.ARRAY;
-		return true;
-	}
+    items.type = JSON_SCHEMA_TYPES.STRING;
+    //items.description = 'TODO: This should have a regex applied to validate the ENTITIES format.';
+    jsonSchema.items = items;
+    jsonSchema.type = JSON_SCHEMA_TYPES.ARRAY;
+    return true;
+  }
 
-	// 3.4.13 integer: http://www.w3.org/TR/xmlschema11-2/#integer
-	integer(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		return true;
-	}
+  // 3.4.13 integer: http://www.w3.org/TR/xmlschema11-2/#integer
+  integer(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
+    return true;
+  }
 
-	// 3.4.14 nonPositiveInteger: http://www.w3.org/TR/xmlschema11-2/#nonPositiveInteger
-	nonPositiveInteger(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.maximum = 0;
-		return true;
-	}
+  // 3.4.14 nonPositiveInteger: http://www.w3.org/TR/xmlschema11-2/#nonPositiveInteger
+  nonPositiveInteger(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
+    jsonSchema.maximum = 0;
+    return true;
+  }
 
-	// 3.4.15 negativeInteger: http://www.w3.org/TR/xmlschema11-2/#negativeInteger
-	negativeInteger(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.maximum = 0;
-		jsonSchema.exclusiveMinimum = true;
-		return true;
-	}
+  // 3.4.15 negativeInteger: http://www.w3.org/TR/xmlschema11-2/#negativeInteger
+  negativeInteger(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
+    jsonSchema.maximum = 0;
+    jsonSchema.exclusiveMinimum = true;
+    return true;
+  }
 
-	// 3.4.16 long: http://www.w3.org/TR/xmlschema11-2/#long
-	long(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.minimum = -9223372036854775808;
-		jsonSchema.maximum = 9223372036854775807;
-		return true;
-	}
+  // 3.4.16 long: http://www.w3.org/TR/xmlschema11-2/#long
+  long(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
+    jsonSchema.minimum = -9223372036854775808;
+    jsonSchema.maximum = 9223372036854775807;
+    return true;
+  }
 
-	// 3.4.17 int: http://www.w3.org/TR/xmlschema11-2/#int
-	int(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.minimum = -2147483648;
-		jsonSchema.maximum = 2147483647;
-		return true;
-	}
+  // 3.4.17 int: http://www.w3.org/TR/xmlschema11-2/#int
+  int(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
+    jsonSchema.minimum = -2147483648;
+    jsonSchema.maximum = 2147483647;
+    return true;
+  }
 
-	// 3.4.18 short: http://www.w3.org/TR/xmlschema11-2/#short
-	short(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.minimum = -32768;
-		jsonSchema.maximum = 32767;
-		return true;
-	}
+  // 3.4.18 short: http://www.w3.org/TR/xmlschema11-2/#short
+  short(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
+    jsonSchema.minimum = -32768;
+    jsonSchema.maximum = 32767;
+    return true;
+  }
 
-	// 3.4.19 byte: http://www.w3.org/TR/xmlschema11-2/#byte
-	byte(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.minimum = -128;
-		jsonSchema.maximum = 127;
-		return true;
-	}
+  // 3.4.19 byte: http://www.w3.org/TR/xmlschema11-2/#byte
+  byte(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
+    jsonSchema.minimum = -128;
+    jsonSchema.maximum = 127;
+    return true;
+  }
 
-	// 3.4.20 nonNegativeInteger: http://www.w3.org/TR/xmlschema11-2/#nonNegativeInteger
-	nonNegativeInteger(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.minimum = 0;
-		return true;
-	}
+  // 3.4.20 nonNegativeInteger: http://www.w3.org/TR/xmlschema11-2/#nonNegativeInteger
+  nonNegativeInteger(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
+    jsonSchema.minimum = 0;
+    return true;
+  }
 
-	// 3.4.21 unsignedLong: http://www.w3.org/TR/xmlschema11-2/#unsignedLong
-	unsignedLong(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.minimum = 0;
-		jsonSchema.maximum = 18446744073709551615;
-		return true;
-	}
+  // 3.4.21 unsignedLong: http://www.w3.org/TR/xmlschema11-2/#unsignedLong
+  unsignedLong(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
+    jsonSchema.minimum = 0;
+    jsonSchema.maximum = 18446744073709551615;
+    return true;
+  }
 
-	// 3.4.22 unsignedInt: http://www.w3.org/TR/xmlschema11-2/#unsignedInt
-	unsignedInt(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.minimum = 0;
-		jsonSchema.maximum = 4294967295;
-		return true;
-	}
+  // 3.4.22 unsignedInt: http://www.w3.org/TR/xmlschema11-2/#unsignedInt
+  unsignedInt(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
+    jsonSchema.minimum = 0;
+    jsonSchema.maximum = 4294967295;
+    return true;
+  }
 
-	// 3.4.23 unsignedShort: http://www.w3.org/TR/xmlschema11-2/#unsignedShort
-	unsignedShort(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.minimum = 0;
-		jsonSchema.maximum = 65535;
-		return true;
-	}
+  // 3.4.23 unsignedShort: http://www.w3.org/TR/xmlschema11-2/#unsignedShort
+  unsignedShort(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
+    jsonSchema.minimum = 0;
+    jsonSchema.maximum = 65535;
+    return true;
+  }
 
-	// 3.4.24 unsignedByte: http://www.w3.org/TR/xmlschema11-2/#unsignedByte
-	unsignedByte(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.minimum = 0;
-		jsonSchema.maximum = 255;
-		return true;
-	}
+  // 3.4.24 unsignedByte: http://www.w3.org/TR/xmlschema11-2/#unsignedByte
+  unsignedByte(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
+    jsonSchema.minimum = 0;
+    jsonSchema.maximum = 255;
+    return true;
+  }
 
-	// 3.4.25 positiveInteger: http://www.w3.org/TR/xmlschema11-2/#positiveInteger
-	positiveInteger(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.minimum = 0;
-		jsonSchema.maximum = 4294967295;
-		jsonSchema.exclusiveMinimum = true;
-		return true;
-	}
+  // 3.4.25 positiveInteger: http://www.w3.org/TR/xmlschema11-2/#positiveInteger
+  positiveInteger(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
+    jsonSchema.minimum = 0;
+    jsonSchema.maximum = 4294967295;
+    jsonSchema.exclusiveMinimum = true;
+    return true;
+  }
 
-	// 3.4.26 yearMonthDuration: http://www.w3.org/TR/xmlschema11-2/#yearMonthDuration
-	yearMonthDuration(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		// jsonSchema.pattern = '^[-]?P(?!$)(?:\d+Y)?(?:\d+M)?(?:\d+D)?(?:T(?!$)(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?$';
-		// jsonSchema.description = 'TODO: (modify) The pattern above: Matches the XSD schema duration built in type as defined by http://www.w3.org/TR/xmlschema-2/#duration.  Source: http://www.regexlib.com/REDetails.aspx?regexp_id=1219';
-		return true;
-	}
+  // 3.4.26 yearMonthDuration: http://www.w3.org/TR/xmlschema11-2/#yearMonthDuration
+  yearMonthDuration(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    // jsonSchema.pattern = '^[-]?P(?!$)(?:\d+Y)?(?:\d+M)?(?:\d+D)?(?:T(?!$)(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?$';
+    // jsonSchema.description = 'TODO: (modify) The pattern above: Matches the XSD schema duration built in type as defined by http://www.w3.org/TR/xmlschema-2/#duration.  Source: http://www.regexlib.com/REDetails.aspx?regexp_id=1219';
+    return true;
+  }
 
-	// 3.4.27 dayTimeDuration: http://www.w3.org/TR/xmlschema11-2/#dayTimeDuration
-	dateTimeDuration(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		//jsonSchema.pattern = '^[-]?P(?!$)(?:\d+Y)?(?:\d+M)?(?:\d+D)?(?:T(?!$)(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?$';
-		// jsonSchema.description = 'TODO: (modify) The pattern above: Matches the XSD schema duration built in type as defined by http://www.w3.org/TR/xmlschema-2/#duration.  Source: http://www.regexlib.com/REDetails.aspx?regexp_id=1219';
-		return true;
-	}
+  // 3.4.27 dayTimeDuration: http://www.w3.org/TR/xmlschema11-2/#dayTimeDuration
+  dateTimeDuration(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    //jsonSchema.pattern = '^[-]?P(?!$)(?:\d+Y)?(?:\d+M)?(?:\d+D)?(?:T(?!$)(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?$';
+    // jsonSchema.description = 'TODO: (modify) The pattern above: Matches the XSD schema duration built in type as defined by http://www.w3.org/TR/xmlschema-2/#duration.  Source: http://www.regexlib.com/REDetails.aspx?regexp_id=1219';
+    return true;
+  }
 
-	// 3.4.28 dateTimeStamp: http://www.w3.org/TR/xmlschema11-2/#dateTimeStamp
-	dateTimeStamp(node, jsonSchema, xsd) {
-		jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
-		jsonSchema.format = JSON_SCHEMA_FORMATS.DATE_TIME;
-		return true;
-	}
+  // 3.4.28 dateTimeStamp: http://www.w3.org/TR/xmlschema11-2/#dateTimeStamp
+  dateTimeStamp(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.STRING;
+    jsonSchema.format = JSON_SCHEMA_FORMATS.DATE_TIME;
+    return true;
+  }
 }
 
 module.exports = BuiltInTypeConverter;
+
 },{"./constants":91,"./jsonschema/jsonSchemaFileDraft04":98,"./jsonschema/jsonSchemaFormats":101,"./jsonschema/jsonSchemaTypes":105,"debug":3}],91:[function(require,module,exports){
 'use strict';
 
@@ -16558,7 +16570,7 @@ module.exports = {
 },{}],92:[function(require,module,exports){
 'use strict';
 
-const debug = require('debug')('xsd2jsonschema:ConverterDraft04')
+const debug = require('debug')('xsd2jsonschema:ConverterDraft04');
 
 const URI = require('urijs');
 const Qname = require('./qname');
@@ -16575,1087 +16587,1438 @@ const BaseSpecialCaseIdentifier = require('./baseSpecialCaseIdentifier');
 const SpecialCases = require('./specialCases');
 const NamespaceManager = require('./namespaceManager');
 
-
 const namespaceManager_NAME = Symbol();
 const specialCaseIdentifier_NAME = Symbol();
 const includeTextAndCommentNodes_NAME = Symbol();
 
 /**
- * Class representing a collection of XML Handler methods for converting XML Schema elements to JSON Schema.  XML 
- * handler methods are methods used to convert an element of the corresponding name an equiviant JSON Schema 
- * representation.  Handlers all check the current state (i.e. thier parent node) to determine how to convert the 
+ * Class representing a collection of XML Handler methods for converting XML Schema elements to JSON Schema.  XML
+ * handler methods are methods used to convert an element of the corresponding name an equiviant JSON Schema
+ * representation.  Handlers all check the current state (i.e. thier parent node) to determine how to convert the
  * node at hand.  See the {@link ConverterDraft04#choice|choice} handler for a complex example.
- * 
+ *
  * Subclasses can override any handler method to customize the conversion as needed.
- * 
+ *
  * @see {@link ParsingState}
  */
 
- class ConverterDraft04 extends Processor {
-	/**
-	 * Constructs an instance of ConverterDraft04.
-	 * @constructor
-	 */
-	constructor(options) {
-		super(options);
-		if (options != undefined) {
-			this.namespaceManager = options.namespaceManager != undefined ? options.namespaceManager : new NamespaceManager();
-			this.specialCaseIdentifier = options.specialCaseIdentifier != undefined ? options.specialCaseIdentifier : new BaseSpecialCaseIdentifier();
-		} else {
-			//this.namespaceManager = new NamespaceManager();
-			//this.specialCaseIdentifier = new BaseSpecialCaseIdentifier();
-		}
-
-		// The working schema is initilized as needed through XML Handlers
-	}
-
-	// Getters/Setters
-
-	get namespaceManager() {
-		return this[namespaceManager_NAME];
-	}
-	set namespaceManager(newNamespaceManager) {
-		this[namespaceManager_NAME] = newNamespaceManager;
-	}
-
-	get specialCaseIdentifier() {
-		return this[specialCaseIdentifier_NAME];
-	}
-	set specialCaseIdentifier(newSpecialCaseIdentifier) {
-		this[specialCaseIdentifier_NAME] = newSpecialCaseIdentifier;
-	}
-
-	get includeTextAndCommentNodes() {
-		return this[includeTextAndCommentNodes_NAME];
-	}
-	set includeTextAndCommentNodes(newIncludeTextAndCommentNodes) {
-		this[includeTextAndCommentNodes_NAME] = newIncludeTextAndCommentNodes;
-	}
-
-	dumpJsonSchema(jsonSchema) {
-		Object.keys(jsonSchema).forEach(function (prop, index, array) {
-			debug(prop + '=' + jsonSchema[prop]);
-		});
-	}
-
-	// Read-only properties
-	
-	get builtInTypeConverter() {
-		return this.namespaceManager.builtInTypeConverter;
-	}
-	set builtInTypeConverter(unused) {
-		throw new Error('Unsupported operation');
-	}
-
-	/**
-	 * Creates a namespaces for the given namespace name.  This method is called from the schema XML Handler.
-	 * 
-     * @see {@link NamespaceManager#createNamespace|NamespaceManager.createNamespace()}
-	 */
-	initializeNamespaces(xsd) {
-		Object.keys(xsd.namespaces).forEach(function (namespace, index, array) {
-			this.namespaceManager.addNamespace(xsd.namespaces[namespace]);
-		}, this);
-	}
-
-	/**
-	 * This method is called for each node in the XML Schema file being processed.  It performs three actions
-	 *  1) processes an ID attribute if present
-	 *  2) calls the appropriate XML Handler method.
-	 *  3) calls super.process() to provide detailed logging
-	 * @param {Node} node - the current {@link https://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/core.html#ID-745549614 element} in xsd being converted.
-	 * @param {JsonSchemaFile} jsonSchema - the JSON Schema representing the current XML Schema file {@link XsdFile|xsd} being converted.
-	 * @param {XsdFile} xsd - the XML schema file currently being converted.
-	 * 
-	 * @returns {Boolean} - handler methods can return false to cancel traversal of {@link XsdFile|xsd}.  An XML Schema handler method
-	 *  has a common footprint and a name that corresponds to one of the XML Schema element names found in {@link module:XsdElements}.
-	 *  For example, the <choice> handler method is <pre><code>choice(node, jsonSchema, xsd)</code></pre>
-	 */
-	process(node, jsonSchema, xsd) {
-		const id = XsdFile.getAttrValue(node, XsdAttributes.ID);
-		if (id !== undefined) {
-			let qualifiedTypeName = new Qname(id);
-			this.workingJsonSchema.addAttributeProperty(qualifiedTypeName.getLocal(), this.createAttributeSchema(node, jsonSchema, xsd, qualifiedTypeName));
-		}
-		const fnName = XsdFile.getNodeName(node);
-		if((debug.enabled === true && node.nodeType != XsdNodeTypes.TEXT_NODE && node.nodeType != XsdNodeTypes.COMMENT_NODE) || this.includeTextAndCommentNodes === true) {
-
-			const nameAttr = XsdFile.getAttrValue(node,XsdAttributes.NAME);
-			const valueAttr = XsdFile.getValueAttr(node);
-			debug('Processing [' + fnName + '] ' 
-				+ (nameAttr == undefined ? '' : '[' + nameAttr + ']')
-				+ (valueAttr == undefined ? '' : '[' + valueAttr + ']')				
-			);
-		}
-		let keepProcessing = true;
-		if (this[fnName] != undefined) {
-			keepProcessing = this[fnName](node, jsonSchema, xsd);
-		} else {
-			this.skippingUnknownNode(fnName, node, jsonSchema, xsd);
-		}
-		super.process(node, jsonSchema, xsd);
-		return keepProcessing
-	}
-
-	skippingUnknownNode(fnName, node, jsonSchema, xsd) {
-		debug(`Skipping unknown node [${fnName}]`);
-	}
-
-	all(node, jsonSchema, xsd) {
-		// TODO: id, minOccurs, maxOccurs
-		// (TBD)
-	}
-
-	alternative(node, jsonSchema, xsd) {
-		// TODO: id, test, type, xpathDefaultNamespace
-		// (TBD)
-		return true;
-	}
-
-	annotation(node, jsonSchema, xsd) {
-		// TODO: id
-		// Ignore this grouping and continue processing children
-		return true;
-	}
-
-	any(node, jsonSchema, xsd) {
-		// TODO: id, minOccurs, maxOccurs, namespace, processContents, notNamespace, not QName
-		// (TBD)
-		const state = this.parsingState.getCurrentState();
-		switch (state.name) {
-			case XsdElements.CHOICE:
-				throw new Error('any() needs to be implemented within choice!');
-			case XsdElements.SEQUENCE:
-				break
-//			throw new Error('any() needs to be implemented within sequence!');
-			case XsdElements.ALL:
-				throw new Error('any() needs to be implemented within all!');
-			case XsdElements.OPEN_CONTENT:
-				throw new Error('any() needs to be implemented within openContent!');
-			case XsdElements.DEFAULT_OPEN_CONTENT:
-				throw new Error('any() needs to be implemented within defaultOpenContent');
-			default:
-				throw new Error('any() called from within unexpected parsing state!');
-		}
-		return true;
-	}
-
-	anyAttribute(node, jsonSchema, xsd) {
-		// TODO: id, namespace, processContents, notNamespace, not QName
-		// (TBD)
-		return true;
-	}
-
-	appinfo(node, jsonSchema, xsd) {
-		// TODO: source
-		// (TBD)
-		this.workingJsonSchema.description = node.toString();
-		return false;
-	}
-
-	assert(node, jsonSchema, xsd) {
-		// TODO: id, test, xpathDefaultNamespace
-		// (TBD)
-		return true;
-	}
-
-	assertion(node, jsonSchema, xsd) {
-		// TODO: id, test, xpathDefaultNamespace
-		// (TBD)
-		return true;
-	}
-
-	isBuiltInType(qualifiedTypeName) {
-		return this.builtInTypeConverter[qualifiedTypeName.getLocal()] != undefined;
-	}
-
-	/* 
-	 * A factory method to create JSON Schemas of one of the XML Schema built-in types.
-	 *
-	 */
-	createAttributeSchema(node, xsd, qualifiedTypeName) {
-		const attributeJsonSchema = this.workingJsonSchema.newJsonSchemaFile();
-		this.builtInTypeConverter[qualifiedTypeName.getLocal()](node, attributeJsonSchema, xsd)
-		return attributeJsonSchema;
-	}
-
-	// Delete this?
-	createAttributeReference(typeAttr, jsonSchema, xsd) {
-		const refType = this.namespaceManager.getType(typeAttr, this.workingJsonSchema, jsonSchema, xsd, false);
-		return refType.get$RefToSchema(jsonSchema);
-	}
-
-	handleAttributeGlobal(node, jsonSchema, xsd) {
-		const name = XsdFile.getAttrValue(node, XsdAttributes.NAME);
-		const typeName = XsdFile.getAttrValue(node, XsdAttributes.TYPE);
-		// TODO: id, default, fixed, inheritable (TBD)
-		var attributeJsonSchema;
-
-		this.parsingState.pushSchema(this.workingJsonSchema);
-		if (typeName !== undefined) {
-			const qualifiedTypeName = new Qname(typeName);
-			attributeJsonSchema = this.namespaceManager.getGlobalAttribute(name, jsonSchema);
-			jsonSchema.getGlobalAttributesSchema().setSubSchema(name, attributeJsonSchema);
-			return this.builtInTypeConverter[qualifiedTypeName.getLocal()](node, attributeJsonSchema);
-		} else {
-			// Setup the working schema and allow processing to continue for any contained simpleType or annotation nodes.
-			attributeJsonSchema = this.namespaceManager.getGlobalAttribute(name, jsonSchema);
-			jsonSchema.getGlobalAttributesSchema().setSubSchema(name, attributeJsonSchema);
-			this.workingJsonSchema = attributeJsonSchema;
-		}
-		return true;
-	}
-
-	handleAttributeLocal(node, jsonSchema, xsd) {
-		const name = XsdFile.getAttrValue(node, XsdAttributes.NAME);
-		const type = XsdFile.getAttrValue(node, XsdAttributes.TYPE);
-		const use = XsdFile.getAttrValue(node, XsdAttributes.USE);
-		// TODO: id, form, default, fixed, targetNamespace, inheritable (TBD)
-		var attributeJsonSchema;
-
-		this.parsingState.pushSchema(this.workingJsonSchema);
-		if (type !== undefined) {
-			const qualifiedTypeName = new Qname(type);
-			if(this.isBuiltInType(qualifiedTypeName)) {
-				attributeJsonSchema = this.createAttributeSchema(node, xsd, qualifiedTypeName);
-			} else {
-				attributeJsonSchema = this.namespaceManager.getTypeReference(type, this.workingJsonSchema, jsonSchema, xsd);
-			}
-			this.workingJsonSchema.addAttributeProperty(name, attributeJsonSchema, use);
-		} else {
-			// Setup the working schema and allow processing to continue for any contained simpleType or annotation nodes.
-			attributeJsonSchema = this.workingJsonSchema.newJsonSchemaFile();
-			this.workingJsonSchema.addAttributeProperty(name, attributeJsonSchema, use);
-			this.workingJsonSchema = attributeJsonSchema;
-		}
-		return true;
-	}
-
-	handleAttributeReference(node, jsonSchema, xsd) {
-		const ref = XsdFile.getAttrValue(node, XsdAttributes.REF);
-		const use = XsdFile.getAttrValue(node, XsdAttributes.USE);
-		// TODO: id, default, fixed, inheritable (TBD)
-
-		if (ref !== undefined) {
-			var attrSchema = this.namespaceManager.getGlobalAttribute(ref, jsonSchema);
-			this.workingJsonSchema.addAttributeProperty(ref, attrSchema.get$RefToSchema(this.workingJsonSchema), use);
-		}
-
-		return true;
-	}
-
-	attribute(node, jsonSchema, xsd) {
-		// (TBD)
-		//dumpNode(node);	
-		if (XsdFile.isReference(node)) {
-			return this.handleAttributeReference(node, jsonSchema, xsd);
-		} else if (this.parsingState.isTopLevelEntity()) {
-			return this.handleAttributeGlobal(node, jsonSchema, xsd);
-		} else {
-			return this.handleAttributeLocal(node, jsonSchema, xsd);
-		}
-	}
-
-	handleAttributeGroupDefinition(node, jsonSchema, xsd) {
-		// TODO id, name 
-		// (TBD)
-	}
-
-	handleAttributeGroupReference(node, jsonSchema, xsd) {
-		// TODO id, ref (TBD)
-	}
-
-	attributeGroup(node, jsonSchema, xsd) {
-		// (TBD)
-		return true;
-	}
-
-	getMinMaxOccurs(node, minmax) {
-		var retval = XsdFile.getAttrValue(node, minmax);
-		if (retval != undefined && retval != XsdAttributeValues.UNBOUNDED) {
-			retval = XsdFile.getAttrValueAsNumber(node, minmax);
-		}
-		return retval;
-	}
-
-	handleChoiceArray(node, jsonSchema, xsd) {
-		const minOccursAttr = this.getMinMaxOccurs(node, XsdAttributes.MIN_OCCURS);
-		const maxOccursAttr = this.getMinMaxOccurs(node, XsdAttributes.MAX_OCCURS);
-		// TODO: id
-		// (TBD Don't forget to support singles)
-		throw new Error('choice array needs to be implemented!!');
-		return true;
-	}
-
-	allChildrenAreOptional(node) {
-		var retval = true;
-		const children = Array.from(node.childNodes);
-		children.forEach(function (childNode) {
-			if (childNode.nodeType != XsdNodeTypes.TEXT_NODE) {
-				const minOccursAttr = this.getMinMaxOccurs(childNode, XsdAttributes.MIN_OCCURS);
-				if (minOccursAttr != 0) {
-					retval = false;
-				}
-			}
-		}, this)
-		return retval;
-	}
-
-	choice(node, jsonSchema, xsd) {
-		// TODO: id
-		const minOccursAttr = this.getMinMaxOccurs(node, XsdAttributes.MIN_OCCURS);
-		const maxOccursAttr = this.getMinMaxOccurs(node, XsdAttributes.MAX_OCCURS);
-		const isAnyOfChoice = this.specialCaseIdentifier.isAnyOfChoice(node, xsd);
-		if (isAnyOfChoice === true) {
-			this.specialCaseIdentifier.addSpecialCase(SpecialCases.ANY_OF_CHOICE, this.workingJsonSchema, node);
-			// This could be optional too.  Need a test! 
-		}
-		const isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED));
-		if (isArray) {
-			return this.handleChoiceArray(node, jsonSchema, xsd);
-		}
-		const isOptional = this.specialCaseIdentifier.isOptional(node, xsd, minOccursAttr);
-		const allChildrenAreOptional = this.allChildrenAreOptional(node);
-		const isSiblingChoice = this.specialCaseIdentifier.isSiblingChoice(node, xsd);
-		const state = this.parsingState.getCurrentState();
-		switch (state.name) {
-			case XsdElements.CHOICE:
-				// Allow to fall through and continue processing.  The schema is estabished with the complexType.
-				//throw new Error('choice() needs to be implemented within choice');
-				let oneOfSchema = this.workingJsonSchema.newJsonSchemaFile();
-				this.workingJsonSchema.oneOf.push(oneOfSchema);
-				this.parsingState.pushSchema(this.workingJsonSchema);
-				this.workingJsonSchema = oneOfSchema;
-			break;
-			case XsdElements.COMPLEX_TYPE:
-				// Allow to fall through and continue processing.  The schema is estabished with the complexType.
-				//throw new Error('choice() needs to be implemented within complexType');
-				break;
-			case XsdElements.EXTENSION:
-				throw new Error('choice() needs to be implemented within extension');
-			case XsdElements.GROUP:
-				// Allow to fall through and continue processing.  The schema is estabished with the group.
-				//throw new Error('choice() needs to be implemented within group');
-				break;
-			case XsdElements.RESTRICTION:
-				throw new Error('choice() needs to be implemented within restriction');
-			case XsdElements.SEQUENCE:
-				if (isSiblingChoice) {
-					debug('Found sibling <choice>');
-					let allOfSchema = this.workingJsonSchema.newJsonSchemaFile();
-					this.workingJsonSchema.allOf.push(allOfSchema);
-					this.parsingState.pushSchema(this.workingJsonSchema);
-					this.workingJsonSchema = allOfSchema;
-					if(isAnyOfChoice === true) {
-						debug('                   ... that is an anyOfChoice');
-						// Ducktype it on there for now.  This is checked in baseSpecialCaseIdentifier.fixAnyOfChoice.
-						// It is needed because all sibling choices may not be anyOfChoices.
-						allOfSchema.isAnyOfChoice = true;
-					}
-				}
-				if (allChildrenAreOptional || isOptional) {
-					debug('Found optional <choice> for ' + jsonSchema.id);
-					let optionalChoiceSchema = this.workingJsonSchema.newJsonSchemaFile();
-					this.workingJsonSchema.anyOf.push(optionalChoiceSchema);
-					if (!isSiblingChoice) {
-						this.parsingState.pushSchema(this.workingJsonSchema)
-					}
-					this.workingJsonSchema = optionalChoiceSchema;
-						// The optional part will be added as a special case
-					this.specialCaseIdentifier.addSpecialCase(SpecialCases.OPTIONAL_CHOICE, optionalChoiceSchema, node);
-				} else {
-					debug('Found required <choice>');
-					// This is an needless grouping just allow to fall through and continue processing
-					// Allow to fall through and continue processing.  
-					// The schema should be estabished by the parent of the sequence.
-					//  (Keep an eye on this one)
-					//throw new Error('choice() needs to be implemented within sequence');
-				}
-				break;
-			default:
-				throw new Error('choice() called from within unexpected parsing state!');
-		}
-		return true;
-	}
-
-	comment(node, jsonSchema, xsd) {
-		// do nothing - This is an XML comment (e.g. <!-- text -->) 
-		return true;
-	}
-
-	complexContent(node, jsonSchema, xsd) {
-		// TODO: id, mixed 
-		// Ignore this grouping and continue processing children
-		return true;
-	}
-
-	handleNamedComplexType(node, jsonSchema, xsd) {
-		const nameAttr = XsdFile.getAttrValue(node, XsdAttributes.NAME);
-		// TODO: id, mixed, abstract, block, final, defaultAttributesApply
-
-		const state = this.parsingState.getCurrentState();
-
-		switch (state.name) {
-			case XsdElements.SCHEMA:
-				this.workingJsonSchema = this.namespaceManager.getType(nameAttr, jsonSchema, jsonSchema, xsd);
-				jsonSchema.setSubSchema(nameAttr, this.workingJsonSchema);
-				this.workingJsonSchema.type = jsonSchemaTypes.OBJECT;
-				break;
-			case XsdElements.REDEFINE:
-				throw new Error('complexType() needs to be impemented within redefine');
-			case XsdElements.OVERRIDE:
-				throw new Error('complexType() needs to be impemented within override');
-			default:
-				throw new Error('complexType() called from within unexpected parsing state! state=' + state.name);
-		}
-		return true;
-	}
-
-	handleAnonymousComplexType(node, jsonSchema, xsd) {
-		// TODO: id, mixed, defaultAttributesApply
-		// Ignore this grouping and continue processing children
-		return true;
-	}
-
-	complexType(node, jsonSchema, xsd) {
-		if (XsdFile.isNamed(node)) {
-			return this.handleNamedComplexType(node, jsonSchema, xsd);
-		} else {
-			return this.handleAnonymousComplexType(node, jsonSchema, xsd);
-		}
-	}
-
-	defaultOpenContent(node, jsonSchema, xsd) {
-		// TODO: schema
-		// (TBD)
-		return true;
-	}
-
-	documentation(node, jsonSchema, xsd) {
-		// TODO: source, xml:lang
-		// Ignore this grouping and continue processing children.  The actual text will come through the text() method.
-		return true;
-	}
-
-	handleElementGlobal(node, jsonSchema, xsd) {
-		const nameAttr = XsdFile.getAttrValue(node, XsdAttributes.NAME);
-		const typeAttr = XsdFile.getAttrValue(node, XsdAttributes.TYPE);
-		// TODO: id, defaut, fixed, nillable, abstract, substitutionGroup, block, final
-
-		if (typeAttr !== undefined) {
-			var typeName = typeAttr;
-			var refType = this.namespaceManager.getTypeReference(typeName, jsonSchema, jsonSchema, xsd);
-			//refType.id = jsonSchema.id;
-			this.namespaceManager.addTypeReference(nameAttr, refType, jsonSchema, xsd);
-			this.workingJsonSchema = refType;
-			jsonSchema.setSubSchema(nameAttr, this.workingJsonSchema);
-			//workingJsonSchema.type = jsonSchemaTypes.OBJECT;
-		} else {
-			this.workingJsonSchema = this.namespaceManager.getType(nameAttr, jsonSchema, jsonSchema, xsd);
-			jsonSchema.setSubSchema(nameAttr, this.workingJsonSchema);
-			this.workingJsonSchema.type = jsonSchemaTypes.OBJECT;
-		}
-		if (this.parsingState.inChoice()) {
-			throw new Error('choice needs to be implemented in handleElementGlobal()!');
-		}
-		return true;
-	}
-
-	addProperty(targetSchema, propertyName, customType, minOccursAttr) {
-		if (minOccursAttr === undefined || minOccursAttr === XsdAttributeValues.REQUIRED || minOccursAttr > 0) {
-			targetSchema.addRequired(propertyName);
-		}
-		targetSchema.setProperty(propertyName, customType);
-	}
-
-	addChoiceProperty(targetSchema, propertyName, customType, minOccursAttr) {
-		var choiceSchema = targetSchema.newJsonSchemaFile();
-		//choiceSchema.additionalProperties = false;
-		this.addProperty(choiceSchema, propertyName, customType, minOccursAttr);
-		targetSchema.oneOf.push(choiceSchema);
-	}
-
-	addPropertyAsArray(targetSchema, propertyName, customType, minOccursAttr, maxOccursAttr) {
-		const oneOfSchema = targetSchema.newJsonSchemaFile();
-		const arraySchema = oneOfSchema.newJsonSchemaFile();
-		const min = minOccursAttr === undefined ? undefined : minOccursAttr;
-		const max = maxOccursAttr === undefined ? undefined : maxOccursAttr;
-
-		arraySchema.type = jsonSchemaTypes.ARRAY;
-		arraySchema.minItems = min;
-		arraySchema.maxItems = max === XsdAttributeValues.UNBOUNDED ? undefined : max;
-		arraySchema.items = customType.get$RefToSchema(arraySchema);
-
-		oneOfSchema.oneOf.push(customType.get$RefToSchema(oneOfSchema));
-		oneOfSchema.oneOf.push(arraySchema);
-		this.addProperty(targetSchema, propertyName, oneOfSchema, minOccursAttr);
-	}
-
-	addChoicePropertyAsArray(targetSchema, propertyName, customType, minOccursAttr, maxOccursAttr) {
-		const choiceSchema = targetSchema.newJsonSchemaFile();
-
-		//choiceSchema.additionalProperties = false;
-		this.addPropertyAsArray(choiceSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
-		targetSchema.oneOf.push(choiceSchema);
-	}
-
-	handleElementLocal(node, jsonSchema, xsd) {
-		const nameAttr = XsdFile.getAttrValue(node, XsdAttributes.NAME);
-		const typeAttr = XsdFile.getAttrValue(node, XsdAttributes.TYPE);
-		const minOccursAttr = this.getMinMaxOccurs(node, XsdAttributes.MIN_OCCURS);
-		const maxOccursAttr = this.getMinMaxOccurs(node, XsdAttributes.MAX_OCCURS);
-		// TODO: id, form, defaut, fixed, nillable, block, targetNamespace
-
-		var lookupName;
-		if (typeAttr !== undefined) {
-			lookupName = typeAttr;
-		}
-		const propertyName = nameAttr;
-		var customType;
-		if (lookupName !== undefined) {
-			if (this.namespaceManager.isBuiltInType(lookupName, xsd)) {
-				//customType = this.namespaceManager.getBType(lookupName, this.workingJsonSchema, jsonSchema, xsd, false);
-				customType = this.namespaceManager.getBuiltInType(lookupName, this.workingJsonSchemaent, xsd);
-			} else {
-				customType = this.namespaceManager.getTypeReference(lookupName, this.workingJsonSchema, jsonSchema, xsd);
-			}
-		} else {
-			//propertyName = nameAttr + '-' + XsdFile.getNameOfFirstParentWithNameAttribute(node);  // local element names attributes are scoped to the parent so they are not unique within the namespace.
-			//customType = this.namespaceManager.getType(propertyName, this.workingJsonSchema, jsonSchema, xsd);
-			customType = this.workingJsonSchema.newJsonSchemaFile();
-		}
-		var isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED));
-		var state = this.parsingState.getCurrentState();
-		switch (state.name) {
-			case XsdElements.CHOICE:
-				if (this.allChildrenAreOptional(node.parentNode) && this.specialCaseIdentifier.isOptional(node.parentNode, xsd)) {
-					if (isArray) {
-						
-						this.addPropertyAsArray(this.workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
-					} else {
-						this.addProperty(this.workingJsonSchema, propertyName, customType, minOccursAttr);
-					}
-				} else {
-					if (isArray) {
-						this.addChoicePropertyAsArray(this.workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
-					} else {
-						this.addChoiceProperty(this.workingJsonSchema, propertyName, customType, minOccursAttr);
-					}
-				}
-				break;
-			case XsdElements.SEQUENCE:
-			case XsdElements.ALL:
-				if (isArray) {
-					this.addPropertyAsArray(this.workingJsonSchema, propertyName, customType, minOccursAttr, maxOccursAttr);
-				} else {
-					this.addProperty(this.workingJsonSchema, propertyName, customType, minOccursAttr);
-				}
-				break;
-			default:
-				throw new Error('element() [local] called from within unexpected parsing state!');
-		}
-		this.parsingState.pushSchema(this.workingJsonSchema);
-		this.workingJsonSchema = customType;
-		return true;
-	}
-
-	handleElementReference(node, jsonSchema, xsd) {
-		const minOccursAttr = this.getMinMaxOccurs(node, XsdAttributes.MIN_OCCURS);
-		const maxOccursAttr = this.getMinMaxOccurs(node, XsdAttributes.MAX_OCCURS);
-		const refAttr = XsdFile.getAttrValue(node, XsdAttributes.REF);
-		// TODO: id
-
-		// An element within a model group (such as 'group') may be a reference.  References have neither
-		// a name nor a type attribute - just a ref attribute.  This is awkward when the reference elmenent
-		// is a property of an object in JSON.  With no other options to name the property ref is used.
-		const propertyName = refAttr;  // ref attribute is required for an element reference
-		const ref = this.namespaceManager.getTypeReference(propertyName, this.workingJsonSchema, jsonSchema, xsd);
-		const isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED));
-		const state = this.parsingState.getCurrentState();
-		switch (state.name) {
-			case XsdElements.CHOICE:
-				if (this.allChildrenAreOptional(node.parentNode) && this.specialCaseIdentifier.isOptional(node.parentNode, xsd)) {
-					if (isArray) {
-						this.addPropertyAsArray(this.workingJsonSchema, propertyName, ref, minOccursAttr, maxOccursAttr);
-					} else {
-						this.addProperty(this.workingJsonSchema, propertyName, ref, minOccursAttr);
-					}
-				} else {
-					if (isArray) {
-						this.addChoicePropertyAsArray(this.workingJsonSchema, propertyName, ref, minOccursAttr, maxOccursAttr);
-					} else {
-						this.addChoiceProperty(this.workingJsonSchema, propertyName, ref, minOccursAttr);
-					}
-				}
-				break;
-			case XsdElements.SEQUENCE:
-			case XsdElements.ALL:
-				if (isArray) {
-					this.addPropertyAsArray(this.workingJsonSchema, propertyName, ref, minOccursAttr, maxOccursAttr);
-				} else {
-					this.addProperty(this.workingJsonSchema, propertyName, ref, minOccursAttr);
-				}
-				break;
-			default:
-				throw new Error('element() [reference] called from within unexpected parsing state!');
-		}
-		return true;
-	}
-
-	element(node, jsonSchema, xsd) {
-		const refAttr = XsdFile.getAttrValue(node, XsdAttributes.REF);
-
-		if (refAttr !== undefined) {
-			return this.handleElementReference(node, jsonSchema, xsd);
-		} else if (this.parsingState.isTopLevelEntity()) {
-			return this.handleElementGlobal(node, jsonSchema, xsd);
-		} else {
-			return this.handleElementLocal(node, jsonSchema, xsd);
-		}
-	}
-
-	enumeration(node, jsonSchema, xsd) {
-		const val = XsdFile.getValueAttr(node);
-		// TODO: id, fixed
-
-		this.workingJsonSchema.addEnum(val)
-		return true;
-	}
-
-	explicitTimezone(node, jsonSchema, xsd) {
-		// TODO: id, fixed, value
-		// (TBD)
-		return true;
-	}
-
-	extension(node, jsonSchema, xsd) {
-		const baseAttr = XsdFile.getAttrValue(node, XsdAttributes.BASE);
-		// TODO: id
-		const state = this.parsingState.getCurrentState();
-		// This switch isn't really needed since both content types are being handled the same, but keeping it just in case this turns out to be a false assumption.
-		switch (state.name) {
-			case XsdElements.COMPLEX_CONTENT:
-				this.parsingState.pushSchema(this.workingJsonSchema);
-				let typeRef = this.namespaceManager.getTypeReference(baseAttr, this.workingJsonSchema, jsonSchema, xsd);
-				this.workingJsonSchema = this.workingJsonSchema.extend(typeRef) //, jsonSchemaTypes.OBJECT);
-				break;
-			case XsdElements.SIMPLE_CONTENT:
-				if (this.namespaceManager.isBuiltInType(baseAttr, xsd)) {
-					let baseType = new Qname(baseAttr);
-					let baseTypeName = baseType.getLocal();
-					return this.builtInTypeConverter[baseTypeName](node, this.workingJsonSchema);
-				} else {
-					this.parsingState.pushSchema(this.workingJsonSchema);
-					let typeRef = this.namespaceManager.getTypeReference(baseAttr, this.workingJsonSchema, jsonSchema, xsd);
-					this.workingJsonSchema = this.workingJsonSchema.extend(typeRef) //, jsonSchemaTypes.OBJECT);
-				}
-				break;
-			default:
-				throw new Error('extension() called from within unexpected parsing state!');
-		}
-		return true;
-	}
-
-	field(node, jsonSchema, xsd) {
-		// TODO: id, xpath, xpathDefaultNamespace
-		// (TBD)
-		return true;
-	}
-
-	fractionDigits(node, jsonSchema, xsd) {
-		// TODO: id, value, fixed
-		// do nothing - there is no coresponding functionality in JSON Schema
-		return true;
-	}
-
-	handleGroupDefinition(node, jsonSchema, xsd) {
-		const nameAttr = XsdFile.getAttrValue(node, XsdAttributes.NAME);
-		// TODO: id
-
-		const state = this.parsingState.getCurrentState();
-		switch (state.name) {
-			case XsdElements.SCHEMA:
-				this.workingJsonSchema = this.namespaceManager.getType(nameAttr, jsonSchema, jsonSchema, xsd);
-				jsonSchema.setSubSchema(nameAttr, this.workingJsonSchema);
-				this.workingJsonSchema.type = jsonSchemaTypes.OBJECT;
-				break;
-			case XsdElements.REDEFINE:
-				throw new Error('group() [definition] needs to be impemented within redefine!');
-			case XsdElements.OVERRIDE:
-				throw new Error('group() [definition] needs to be impemented within override!');
-			default:
-				throw new Error('group() [definition] called from within unexpected parsing state!');
-		}
-		return true;
-	}
-
-	handleGroupReference(node, jsonSchema, xsd) {
-		const minOccursAttr = this.getMinMaxOccurs(node, XsdAttributes.MIN_OCCURS);
-		const maxOccursAttr = this.getMinMaxOccurs(node, XsdAttributes.MAX_OCCURS);
-		const refAttr = XsdFile.getAttrValue(node, XsdAttributes.REF);
-		// TODO: id
-
-		const propertyName = refAttr;  // ref attribute is required for group reference
-		const ref = this.namespaceManager.getTypeReference(propertyName, this.workingJsonSchema, jsonSchema, xsd);
-		const isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED));
-		const state = this.parsingState.getCurrentState();
-		switch (state.name) {
-			case XsdElements.EXTENSION:
-				throw new Error('group() [reference] needs to be impemented within extension!');
-			case XsdElements.RESTRICTION:
-				throw new Error('group() [reference] needs to be impemented within restriction!');
-			case XsdElements.CHOICE:
-				if (isArray) {
-					this.addChoicePropertyAsArray(this.workingJsonSchema, propertyName, ref, minOccursAttr, maxOccursAttr);
-				} else {
-					this.addChoiceProperty(this.workingJsonSchema, propertyName, ref, minOccursAttr);
-				}
-				break;
-			case XsdElements.COMPLEX_TYPE:
-			case XsdElements.SEQUENCE:
-			case XsdElements.ALL:
-				if (isArray) {
-					this.addPropertyAsArray(this.workingJsonSchema, propertyName, ref, minOccursAttr, maxOccursAttr);
-				} else {
-					this.addProperty(this.workingJsonSchema, propertyName, ref, minOccursAttr);
-				}
-				break;
-			default:
-				throw new Error('group() [reference] called from within unexpected parsing state!');
-		}
-		return true;
-	}
-
-	group(node, jsonSchema, xsd) {
-		if (XsdFile.isReference(node)) {
-			return this.handleGroupReference(node, jsonSchema, xsd);
-		} else {
-			return this.handleGroupDefinition(node, jsonSchema, xsd);
-		}
-	}
-
-	import(node, jsonSchema, xsd) {
-		const namespace = XsdFile.getAttrValue(node, XsdAttributes.NAMESPACE);
- 		const schemaLocation = XsdFile.getAttrValue(node, XsdAttributes.SCHEMA_LOCATION);
-		// TODO: id
-		xsd.imports[namespace] = new URI(xsd.directory).segment(schemaLocation).toString();
-		return true;
-	}
-
-	include(node, jsonSchema, xsd) {
-		// TODO: id, schemaLocation
-		// do nothing
-		return true;
-	}
-
-	handleKeyConstraint() {
-		// TODO: id, name
-		// (TBD)
-		return true;
-	}
-
-	handleKeyReferenceToKeyConstraint() {
-		// TODO: id, ref
-		// (TBD)
-		return true;
-	}
-
-	key(node, jsonSchema, xsd) {
-		// (TBD)
-		return true;
-	}
-
-	handleKeyReference(node, jsonSchema, xsd) {
-		// TODO: id, name, refer
-		// (TBD)
-		return true;
-	}
-
-	handleKeyReferenceToKeyReference(node, jsonSchema, xsd) {
-		// TODO: id, ref
-		// (TBD)
-		return true;
-	}
-
-	keyref(node, jsonSchema, xsd) {
-		// (TBD)
-		return true;
-	}
-
-	length(node, jsonSchema, xsd) {
-		// TODO: id, fixed
-		const len = XsdFile.getValueAttrAsNumber(node);
-
-		this.workingJsonSchema.maxLength = len;
-		this.workingJsonSchema.minLength = len;
-		return true;
-	}
-
-	list(node, jsonSchema, xsd) {
-		// TODO: id, itemType
-		// (TBD)
-		return true;
-	}
-
-	maxExclusive(node, jsonSchema, xsd) {
-		const val = XsdFile.getValueAttrAsNumber(node);
-		// TODO: id, fixed
-
-		this.workingJsonSchema.maximum = val;
-		this.workingJsonSchema.exlusiveMaximum = true;
-		return true;
-	}
-
-	maxInclusive(node, jsonSchema, xsd) {
-		const val = XsdFile.getValueAttrAsNumber(node);
-		// TODO: id, fixed
-
-		this.workingJsonSchema.maximum = val; // inclusive is the JSON Schema default
-		return true;
-	}
-
-	maxLength(node, jsonSchema, xsd) {
-		const len = XsdFile.getValueAttrAsNumber(node);
-		// TODO: id, fixed
-
-		this.workingJsonSchema.maxLength = len;
-		return true;
-	}
-
-	minExclusive(node, jsonSchema, xsd) {
-		const val = XsdFile.getValueAttrAsNumber(node);
-		// TODO: id, fixed
-
-		this.workingJsonSchema.minimum = val;
-		this.workingJsonSchema.exclusiveMinimum = true;
-		return true;
-	}
-
-	minInclusive(node, jsonSchema, xsd) {
-		const val = XsdFile.getValueAttrAsNumber(node);
-		// TODO: id, fixed
-
-		this.workingJsonSchema.minimum = val; // inclusive is the JSON Schema default
-		return true;
-	}
-
-	minLength(node, jsonSchema, xsd) {
-		const len = XsdFile.getValueAttrAsNumber(node);
-		// TODO: id, fixed
-
-		this.workingJsonSchema.minLength = len;
-		return true;
-	}
-
-	notation(node, jsonSchema, xsd) {
-		// TODO: id, name, public, system
-		// (TBD)
-		return true;
-	}
-
-	openContent(node, jsonSchema, xsd) {
-		// TODO: id, mode
-		// (TBD)
-		return true;
-	}
-
-	override(node, jsonSchema, xsd) {
-		// TODO: id, schemaLocation
-		// (TBD)
-		return true;
-	}
-
-	pattern(node, jsonSchema, xsd) {
-		const pattern = XsdFile.getValueAttr(node);
-		// TODO: id
-
-		this.workingJsonSchema.pattern = pattern;
-		return true;
-	}
-
-	redefine(node, jsonSchema, xsd) {
-		// TODO: id, schemaLocation
-		// (TBD)
-		return true;
-	}
-
-	restriction(node, jsonSchema, xsd) {
-		const baseAttr = XsdFile.getAttrValue(node, XsdAttributes.BASE);
-		const baseType = new Qname(baseAttr);
-		const baseTypeName = baseType.getLocal();
-		// TODO: id, (base inheritance via allOf)
-
-		if (this.namespaceManager.isBuiltInType(baseAttr, xsd)) {
-			return this.builtInTypeConverter[baseTypeName](node, this.workingJsonSchema);
-		} else {
-			this.parsingState.pushSchema(this.workingJsonSchema);
-			let typeRef = this.namespaceManager.getTypeReference(baseAttr, jsonSchema, jsonSchema, xsd);
-			if(XsdFile.isEmpty(node)) {
-				jsonSchema.setSubSchema(XsdFile.getNameAttrValue(node.parentNode), typeRef);
-			} else {
-				this.workingJsonSchema = this.workingJsonSchema.extend(typeRef);
-			}
-			return true;
-		}
-	}
-
-	schema(node, jsonSchema, xsd) {
-		// TODO: id, version, targetNamespace, attributeFormDefualt, elementFormDefualt, blockDefault, finalDefault, xml:lang, defaultAttributes, xpathDefaultNamespace
-
-		jsonSchema.description = 'Schema tag attributes: ' + utils.objectToString(XsdFile.buildAttributeMap(node));
-		this.initializeNamespaces(xsd);
-		this.workingJsonSchema = jsonSchema;
-		return true;
-	}
-
-	selector(node, jsonSchema, xsd) {
-		// TODO: key, keyref, unique
-		// (TBD)
-		return true;
-	}
-
-	sequence(node, jsonSchema, xsd) {
-		const minOccursAttr = this.getMinMaxOccurs(node, XsdAttributes.MIN_OCCURS);
-		const maxOccursAttr = this.getMinMaxOccurs(node, XsdAttributes.MAX_OCCURS);
-		const isArray = (maxOccursAttr !== undefined && (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED));
-		if (isArray) {
-			throw new Error('sequence arrays need to be implemented!');
-		}
-		var isOptional = (minOccursAttr !== undefined && minOccursAttr == 0);
-		if (isOptional === true) {
-			let type = XsdFile.getTypeNode(node);
-			let typeName = type.getAttribute('name');
-			debug('Optional Sequence Found : ' + xsd.filename + ':' + typeName);
-			if (typeName == '') {
-				this.parsingState.dumpStates(xsd.filename);
-				XsdFile.dumpNode(node);
-			}
-		}
-		const state = this.parsingState.getCurrentState();
-		switch (state.name) {
-			case XsdElements.CHOICE:
-				let choiceSchema = this.workingJsonSchema.newJsonSchemaFile();
-				//choiceSchema.additionalProperties = false;
-				this.workingJsonSchema.oneOf.push(choiceSchema);
-				this.parsingState.pushSchema(this.workingJsonSchema);
-				this.workingJsonSchema = choiceSchema;
-				break;
-			case XsdElements.COMPLEX_TYPE:
-				break;
-			case XsdElements.EXTENSION:
-				break;
-			case XsdElements.GROUP:
-				break;
-			case XsdElements.RESTRICTION:
-				break;
-			case XsdElements.SEQUENCE:
-				if (isOptional) {
-					let optionalSequenceSchema = this.workingJsonSchema.newJsonSchemaFile();
-					this.workingJsonSchema.anyOf.push(optionalSequenceSchema);
-					this.specialCaseIdentifier.addSpecialCase(SpecialCases.OPTIONAL_SEQUENCE, optionalSequenceSchema, node);
-					// Add an the optional part (empty schema)
-					let emptySchema = this.workingJsonSchema.newJsonSchemaFile();
-					emptySchema.description = "This truthy schema is what makes an optional <sequence> optional."
-					this.workingJsonSchema.anyOf.push(emptySchema);
-					this.parsingState.pushSchema(this.workingJsonSchema);
-					this.workingJsonSchema = optionalSequenceSchema;
-				} else {
-					throw new Error('Required nested sequences need to be implemented!');
-				}
-				break;
-			default:
-				throw new Error('sequence() called from within unexpected parsing state! state = [' + state.name + ']');
-		}
-		return true;
-	}
-
-	simpleContent(node, jsonSchema, xsd) {
-		// TODO: id
-		// Ignore this grouping and continue processing children
-		return true;
-	}
-
-	handleSimpleTypeNamedGlobal(node, jsonSchema, xsd) {
-		const nameAttr = XsdFile.getAttrValue(node, XsdAttributes.NAME);
-		// TODO: id, final
-
-		this.workingJsonSchema = this.namespaceManager.getType(nameAttr, jsonSchema, jsonSchema, xsd);
-		jsonSchema.setSubSchema(nameAttr, this.workingJsonSchema);
-		return true;
-	}
-
-	handleSimpleTypeAnonymousLocal(node, jsonSchema, xsd) {
-		// TODO: id
-		// Ignore this grouping and continue processing children
-		return true;
-	}
-
-	simpleType(node, jsonSchema, xsd) {
-		debug('Found SimpleType');
-		var continueParsing
-		if (XsdFile.isNamed(node)) {
-			continueParsing = this.handleSimpleTypeNamedGlobal(node, jsonSchema, xsd);
-		} else {
-			continueParsing = this.handleSimpleTypeAnonymousLocal(node, jsonSchema, xsd);
-		}
-		if (this.parsingState.inAttribute()) {
-			// need to pop
-		}
-		return continueParsing;
-	}
-
-	text(node, jsonSchema, xsd) {
-		if (this.parsingState.inDocumentation()) {
-			// TODO: This should be a configurable option
-			this.workingJsonSchema.description = node.parentNode.childNodes.toString().replace(/\s+/g, ' ').trim();
-		} else if (this.parsingState.inAppInfo()) {
-			//this.workingJsonSchema.concatDescription(node.parentNode.nodeName + '=' + node.textContent + ' ');
-			this.workingJsonSchema.description += node.parentNode.nodeName + '=' + node.textContent + ' ';
-		}
-		return true;
-	}
-
-	totalDigits(node, jsonSchema, xsd) {
-		// TODO: id, value, fixed
-		// do nothing - there is no coresponding functionality in JSON Schema
-		return true;
-	}
-
-	union(node, jsonSchema, xsd) {
-		// TODO: id, memberTypes
-		// (TBD)
-		return true;
-	}
-
-	handleUniqueConstraint(node, jsonSchema, xsd) {
-		// TODO: id, name
-		// (TBD)
-		return true;
-	}
-
-	handleUniqueReferenceToUniqueConstraint(node, jsonSchema, xsd) {
-		// TODO: id, ref
-		// (TBD)
-		return true;
-	}
-
-	unique(node, jsonSchema, xsd) {
-		// (TBD)
-		return true;
-	}
-
-	whitespace(node, jsonSchema, xsd) {
-		// TODO: id, value, fixed
-		// (TBD)
-		return true;
-	}
-
-	processSpecialCases() {
-		this.specialCaseIdentifier.processSpecialCases();
-	}
+class ConverterDraft04 extends Processor {
+  /**
+   * Constructs an instance of ConverterDraft04.
+   * @constructor
+   */
+  constructor(options) {
+    super(options);
+    if (options != undefined) {
+      this.namespaceManager =
+        options.namespaceManager != undefined
+          ? options.namespaceManager
+          : new NamespaceManager();
+      this.specialCaseIdentifier =
+        options.specialCaseIdentifier != undefined
+          ? options.specialCaseIdentifier
+          : new BaseSpecialCaseIdentifier();
+    } else {
+      //this.namespaceManager = new NamespaceManager();
+      //this.specialCaseIdentifier = new BaseSpecialCaseIdentifier();
+    }
+
+    // The working schema is initilized as needed through XML Handlers
+  }
+
+  // Getters/Setters
+
+  get namespaceManager() {
+    return this[namespaceManager_NAME];
+  }
+  set namespaceManager(newNamespaceManager) {
+    this[namespaceManager_NAME] = newNamespaceManager;
+  }
+
+  get specialCaseIdentifier() {
+    return this[specialCaseIdentifier_NAME];
+  }
+  set specialCaseIdentifier(newSpecialCaseIdentifier) {
+    this[specialCaseIdentifier_NAME] = newSpecialCaseIdentifier;
+  }
+
+  get includeTextAndCommentNodes() {
+    return this[includeTextAndCommentNodes_NAME];
+  }
+  set includeTextAndCommentNodes(newIncludeTextAndCommentNodes) {
+    this[includeTextAndCommentNodes_NAME] = newIncludeTextAndCommentNodes;
+  }
+
+  dumpJsonSchema(jsonSchema) {
+    Object.keys(jsonSchema).forEach(function (prop, index, array) {
+      debug(prop + '=' + jsonSchema[prop]);
+    });
+  }
+
+  // Read-only properties
+
+  get builtInTypeConverter() {
+    return this.namespaceManager.builtInTypeConverter;
+  }
+  set builtInTypeConverter(unused) {
+    throw new Error('Unsupported operation');
+  }
+
+  /**
+   * Creates a namespaces for the given namespace name.  This method is called from the schema XML Handler.
+   *
+   * @see {@link NamespaceManager#createNamespace|NamespaceManager.createNamespace()}
+   */
+  initializeNamespaces(xsd) {
+    Object.keys(xsd.namespaces).forEach(function (namespace, index, array) {
+      this.namespaceManager.addNamespace(xsd.namespaces[namespace]);
+    }, this);
+  }
+
+  /**
+   * This method is called for each node in the XML Schema file being processed.  It performs three actions
+   *  1) processes an ID attribute if present
+   *  2) calls the appropriate XML Handler method.
+   *  3) calls super.process() to provide detailed logging
+   * @param {Node} node - the current {@link https://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/core.html#ID-745549614 element} in xsd being converted.
+   * @param {JsonSchemaFile} jsonSchema - the JSON Schema representing the current XML Schema file {@link XsdFile|xsd} being converted.
+   * @param {XsdFile} xsd - the XML schema file currently being converted.
+   *
+   * @returns {Boolean} - handler methods can return false to cancel traversal of {@link XsdFile|xsd}.  An XML Schema handler method
+   *  has a common footprint and a name that corresponds to one of the XML Schema element names found in {@link module:XsdElements}.
+   *  For example, the <choice> handler method is <pre><code>choice(node, jsonSchema, xsd)</code></pre>
+   */
+  process(node, jsonSchema, xsd) {
+    const id = XsdFile.getAttrValue(node, XsdAttributes.ID);
+    if (id !== undefined) {
+      let qualifiedTypeName = new Qname(id);
+      this.workingJsonSchema.addAttributeProperty(
+        qualifiedTypeName.getLocal(),
+        this.createAttributeSchema(node, jsonSchema, xsd, qualifiedTypeName)
+      );
+    }
+    const fnName = XsdFile.getNodeName(node);
+    if (
+      (debug.enabled === true &&
+        node.nodeType != XsdNodeTypes.TEXT_NODE &&
+        node.nodeType != XsdNodeTypes.COMMENT_NODE) ||
+      this.includeTextAndCommentNodes === true
+    ) {
+      const nameAttr = XsdFile.getAttrValue(node, XsdAttributes.NAME);
+      const valueAttr = XsdFile.getValueAttr(node);
+      debug(
+        'Processing [' +
+          fnName +
+          '] ' +
+          (nameAttr == undefined ? '' : '[' + nameAttr + ']') +
+          (valueAttr == undefined ? '' : '[' + valueAttr + ']')
+      );
+    }
+    let keepProcessing = true;
+    if (this[fnName] != undefined) {
+      keepProcessing = this[fnName](node, jsonSchema, xsd);
+    } else {
+      this.skippingUnknownNode(fnName, node, jsonSchema, xsd);
+    }
+    super.process(node, jsonSchema, xsd);
+    return keepProcessing;
+  }
+
+  skippingUnknownNode(fnName, node, jsonSchema, xsd) {
+    debug(`Skipping unknown node [${fnName}]`);
+  }
+
+  all(node, jsonSchema, xsd) {
+    // TODO: id, minOccurs, maxOccurs
+    // (TBD)
+  }
+
+  alternative(node, jsonSchema, xsd) {
+    // TODO: id, test, type, xpathDefaultNamespace
+    // (TBD)
+    return true;
+  }
+
+  annotation(node, jsonSchema, xsd) {
+    // TODO: id
+    // Ignore this grouping and continue processing children
+    return true;
+  }
+
+  any(node, jsonSchema, xsd) {
+    // TODO: id, minOccurs, maxOccurs, namespace, processContents, notNamespace, not QName
+    // (TBD)
+    const state = this.parsingState.getCurrentState();
+    switch (state.name) {
+      case XsdElements.CHOICE:
+        throw new Error('any() needs to be implemented within choice!');
+      case XsdElements.SEQUENCE:
+        break;
+      //			throw new Error('any() needs to be implemented within sequence!');
+      case XsdElements.ALL:
+        throw new Error('any() needs to be implemented within all!');
+      case XsdElements.OPEN_CONTENT:
+        throw new Error('any() needs to be implemented within openContent!');
+      case XsdElements.DEFAULT_OPEN_CONTENT:
+        throw new Error(
+          'any() needs to be implemented within defaultOpenContent'
+        );
+      default:
+        throw new Error('any() called from within unexpected parsing state!');
+    }
+    return true;
+  }
+
+  anyAttribute(node, jsonSchema, xsd) {
+    // TODO: id, namespace, processContents, notNamespace, not QName
+    // (TBD)
+    return true;
+  }
+
+  appinfo(node, jsonSchema, xsd) {
+    // TODO: source
+    // (TBD)
+    this.workingJsonSchema.description = node.toString();
+    return false;
+  }
+
+  assert(node, jsonSchema, xsd) {
+    // TODO: id, test, xpathDefaultNamespace
+    // (TBD)
+    return true;
+  }
+
+  assertion(node, jsonSchema, xsd) {
+    // TODO: id, test, xpathDefaultNamespace
+    // (TBD)
+    return true;
+  }
+
+  isBuiltInType(qualifiedTypeName) {
+    return this.builtInTypeConverter[qualifiedTypeName.getLocal()] != undefined;
+  }
+
+  /*
+   * A factory method to create JSON Schemas of one of the XML Schema built-in types.
+   *
+   */
+  createAttributeSchema(node, xsd, qualifiedTypeName) {
+    const attributeJsonSchema = this.workingJsonSchema.newJsonSchemaFile();
+    this.builtInTypeConverter[qualifiedTypeName.getLocal()](
+      node,
+      attributeJsonSchema,
+      xsd
+    );
+    return attributeJsonSchema;
+  }
+
+  // Delete this?
+  createAttributeReference(typeAttr, jsonSchema, xsd) {
+    const refType = this.namespaceManager.getType(
+      typeAttr,
+      this.workingJsonSchema,
+      jsonSchema,
+      xsd,
+      false
+    );
+    return refType.get$RefToSchema(jsonSchema);
+  }
+
+  handleAttributeGlobal(node, jsonSchema, xsd) {
+    const name = XsdFile.getAttrValue(node, XsdAttributes.NAME);
+    const typeName = XsdFile.getAttrValue(node, XsdAttributes.TYPE);
+    // TODO: id, default, fixed, inheritable (TBD)
+    var attributeJsonSchema;
+
+    this.parsingState.pushSchema(this.workingJsonSchema);
+    if (typeName !== undefined) {
+      const qualifiedTypeName = new Qname(typeName);
+      attributeJsonSchema = this.namespaceManager.getGlobalAttribute(
+        name,
+        jsonSchema
+      );
+      jsonSchema
+        .getGlobalAttributesSchema()
+        .setSubSchema(name, attributeJsonSchema);
+      return this.builtInTypeConverter[qualifiedTypeName.getLocal()](
+        node,
+        attributeJsonSchema
+      );
+    } else {
+      // Setup the working schema and allow processing to continue for any contained simpleType or annotation nodes.
+      attributeJsonSchema = this.namespaceManager.getGlobalAttribute(
+        name,
+        jsonSchema
+      );
+      jsonSchema
+        .getGlobalAttributesSchema()
+        .setSubSchema(name, attributeJsonSchema);
+      this.workingJsonSchema = attributeJsonSchema;
+    }
+    return true;
+  }
+
+  handleAttributeLocal(node, jsonSchema, xsd) {
+    const name = XsdFile.getAttrValue(node, XsdAttributes.NAME);
+    const type = XsdFile.getAttrValue(node, XsdAttributes.TYPE);
+    const use = XsdFile.getAttrValue(node, XsdAttributes.USE);
+    // TODO: id, form, default, fixed, targetNamespace, inheritable (TBD)
+    var attributeJsonSchema;
+
+    this.parsingState.pushSchema(this.workingJsonSchema);
+    if (type !== undefined) {
+      const qualifiedTypeName = new Qname(type);
+      if (this.isBuiltInType(qualifiedTypeName)) {
+        attributeJsonSchema = this.createAttributeSchema(
+          node,
+          xsd,
+          qualifiedTypeName
+        );
+      } else {
+        attributeJsonSchema = this.namespaceManager.getTypeReference(
+          type,
+          this.workingJsonSchema,
+          jsonSchema,
+          xsd
+        );
+      }
+      this.workingJsonSchema.addAttributeProperty(
+        name,
+        attributeJsonSchema,
+        use
+      );
+    } else {
+      // Setup the working schema and allow processing to continue for any contained simpleType or annotation nodes.
+      attributeJsonSchema = this.workingJsonSchema.newJsonSchemaFile();
+      this.workingJsonSchema.addAttributeProperty(
+        name,
+        attributeJsonSchema,
+        use
+      );
+      this.workingJsonSchema = attributeJsonSchema;
+    }
+    return true;
+  }
+
+  handleAttributeReference(node, jsonSchema, xsd) {
+    const ref = XsdFile.getAttrValue(node, XsdAttributes.REF);
+    const use = XsdFile.getAttrValue(node, XsdAttributes.USE);
+    // TODO: id, default, fixed, inheritable (TBD)
+
+    if (ref !== undefined) {
+      var attrSchema = this.namespaceManager.getGlobalAttribute(
+        ref,
+        jsonSchema
+      );
+      this.workingJsonSchema.addAttributeProperty(
+        ref,
+        attrSchema.get$RefToSchema(this.workingJsonSchema),
+        use
+      );
+    }
+
+    return true;
+  }
+
+  attribute(node, jsonSchema, xsd) {
+    // (TBD)
+    //dumpNode(node);
+    if (XsdFile.isReference(node)) {
+      return this.handleAttributeReference(node, jsonSchema, xsd);
+    } else if (this.parsingState.isTopLevelEntity()) {
+      return this.handleAttributeGlobal(node, jsonSchema, xsd);
+    } else {
+      return this.handleAttributeLocal(node, jsonSchema, xsd);
+    }
+  }
+
+  handleAttributeGroupDefinition(node, jsonSchema, xsd) {
+    // TODO id, name
+    // (TBD)
+  }
+
+  handleAttributeGroupReference(node, jsonSchema, xsd) {
+    // TODO id, ref (TBD)
+  }
+
+  attributeGroup(node, jsonSchema, xsd) {
+    // (TBD)
+    return true;
+  }
+
+  getMinMaxOccurs(node, minmax) {
+    var retval = XsdFile.getAttrValue(node, minmax);
+    if (retval != undefined && retval != XsdAttributeValues.UNBOUNDED) {
+      retval = XsdFile.getAttrValueAsNumber(node, minmax);
+    }
+    return retval;
+  }
+
+  handleChoiceArray(node, jsonSchema, xsd) {
+    const minOccursAttr = this.getMinMaxOccurs(node, XsdAttributes.MIN_OCCURS);
+    const maxOccursAttr = this.getMinMaxOccurs(node, XsdAttributes.MAX_OCCURS);
+    // TODO: id
+    // (TBD Don't forget to support singles)
+    throw new Error('choice array needs to be implemented!!');
+    return true;
+  }
+
+  allChildrenAreOptional(node) {
+    var retval = true;
+    const children = Array.from(node.childNodes);
+    children.forEach(function (childNode) {
+      if (childNode.nodeType != XsdNodeTypes.TEXT_NODE) {
+        const minOccursAttr = this.getMinMaxOccurs(
+          childNode,
+          XsdAttributes.MIN_OCCURS
+        );
+        if (minOccursAttr != 0) {
+          retval = false;
+        }
+      }
+    }, this);
+    return retval;
+  }
+
+  choice(node, jsonSchema, xsd) {
+    // TODO: id
+    const minOccursAttr = this.getMinMaxOccurs(node, XsdAttributes.MIN_OCCURS);
+    const maxOccursAttr = this.getMinMaxOccurs(node, XsdAttributes.MAX_OCCURS);
+    const isAnyOfChoice = this.specialCaseIdentifier.isAnyOfChoice(node, xsd);
+    if (isAnyOfChoice === true) {
+      this.specialCaseIdentifier.addSpecialCase(
+        SpecialCases.ANY_OF_CHOICE,
+        this.workingJsonSchema,
+        node
+      );
+      // This could be optional too.  Need a test!
+    }
+    const isArray =
+      maxOccursAttr !== undefined &&
+      (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED);
+    if (isArray) {
+      return this.handleChoiceArray(node, jsonSchema, xsd);
+    }
+    const isOptional = this.specialCaseIdentifier.isOptional(
+      node,
+      xsd,
+      minOccursAttr
+    );
+    const allChildrenAreOptional = this.allChildrenAreOptional(node);
+    const isSiblingChoice = this.specialCaseIdentifier.isSiblingChoice(
+      node,
+      xsd
+    );
+    const state = this.parsingState.getCurrentState();
+    switch (state.name) {
+      case XsdElements.CHOICE:
+        // Allow to fall through and continue processing.  The schema is estabished with the complexType.
+        //throw new Error('choice() needs to be implemented within choice');
+        let oneOfSchema = this.workingJsonSchema.newJsonSchemaFile();
+        this.workingJsonSchema.oneOf.push(oneOfSchema);
+        this.parsingState.pushSchema(this.workingJsonSchema);
+        this.workingJsonSchema = oneOfSchema;
+        break;
+      case XsdElements.COMPLEX_TYPE:
+        // Allow to fall through and continue processing.  The schema is estabished with the complexType.
+        //throw new Error('choice() needs to be implemented within complexType');
+        break;
+      case XsdElements.EXTENSION:
+        throw new Error('choice() needs to be implemented within extension');
+      case XsdElements.GROUP:
+        // Allow to fall through and continue processing.  The schema is estabished with the group.
+        //throw new Error('choice() needs to be implemented within group');
+        break;
+      case XsdElements.RESTRICTION:
+        throw new Error('choice() needs to be implemented within restriction');
+      case XsdElements.SEQUENCE:
+        if (isSiblingChoice) {
+          debug('Found sibling <choice>');
+          let allOfSchema = this.workingJsonSchema.newJsonSchemaFile();
+          this.workingJsonSchema.allOf.push(allOfSchema);
+          this.parsingState.pushSchema(this.workingJsonSchema);
+          this.workingJsonSchema = allOfSchema;
+          if (isAnyOfChoice === true) {
+            debug('                   ... that is an anyOfChoice');
+            // Ducktype it on there for now.  This is checked in baseSpecialCaseIdentifier.fixAnyOfChoice.
+            // It is needed because all sibling choices may not be anyOfChoices.
+            allOfSchema.isAnyOfChoice = true;
+          }
+        }
+        if (allChildrenAreOptional || isOptional) {
+          debug('Found optional <choice> for ' + jsonSchema.id);
+          let optionalChoiceSchema = this.workingJsonSchema.newJsonSchemaFile();
+          this.workingJsonSchema.anyOf.push(optionalChoiceSchema);
+          if (!isSiblingChoice) {
+            this.parsingState.pushSchema(this.workingJsonSchema);
+          }
+          this.workingJsonSchema = optionalChoiceSchema;
+          // The optional part will be added as a special case
+          this.specialCaseIdentifier.addSpecialCase(
+            SpecialCases.OPTIONAL_CHOICE,
+            optionalChoiceSchema,
+            node
+          );
+        } else {
+          debug('Found required <choice>');
+          // This is an needless grouping just allow to fall through and continue processing
+          // Allow to fall through and continue processing.
+          // The schema should be estabished by the parent of the sequence.
+          //  (Keep an eye on this one)
+          //throw new Error('choice() needs to be implemented within sequence');
+        }
+        break;
+      default:
+        throw new Error(
+          'choice() called from within unexpected parsing state!'
+        );
+    }
+    return true;
+  }
+
+  comment(node, jsonSchema, xsd) {
+    // do nothing - This is an XML comment (e.g. <!-- text -->)
+    return true;
+  }
+
+  complexContent(node, jsonSchema, xsd) {
+    // TODO: id, mixed
+    // Ignore this grouping and continue processing children
+    return true;
+  }
+
+  handleNamedComplexType(node, jsonSchema, xsd) {
+    const nameAttr = XsdFile.getAttrValue(node, XsdAttributes.NAME);
+    // TODO: id, mixed, abstract, block, final, defaultAttributesApply
+
+    const state = this.parsingState.getCurrentState();
+
+    switch (state.name) {
+      case XsdElements.SCHEMA:
+        this.workingJsonSchema = this.namespaceManager.getType(
+          nameAttr,
+          jsonSchema,
+          jsonSchema,
+          xsd
+        );
+        jsonSchema.setSubSchema(nameAttr, this.workingJsonSchema);
+        this.workingJsonSchema.type = jsonSchemaTypes.OBJECT;
+        break;
+      case XsdElements.REDEFINE:
+        throw new Error('complexType() needs to be impemented within redefine');
+      case XsdElements.OVERRIDE:
+        throw new Error('complexType() needs to be impemented within override');
+      default:
+        throw new Error(
+          'complexType() called from within unexpected parsing state! state=' +
+            state.name
+        );
+    }
+    return true;
+  }
+
+  handleAnonymousComplexType(node, jsonSchema, xsd) {
+    // TODO: id, mixed, defaultAttributesApply
+    // Ignore this grouping and continue processing children
+    return true;
+  }
+
+  complexType(node, jsonSchema, xsd) {
+    if (XsdFile.isNamed(node)) {
+      return this.handleNamedComplexType(node, jsonSchema, xsd);
+    } else {
+      return this.handleAnonymousComplexType(node, jsonSchema, xsd);
+    }
+  }
+
+  defaultOpenContent(node, jsonSchema, xsd) {
+    // TODO: schema
+    // (TBD)
+    return true;
+  }
+
+  documentation(node, jsonSchema, xsd) {
+    // TODO: source, xml:lang
+    // Ignore this grouping and continue processing children.  The actual text will come through the text() method.
+    return true;
+  }
+
+  handleElementGlobal(node, jsonSchema, xsd) {
+    const nameAttr = XsdFile.getAttrValue(node, XsdAttributes.NAME);
+    const typeAttr = XsdFile.getAttrValue(node, XsdAttributes.TYPE);
+    // TODO: id, defaut, fixed, nillable, abstract, substitutionGroup, block, final
+
+    if (typeAttr !== undefined) {
+      var typeName = typeAttr;
+      var refType = this.namespaceManager.getTypeReference(
+        typeName,
+        jsonSchema,
+        jsonSchema,
+        xsd
+      );
+      //refType.id = jsonSchema.id;
+      this.namespaceManager.addTypeReference(
+        nameAttr,
+        refType,
+        jsonSchema,
+        xsd
+      );
+      this.workingJsonSchema = refType;
+      jsonSchema.setSubSchema(nameAttr, this.workingJsonSchema);
+      //workingJsonSchema.type = jsonSchemaTypes.OBJECT;
+    } else {
+      this.workingJsonSchema = this.namespaceManager.getType(
+        nameAttr,
+        jsonSchema,
+        jsonSchema,
+        xsd
+      );
+      jsonSchema.setSubSchema(nameAttr, this.workingJsonSchema);
+      this.workingJsonSchema.type = jsonSchemaTypes.OBJECT;
+    }
+    if (this.parsingState.inChoice()) {
+      throw new Error(
+        'choice needs to be implemented in handleElementGlobal()!'
+      );
+    }
+    return true;
+  }
+
+  addProperty(targetSchema, propertyName, customType, minOccursAttr) {
+    if (
+      minOccursAttr === undefined ||
+      minOccursAttr === XsdAttributeValues.REQUIRED ||
+      minOccursAttr > 0
+    ) {
+      targetSchema.addRequired(propertyName);
+    }
+    targetSchema.setProperty(propertyName, customType);
+  }
+
+  addChoiceProperty(targetSchema, propertyName, customType, minOccursAttr) {
+    var choiceSchema = targetSchema.newJsonSchemaFile();
+    //choiceSchema.additionalProperties = false;
+    this.addProperty(choiceSchema, propertyName, customType, minOccursAttr);
+    targetSchema.oneOf.push(choiceSchema);
+  }
+
+  addPropertyAsArray(
+    targetSchema,
+    propertyName,
+    customType,
+    minOccursAttr,
+    maxOccursAttr
+  ) {
+    const oneOfSchema = targetSchema.newJsonSchemaFile();
+    const arraySchema = oneOfSchema.newJsonSchemaFile();
+    const min = minOccursAttr === undefined ? undefined : minOccursAttr;
+    const max = maxOccursAttr === undefined ? undefined : maxOccursAttr;
+
+    arraySchema.type = jsonSchemaTypes.ARRAY;
+    arraySchema.minItems = min;
+    arraySchema.maxItems =
+      max === XsdAttributeValues.UNBOUNDED ? undefined : max;
+    arraySchema.items = customType.get$RefToSchema(arraySchema);
+
+    oneOfSchema.oneOf.push(customType.get$RefToSchema(oneOfSchema));
+    oneOfSchema.oneOf.push(arraySchema);
+    this.addProperty(targetSchema, propertyName, oneOfSchema, minOccursAttr);
+  }
+
+  addChoicePropertyAsArray(
+    targetSchema,
+    propertyName,
+    customType,
+    minOccursAttr,
+    maxOccursAttr
+  ) {
+    const choiceSchema = targetSchema.newJsonSchemaFile();
+
+    //choiceSchema.additionalProperties = false;
+    this.addPropertyAsArray(
+      choiceSchema,
+      propertyName,
+      customType,
+      minOccursAttr,
+      maxOccursAttr
+    );
+    targetSchema.oneOf.push(choiceSchema);
+  }
+
+  handleElementLocal(node, jsonSchema, xsd) {
+    const nameAttr = XsdFile.getAttrValue(node, XsdAttributes.NAME);
+    const typeAttr = XsdFile.getAttrValue(node, XsdAttributes.TYPE);
+    const minOccursAttr = this.getMinMaxOccurs(node, XsdAttributes.MIN_OCCURS);
+    const maxOccursAttr = this.getMinMaxOccurs(node, XsdAttributes.MAX_OCCURS);
+    // TODO: id, form, defaut, fixed, nillable, block, targetNamespace
+
+    var lookupName;
+    if (typeAttr !== undefined) {
+      lookupName = typeAttr;
+    }
+    const propertyName = nameAttr;
+    var customType;
+    if (lookupName !== undefined) {
+      if (this.namespaceManager.isBuiltInType(lookupName, xsd)) {
+        //customType = this.namespaceManager.getBType(lookupName, this.workingJsonSchema, jsonSchema, xsd, false);
+        customType = this.namespaceManager.getBuiltInType(
+          lookupName,
+          this.workingJsonSchemaent,
+          xsd
+        );
+      } else {
+        customType = this.namespaceManager.getTypeReference(
+          lookupName,
+          this.workingJsonSchema,
+          jsonSchema,
+          xsd
+        );
+      }
+    } else {
+      //propertyName = nameAttr + '-' + XsdFile.getNameOfFirstParentWithNameAttribute(node);  // local element names attributes are scoped to the parent so they are not unique within the namespace.
+      //customType = this.namespaceManager.getType(propertyName, this.workingJsonSchema, jsonSchema, xsd);
+      customType = this.workingJsonSchema.newJsonSchemaFile();
+    }
+    var isArray =
+      maxOccursAttr !== undefined &&
+      (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED);
+    var state = this.parsingState.getCurrentState();
+    switch (state.name) {
+      case XsdElements.CHOICE:
+        if (
+          this.allChildrenAreOptional(node.parentNode) &&
+          this.specialCaseIdentifier.isOptional(node.parentNode, xsd)
+        ) {
+          if (isArray) {
+            this.addPropertyAsArray(
+              this.workingJsonSchema,
+              propertyName,
+              customType,
+              minOccursAttr,
+              maxOccursAttr
+            );
+          } else {
+            this.addProperty(
+              this.workingJsonSchema,
+              propertyName,
+              customType,
+              minOccursAttr
+            );
+          }
+        } else {
+          if (isArray) {
+            this.addChoicePropertyAsArray(
+              this.workingJsonSchema,
+              propertyName,
+              customType,
+              minOccursAttr,
+              maxOccursAttr
+            );
+          } else {
+            this.addChoiceProperty(
+              this.workingJsonSchema,
+              propertyName,
+              customType,
+              minOccursAttr
+            );
+          }
+        }
+        break;
+      case XsdElements.SEQUENCE:
+      case XsdElements.ALL:
+        if (isArray) {
+          this.addPropertyAsArray(
+            this.workingJsonSchema,
+            propertyName,
+            customType,
+            minOccursAttr,
+            maxOccursAttr
+          );
+        } else {
+          this.addProperty(
+            this.workingJsonSchema,
+            propertyName,
+            customType,
+            minOccursAttr
+          );
+        }
+        break;
+      default:
+        throw new Error(
+          'element() [local] called from within unexpected parsing state!'
+        );
+    }
+    this.parsingState.pushSchema(this.workingJsonSchema);
+    this.workingJsonSchema = customType;
+    return true;
+  }
+
+  handleElementReference(node, jsonSchema, xsd) {
+    const minOccursAttr = this.getMinMaxOccurs(node, XsdAttributes.MIN_OCCURS);
+    const maxOccursAttr = this.getMinMaxOccurs(node, XsdAttributes.MAX_OCCURS);
+    const refAttr = XsdFile.getAttrValue(node, XsdAttributes.REF);
+    // TODO: id
+
+    // An element within a model group (such as 'group') may be a reference.  References have neither
+    // a name nor a type attribute - just a ref attribute.  This is awkward when the reference elmenent
+    // is a property of an object in JSON.  With no other options to name the property ref is used.
+    const propertyName = refAttr; // ref attribute is required for an element reference
+    const ref = this.namespaceManager.getTypeReference(
+      propertyName,
+      this.workingJsonSchema,
+      jsonSchema,
+      xsd
+    );
+    const isArray =
+      maxOccursAttr !== undefined &&
+      (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED);
+    const state = this.parsingState.getCurrentState();
+    switch (state.name) {
+      case XsdElements.CHOICE:
+        if (
+          this.allChildrenAreOptional(node.parentNode) &&
+          this.specialCaseIdentifier.isOptional(node.parentNode, xsd)
+        ) {
+          if (isArray) {
+            this.addPropertyAsArray(
+              this.workingJsonSchema,
+              propertyName,
+              ref,
+              minOccursAttr,
+              maxOccursAttr
+            );
+          } else {
+            this.addProperty(
+              this.workingJsonSchema,
+              propertyName,
+              ref,
+              minOccursAttr
+            );
+          }
+        } else {
+          if (isArray) {
+            this.addChoicePropertyAsArray(
+              this.workingJsonSchema,
+              propertyName,
+              ref,
+              minOccursAttr,
+              maxOccursAttr
+            );
+          } else {
+            this.addChoiceProperty(
+              this.workingJsonSchema,
+              propertyName,
+              ref,
+              minOccursAttr
+            );
+          }
+        }
+        break;
+      case XsdElements.SEQUENCE:
+      case XsdElements.ALL:
+        if (isArray) {
+          this.addPropertyAsArray(
+            this.workingJsonSchema,
+            propertyName,
+            ref,
+            minOccursAttr,
+            maxOccursAttr
+          );
+        } else {
+          this.addProperty(
+            this.workingJsonSchema,
+            propertyName,
+            ref,
+            minOccursAttr
+          );
+        }
+        break;
+      default:
+        throw new Error(
+          'element() [reference] called from within unexpected parsing state!'
+        );
+    }
+    return true;
+  }
+
+  element(node, jsonSchema, xsd) {
+    const refAttr = XsdFile.getAttrValue(node, XsdAttributes.REF);
+    const localNamespaceDefinition = XsdFile.getAttrValueByPrefix(
+      node,
+      XsdAttributeValues.XMLNS
+    );
+    if (localNamespaceDefinition) {
+      xsd.addNamespace(
+        localNamespaceDefinition.localName,
+        localNamespaceDefinition.nodeValue
+      );
+    }
+    if (refAttr !== undefined) {
+      return this.handleElementReference(node, jsonSchema, xsd);
+    } else if (this.parsingState.isTopLevelEntity()) {
+      return this.handleElementGlobal(node, jsonSchema, xsd);
+    } else {
+      return this.handleElementLocal(node, jsonSchema, xsd);
+    }
+  }
+
+  enumeration(node, jsonSchema, xsd) {
+    const val = XsdFile.getValueAttr(node);
+    // TODO: id, fixed
+
+    this.workingJsonSchema.addEnum(val);
+    return true;
+  }
+
+  explicitTimezone(node, jsonSchema, xsd) {
+    // TODO: id, fixed, value
+    // (TBD)
+    return true;
+  }
+
+  extension(node, jsonSchema, xsd) {
+    const baseAttr = XsdFile.getAttrValue(node, XsdAttributes.BASE);
+    const localNamespaceDefinition = XsdFile.getAttrValueByPrefix(
+      node,
+      XsdAttributeValues.XMLNS
+    );
+    if (localNamespaceDefinition) {
+      xsd.addNamespace(
+        localNamespaceDefinition.localName,
+        localNamespaceDefinition.nodeValue
+      );
+    }
+    // TODO: id
+    const state = this.parsingState.getCurrentState();
+    // This switch isn't really needed since both content types are being handled the same, but keeping it just in case this turns out to be a false assumption.
+    switch (state.name) {
+      case XsdElements.COMPLEX_CONTENT:
+        this.parsingState.pushSchema(this.workingJsonSchema);
+        let typeRef = this.namespaceManager.getTypeReference(
+          baseAttr,
+          this.workingJsonSchema,
+          jsonSchema,
+          xsd
+        );
+        this.workingJsonSchema = this.workingJsonSchema.extend(typeRef); //, jsonSchemaTypes.OBJECT);
+        break;
+      case XsdElements.SIMPLE_CONTENT:
+        if (this.namespaceManager.isBuiltInType(baseAttr, xsd)) {
+          let baseType = new Qname(baseAttr);
+          let baseTypeName = baseType.getLocal();
+          return this.builtInTypeConverter[baseTypeName](
+            node,
+            this.workingJsonSchema
+          );
+        } else {
+          this.parsingState.pushSchema(this.workingJsonSchema);
+          let typeRef = this.namespaceManager.getTypeReference(
+            baseAttr,
+            this.workingJsonSchema,
+            jsonSchema,
+            xsd
+          );
+          this.workingJsonSchema = this.workingJsonSchema.extend(typeRef); //, jsonSchemaTypes.OBJECT);
+        }
+        break;
+      default:
+        throw new Error(
+          'extension() called from within unexpected parsing state!'
+        );
+    }
+    return true;
+  }
+
+  field(node, jsonSchema, xsd) {
+    // TODO: id, xpath, xpathDefaultNamespace
+    // (TBD)
+    return true;
+  }
+
+  fractionDigits(node, jsonSchema, xsd) {
+    // TODO: id, value, fixed
+    // do nothing - there is no coresponding functionality in JSON Schema
+    return true;
+  }
+
+  handleGroupDefinition(node, jsonSchema, xsd) {
+    const nameAttr = XsdFile.getAttrValue(node, XsdAttributes.NAME);
+    // TODO: id
+
+    const state = this.parsingState.getCurrentState();
+    switch (state.name) {
+      case XsdElements.SCHEMA:
+        this.workingJsonSchema = this.namespaceManager.getType(
+          nameAttr,
+          jsonSchema,
+          jsonSchema,
+          xsd
+        );
+        jsonSchema.setSubSchema(nameAttr, this.workingJsonSchema);
+        this.workingJsonSchema.type = jsonSchemaTypes.OBJECT;
+        break;
+      case XsdElements.REDEFINE:
+        throw new Error(
+          'group() [definition] needs to be impemented within redefine!'
+        );
+      case XsdElements.OVERRIDE:
+        throw new Error(
+          'group() [definition] needs to be impemented within override!'
+        );
+      default:
+        throw new Error(
+          'group() [definition] called from within unexpected parsing state!'
+        );
+    }
+    return true;
+  }
+
+  handleGroupReference(node, jsonSchema, xsd) {
+    const minOccursAttr = this.getMinMaxOccurs(node, XsdAttributes.MIN_OCCURS);
+    const maxOccursAttr = this.getMinMaxOccurs(node, XsdAttributes.MAX_OCCURS);
+    const refAttr = XsdFile.getAttrValue(node, XsdAttributes.REF);
+    // TODO: id
+
+    const propertyName = refAttr; // ref attribute is required for group reference
+    const ref = this.namespaceManager.getTypeReference(
+      propertyName,
+      this.workingJsonSchema,
+      jsonSchema,
+      xsd
+    );
+    const isArray =
+      maxOccursAttr !== undefined &&
+      (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED);
+    const state = this.parsingState.getCurrentState();
+    switch (state.name) {
+      case XsdElements.EXTENSION:
+        throw new Error(
+          'group() [reference] needs to be impemented within extension!'
+        );
+      case XsdElements.RESTRICTION:
+        throw new Error(
+          'group() [reference] needs to be impemented within restriction!'
+        );
+      case XsdElements.CHOICE:
+        if (isArray) {
+          this.addChoicePropertyAsArray(
+            this.workingJsonSchema,
+            propertyName,
+            ref,
+            minOccursAttr,
+            maxOccursAttr
+          );
+        } else {
+          this.addChoiceProperty(
+            this.workingJsonSchema,
+            propertyName,
+            ref,
+            minOccursAttr
+          );
+        }
+        break;
+      case XsdElements.COMPLEX_TYPE:
+      case XsdElements.SEQUENCE:
+      case XsdElements.ALL:
+        if (isArray) {
+          this.addPropertyAsArray(
+            this.workingJsonSchema,
+            propertyName,
+            ref,
+            minOccursAttr,
+            maxOccursAttr
+          );
+        } else {
+          this.addProperty(
+            this.workingJsonSchema,
+            propertyName,
+            ref,
+            minOccursAttr
+          );
+        }
+        break;
+      default:
+        throw new Error(
+          'group() [reference] called from within unexpected parsing state!'
+        );
+    }
+    return true;
+  }
+
+  group(node, jsonSchema, xsd) {
+    if (XsdFile.isReference(node)) {
+      return this.handleGroupReference(node, jsonSchema, xsd);
+    } else {
+      return this.handleGroupDefinition(node, jsonSchema, xsd);
+    }
+  }
+
+  import(node, jsonSchema, xsd) {
+    const namespace = XsdFile.getAttrValue(node, XsdAttributes.NAMESPACE);
+    const schemaLocation = XsdFile.getAttrValue(
+      node,
+      XsdAttributes.SCHEMA_LOCATION
+    );
+    // TODO: id
+    xsd.imports[namespace] = new URI(xsd.directory)
+      .segment(schemaLocation)
+      .toString();
+    return true;
+  }
+
+  include(node, jsonSchema, xsd) {
+    // TODO: id, schemaLocation
+    // do nothing
+    return true;
+  }
+
+  handleKeyConstraint() {
+    // TODO: id, name
+    // (TBD)
+    return true;
+  }
+
+  handleKeyReferenceToKeyConstraint() {
+    // TODO: id, ref
+    // (TBD)
+    return true;
+  }
+
+  key(node, jsonSchema, xsd) {
+    // (TBD)
+    return true;
+  }
+
+  handleKeyReference(node, jsonSchema, xsd) {
+    // TODO: id, name, refer
+    // (TBD)
+    return true;
+  }
+
+  handleKeyReferenceToKeyReference(node, jsonSchema, xsd) {
+    // TODO: id, ref
+    // (TBD)
+    return true;
+  }
+
+  keyref(node, jsonSchema, xsd) {
+    // (TBD)
+    return true;
+  }
+
+  length(node, jsonSchema, xsd) {
+    // TODO: id, fixed
+    const len = XsdFile.getValueAttrAsNumber(node);
+
+    this.workingJsonSchema.maxLength = len;
+    this.workingJsonSchema.minLength = len;
+    return true;
+  }
+
+  list(node, jsonSchema, xsd) {
+    // TODO: id, itemType
+    // (TBD)
+    return true;
+  }
+
+  maxExclusive(node, jsonSchema, xsd) {
+    const val = XsdFile.getValueAttrAsNumber(node);
+    // TODO: id, fixed
+
+    this.workingJsonSchema.maximum = val;
+    this.workingJsonSchema.exlusiveMaximum = true;
+    return true;
+  }
+
+  maxInclusive(node, jsonSchema, xsd) {
+    const val = XsdFile.getValueAttrAsNumber(node);
+    // TODO: id, fixed
+
+    this.workingJsonSchema.maximum = val; // inclusive is the JSON Schema default
+    return true;
+  }
+
+  maxLength(node, jsonSchema, xsd) {
+    const len = XsdFile.getValueAttrAsNumber(node);
+    // TODO: id, fixed
+
+    this.workingJsonSchema.maxLength = len;
+    return true;
+  }
+
+  minExclusive(node, jsonSchema, xsd) {
+    const val = XsdFile.getValueAttrAsNumber(node);
+    // TODO: id, fixed
+
+    this.workingJsonSchema.minimum = val;
+    this.workingJsonSchema.exclusiveMinimum = true;
+    return true;
+  }
+
+  minInclusive(node, jsonSchema, xsd) {
+    const val = XsdFile.getValueAttrAsNumber(node);
+    // TODO: id, fixed
+
+    this.workingJsonSchema.minimum = val; // inclusive is the JSON Schema default
+    return true;
+  }
+
+  minLength(node, jsonSchema, xsd) {
+    const len = XsdFile.getValueAttrAsNumber(node);
+    // TODO: id, fixed
+
+    this.workingJsonSchema.minLength = len;
+    return true;
+  }
+
+  notation(node, jsonSchema, xsd) {
+    // TODO: id, name, public, system
+    // (TBD)
+    return true;
+  }
+
+  openContent(node, jsonSchema, xsd) {
+    // TODO: id, mode
+    // (TBD)
+    return true;
+  }
+
+  override(node, jsonSchema, xsd) {
+    // TODO: id, schemaLocation
+    // (TBD)
+    return true;
+  }
+
+  pattern(node, jsonSchema, xsd) {
+    const pattern = XsdFile.getValueAttr(node);
+    // TODO: id
+
+    this.workingJsonSchema.pattern = pattern;
+    return true;
+  }
+
+  redefine(node, jsonSchema, xsd) {
+    // TODO: id, schemaLocation
+    // (TBD)
+    return true;
+  }
+
+  restriction(node, jsonSchema, xsd) {
+    const baseAttr = XsdFile.getAttrValue(node, XsdAttributes.BASE);
+    const baseType = new Qname(baseAttr);
+    const baseTypeName = baseType.getLocal();
+    // TODO: id, (base inheritance via allOf)
+
+    if (this.namespaceManager.isBuiltInType(baseAttr, xsd)) {
+      return this.builtInTypeConverter[baseTypeName](
+        node,
+        this.workingJsonSchema
+      );
+    } else {
+      this.parsingState.pushSchema(this.workingJsonSchema);
+      let typeRef = this.namespaceManager.getTypeReference(
+        baseAttr,
+        jsonSchema,
+        jsonSchema,
+        xsd
+      );
+      if (XsdFile.isEmpty(node)) {
+        jsonSchema.setSubSchema(
+          XsdFile.getNameAttrValue(node.parentNode),
+          typeRef
+        );
+      } else {
+        this.workingJsonSchema = this.workingJsonSchema.extend(typeRef);
+      }
+      return true;
+    }
+  }
+
+  schema(node, jsonSchema, xsd) {
+    // TODO: id, version, targetNamespace, attributeFormDefualt, elementFormDefualt, blockDefault, finalDefault, xml:lang, defaultAttributes, xpathDefaultNamespace
+
+    jsonSchema.description =
+      'Schema tag attributes: ' +
+      utils.objectToString(XsdFile.buildAttributeMap(node));
+    this.initializeNamespaces(xsd);
+    this.workingJsonSchema = jsonSchema;
+    return true;
+  }
+
+  selector(node, jsonSchema, xsd) {
+    // TODO: key, keyref, unique
+    // (TBD)
+    return true;
+  }
+
+  sequence(node, jsonSchema, xsd) {
+    const minOccursAttr = this.getMinMaxOccurs(node, XsdAttributes.MIN_OCCURS);
+    const maxOccursAttr = this.getMinMaxOccurs(node, XsdAttributes.MAX_OCCURS);
+    const isArray =
+      maxOccursAttr !== undefined &&
+      (maxOccursAttr > 1 || maxOccursAttr === XsdAttributeValues.UNBOUNDED);
+    if (isArray) {
+      throw new Error('sequence arrays need to be implemented!');
+    }
+    var isOptional = minOccursAttr !== undefined && minOccursAttr == 0;
+    if (isOptional === true) {
+      let type = XsdFile.getTypeNode(node);
+      let typeName = type.getAttribute('name');
+      debug('Optional Sequence Found : ' + xsd.filename + ':' + typeName);
+      if (typeName == '') {
+        this.parsingState.dumpStates(xsd.filename);
+        XsdFile.dumpNode(node);
+      }
+    }
+    const state = this.parsingState.getCurrentState();
+    switch (state.name) {
+      case XsdElements.CHOICE:
+        let choiceSchema = this.workingJsonSchema.newJsonSchemaFile();
+        //choiceSchema.additionalProperties = false;
+        this.workingJsonSchema.oneOf.push(choiceSchema);
+        this.parsingState.pushSchema(this.workingJsonSchema);
+        this.workingJsonSchema = choiceSchema;
+        break;
+      case XsdElements.COMPLEX_TYPE:
+        break;
+      case XsdElements.EXTENSION:
+        break;
+      case XsdElements.GROUP:
+        break;
+      case XsdElements.RESTRICTION:
+        break;
+      case XsdElements.SEQUENCE:
+        if (isOptional) {
+          let optionalSequenceSchema =
+            this.workingJsonSchema.newJsonSchemaFile();
+          this.workingJsonSchema.anyOf.push(optionalSequenceSchema);
+          this.specialCaseIdentifier.addSpecialCase(
+            SpecialCases.OPTIONAL_SEQUENCE,
+            optionalSequenceSchema,
+            node
+          );
+          // Add an the optional part (empty schema)
+          let emptySchema = this.workingJsonSchema.newJsonSchemaFile();
+          emptySchema.description =
+            'This truthy schema is what makes an optional <sequence> optional.';
+          this.workingJsonSchema.anyOf.push(emptySchema);
+          this.parsingState.pushSchema(this.workingJsonSchema);
+          this.workingJsonSchema = optionalSequenceSchema;
+        } else {
+          throw new Error('Required nested sequences need to be implemented!');
+        }
+        break;
+      default:
+        throw new Error(
+          'sequence() called from within unexpected parsing state! state = [' +
+            state.name +
+            ']'
+        );
+    }
+    return true;
+  }
+
+  simpleContent(node, jsonSchema, xsd) {
+    // TODO: id
+    // Ignore this grouping and continue processing children
+    return true;
+  }
+
+  handleSimpleTypeNamedGlobal(node, jsonSchema, xsd) {
+    const nameAttr = XsdFile.getAttrValue(node, XsdAttributes.NAME);
+    // TODO: id, final
+
+    this.workingJsonSchema = this.namespaceManager.getType(
+      nameAttr,
+      jsonSchema,
+      jsonSchema,
+      xsd
+    );
+    jsonSchema.setSubSchema(nameAttr, this.workingJsonSchema);
+    return true;
+  }
+
+  handleSimpleTypeAnonymousLocal(node, jsonSchema, xsd) {
+    // TODO: id
+    // Ignore this grouping and continue processing children
+    return true;
+  }
+
+  simpleType(node, jsonSchema, xsd) {
+    debug('Found SimpleType');
+    var continueParsing;
+    if (XsdFile.isNamed(node)) {
+      continueParsing = this.handleSimpleTypeNamedGlobal(node, jsonSchema, xsd);
+    } else {
+      continueParsing = this.handleSimpleTypeAnonymousLocal(
+        node,
+        jsonSchema,
+        xsd
+      );
+    }
+    if (this.parsingState.inAttribute()) {
+      // need to pop
+    }
+    return continueParsing;
+  }
+
+  text(node, jsonSchema, xsd) {
+    if (this.parsingState.inDocumentation()) {
+      // TODO: This should be a configurable option
+      this.workingJsonSchema.description = node.parentNode.childNodes
+        .toString()
+        .replace(/\s+/g, ' ')
+        .trim();
+    } else if (this.parsingState.inAppInfo()) {
+      //this.workingJsonSchema.concatDescription(node.parentNode.nodeName + '=' + node.textContent + ' ');
+      this.workingJsonSchema.description +=
+        node.parentNode.nodeName + '=' + node.textContent + ' ';
+    }
+    return true;
+  }
+
+  totalDigits(node, jsonSchema, xsd) {
+    // TODO: id, value, fixed
+    // do nothing - there is no coresponding functionality in JSON Schema
+    return true;
+  }
+
+  union(node, jsonSchema, xsd) {
+    // TODO: id, memberTypes
+    // (TBD)
+    return true;
+  }
+
+  handleUniqueConstraint(node, jsonSchema, xsd) {
+    // TODO: id, name
+    // (TBD)
+    return true;
+  }
+
+  handleUniqueReferenceToUniqueConstraint(node, jsonSchema, xsd) {
+    // TODO: id, ref
+    // (TBD)
+    return true;
+  }
+
+  unique(node, jsonSchema, xsd) {
+    // (TBD)
+    return true;
+  }
+
+  whitespace(node, jsonSchema, xsd) {
+    // TODO: id, value, fixed
+    // (TBD)
+    return true;
+  }
+
+  processSpecialCases() {
+    this.specialCaseIdentifier.processSpecialCases();
+  }
 }
 
 module.exports = ConverterDraft04;
+
 },{"./baseSpecialCaseIdentifier":89,"./jsonschema/jsonSchemaFile":97,"./jsonschema/jsonSchemaTypes":105,"./namespaceManager":106,"./processor":108,"./qname":110,"./specialCases":111,"./utils":112,"./xmlschema/xsdAttributeValues":118,"./xmlschema/xsdAttributes":119,"./xmlschema/xsdElements":120,"./xmlschema/xsdFileXmlDom":121,"./xmlschema/xsdNodeTypes":122,"debug":3,"urijs":11}],93:[function(require,module,exports){
 'use strict';
 
@@ -19552,7 +19915,6 @@ const Qname = require('./qname');
 const CONSTANTS = require('./constants');
 const ForwardReference = require('./forwardReference');
 
-
 const namespaces_NAME = Symbol();
 const builtInTypeConverter_NAME = Symbol();
 const jsonSchema_NAME = Symbol();
@@ -19561,551 +19923,724 @@ const forwardReferences_NAME = Symbol();
 const jsonSchemaVersion_NAME = Symbol();
 
 /**
- * Class responsible for managaging namespaces and types within those namespaces, which are defined as 
- * XML Schema aggregates that have been converted to JSON Schema.  Types are arranged by XML 
+ * Class responsible for managaging namespaces and types within those namespaces, which are defined as
+ * XML Schema aggregates that have been converted to JSON Schema.  Types are arranged by XML
  * Namespaces.  Types can be added and retrieved as needed.
- * 
+ *
  * This module also manages global attributes.  As a reminder global attributes are global accross all XML
  * Schema files being considered.  This includes schemas that are brought in by an *&lt;include&gt;* tag
  * or by an *&lt;import&gt;* tag.
- * 
+ *
  * An object is used to manage any number of XML Namespaces including a specialized namespace for global
  * attributes and the XSD well known namespaces.  Namespaces are themselves JSON objects with one property named types.  Initially,
- * the collection of namespaces contains only the globalAttributes specialized namespace.  Additional 
+ * the collection of namespaces contains only the globalAttributes specialized namespace.  Additional
  * namespaces will be added to the collection as they are encountered.
- * 
+ *
  * <pre>
  *	this.namespaces = {};
  *	this.namespaces[''] = { types: {} };
  *	this.namespaces.globalAttributes = { types: {} };
  * </pre>
- * 
+ *
  * @module NamespaceManager
  */
 
 class NamespaceManager {
-	constructor(options) {
-		this.namespaces = {};
-		this.addNamespace(CONSTANTS.GLOBAL_ATTRIBUTES_SCHEMA_NAME);
-		this.addNamespace(CONSTANTS.XML_SCHEMA_NAMESPACE);
-		if (options == undefined) {
-			throw new Error('Parameter "options" is required');
-		}
+  constructor(options) {
+    this.namespaces = {};
+    this.addNamespace(CONSTANTS.GLOBAL_ATTRIBUTES_SCHEMA_NAME);
+    this.addNamespace(CONSTANTS.XML_SCHEMA_NAMESPACE);
+    if (options == undefined) {
+      throw new Error('Parameter "options" is required');
+    }
 
-		if (options.jsonSchemaVersion == undefined) {
-				throw new Error('Parameter options.jsonSchemaVersion is required')
-		}
-		if (options.builtInTypeConverter != undefined) {
-			this.builtInTypeConverter = options.builtInTypeConverter;
-		}
-		this.jsonSchemaVersion = options.jsonSchemaVersion;
-		this.reset();
-	}
+    if (options.jsonSchemaVersion == undefined) {
+      throw new Error('Parameter options.jsonSchemaVersion is required');
+    }
+    if (options.builtInTypeConverter != undefined) {
+      this.builtInTypeConverter = options.builtInTypeConverter;
+    }
+    this.jsonSchemaVersion = options.jsonSchemaVersion;
+    this.reset();
+  }
 
-	// Getters/Setters
+  // Getters/Setters
 
-	/**
-	 * Returns the namespaces object.  It will have been initialized with at least the globalAttributes
-	 * specialized namespace, but it will include any other namespaces that have been added.
-	 * 
-	 * @returns {Object} Returns the namespaces object.
-	 */
-	get namespaces() {
-		return this[namespaces_NAME];
-	}
-	set namespaces(newNamespaces) {
-		this[namespaces_NAME] = newNamespaces;
-	}
+  /**
+   * Returns the namespaces object.  It will have been initialized with at least the globalAttributes
+   * specialized namespace, but it will include any other namespaces that have been added.
+   *
+   * @returns {Object} Returns the namespaces object.
+   */
+  get namespaces() {
+    return this[namespaces_NAME];
+  }
+  set namespaces(newNamespaces) {
+    this[namespaces_NAME] = newNamespaces;
+  }
 
-	get XML_SCHEMA_NAMESPACE() {
-		throw new Error();
-	}
-	set XML_SCHEMA_NAMESPACE(newXmlSchemaNamespace) {
-		throw new Error();
-	}
+  get XML_SCHEMA_NAMESPACE() {
+    throw new Error();
+  }
+  set XML_SCHEMA_NAMESPACE(newXmlSchemaNamespace) {
+    throw new Error();
+  }
 
-	get builtInTypeConverter() {
-		return this[builtInTypeConverter_NAME];
-	}
-	set builtInTypeConverter(newBuiltInTypeConverter) {
-		this[builtInTypeConverter_NAME] = newBuiltInTypeConverter;
-	}
+  get builtInTypeConverter() {
+    return this[builtInTypeConverter_NAME];
+  }
+  set builtInTypeConverter(newBuiltInTypeConverter) {
+    this[builtInTypeConverter_NAME] = newBuiltInTypeConverter;
+  }
 
-	get jsonSchemas() {
-		return this[jsonSchema_NAME];
-	}
-	set jsonSchemas(newJsonSchema) {
-		this[jsonSchema_NAME] = newJsonSchema;
-	}
+  get jsonSchemas() {
+    return this[jsonSchema_NAME];
+  }
+  set jsonSchemas(newJsonSchema) {
+    this[jsonSchema_NAME] = newJsonSchema;
+  }
 
-	get xmlSchemas() {
-		return this[xmlSchemas_NAME];
-	}
-	set xmlSchemas(newXmlSchemas) {
-		this[xmlSchemas_NAME] = newXmlSchemas;
-	}
+  get xmlSchemas() {
+    return this[xmlSchemas_NAME];
+  }
+  set xmlSchemas(newXmlSchemas) {
+    this[xmlSchemas_NAME] = newXmlSchemas;
+  }
 
-	get forwardReferences() {
-		return this[forwardReferences_NAME];
-	}
-	set forwardReferences(newForwardReferences) {
-		this[forwardReferences_NAME] = newForwardReferences;
-	}
+  get forwardReferences() {
+    return this[forwardReferences_NAME];
+  }
+  set forwardReferences(newForwardReferences) {
+    this[forwardReferences_NAME] = newForwardReferences;
+  }
 
-	get jsonSchemaVersion() {
-		return this[jsonSchemaVersion_NAME];
-	}
+  get jsonSchemaVersion() {
+    return this[jsonSchemaVersion_NAME];
+  }
 
-	set jsonSchemaVersion(newJsonSchemaVersion) {
-		this[jsonSchemaVersion_NAME] = newJsonSchemaVersion;
-	}
+  set jsonSchemaVersion(newJsonSchemaVersion) {
+    this[jsonSchemaVersion_NAME] = newJsonSchemaVersion;
+  }
 
-	newJsonSchema(newJsonSchemaOptions) {
-		var jsonSchema;
-		debug(`Allocating new JsonSchmeaFileXXX using options [${newJsonSchemaOptions}] JsonSchemaVersion=${this.jsonSchemaVersion}`);
-		switch (this.jsonSchemaVersion) {
-			case CONSTANTS.DRAFT_04:
-				jsonSchema = new JsonSchemaFileDraft04(newJsonSchemaOptions);
-				break;
-			case CONSTANTS.DRAFT_06:
-				jsonSchema = new JsonSchemaFileDraft06(newJsonSchemaOptions);
-				break;
-			case CONSTANTS.DRAFT_07:
-				jsonSchema = new JsonSchemaFileDraft07(newJsonSchemaOptions);
-				break;
-			default: throw new Error(`Unknown jsonSchemaVersion supplied [${this.jsonSchemaVersion}]`);
-		}
-		return jsonSchema;
-	}
+  newJsonSchema(newJsonSchemaOptions) {
+    var jsonSchema;
+    debug(
+      `Allocating new JsonSchmeaFileXXX using options [${newJsonSchemaOptions}] JsonSchemaVersion=${this.jsonSchemaVersion}`
+    );
+    switch (this.jsonSchemaVersion) {
+      case CONSTANTS.DRAFT_04:
+        jsonSchema = new JsonSchemaFileDraft04(newJsonSchemaOptions);
+        break;
+      case CONSTANTS.DRAFT_06:
+        jsonSchema = new JsonSchemaFileDraft06(newJsonSchemaOptions);
+        break;
+      case CONSTANTS.DRAFT_07:
+        jsonSchema = new JsonSchemaFileDraft07(newJsonSchemaOptions);
+        break;
+      default:
+        throw new Error(
+          `Unknown jsonSchemaVersion supplied [${this.jsonSchemaVersion}]`
+        );
+    }
+    return jsonSchema;
+  }
 
-	addNewJsonSchema(newJsonSchemaOptions) {
-		this.jsonSchemas[newJsonSchemaOptions.uri.toString()] = this.newJsonSchema(newJsonSchemaOptions);
-	}
+  addNewJsonSchema(newJsonSchemaOptions) {
+    this.jsonSchemas[newJsonSchemaOptions.uri.toString()] =
+      this.newJsonSchema(newJsonSchemaOptions);
+  }
 
-	reset() {
-		this.jsonSchemas = {};
-		this.xmlSchemas = {};
-		this.forwardReferences = [];
-	}
+  reset() {
+    this.jsonSchemas = {};
+    this.xmlSchemas = {};
+    this.forwardReferences = [];
+  }
 
-	/**
-	* Adds a namespace to the to the collection.  The namespace is initially empty.
-	 * 
-	 * @param {String} _namespace The name of the XML Namespace.
-	 * @see {@link ConverterDraft04#initializeNamespaces|ConverterDraft04.initializeNamespaces()}
-	 * 
-	 * @returns {void}
-	 */
-	addNamespace(_namespace) {
-		//var namespace = utils.getSafeNamespace(_namespace);
-		const namespace = _namespace;
+  /**
+   * Adds a namespace to the to the collection.  The namespace is initially empty.
+   *
+   * @param {String} _namespace The name of the XML Namespace.
+   * @see {@link ConverterDraft04#initializeNamespaces|ConverterDraft04.initializeNamespaces()}
+   *
+   * @returns {void}
+   */
+  addNamespace(_namespace) {
+    //var namespace = utils.getSafeNamespace(_namespace);
+    const namespace = _namespace;
 
-		if (!this.namespaces.hasOwnProperty(namespace)) {
-			this.namespaces[namespace] = { types: {} };
-		}
-	}
+    if (!this.namespaces.hasOwnProperty(namespace)) {
+      this.namespaces[namespace] = { types: {} };
+    }
+  }
 
-	/**
-	 * Returns the namespace object for a given namespace.
-	 * 
-	 * @param {String} namespace The name of the namespace.  For example: this could be 
-	 * 'targetNamespace' of the *&lt;schema&gt;* tag in an XML Schema file.
-	 * @returns {Object} The namespace if present or enstantiats a new namesapce otherwise.
-	 */
-	getNamespace(namespace) {
-		return this.namespaces[namespace];
-	}
+  /**
+   * Returns the namespace object for a given namespace.
+   *
+   * @param {String} namespace The name of the namespace.  For example: this could be
+   * 'targetNamespace' of the *&lt;schema&gt;* tag in an XML Schema file.
+   * @returns {Object} The namespace if present or enstantiats a new namesapce otherwise.
+   */
+  getNamespace(namespace) {
+    return this.namespaces[namespace];
+  }
 
-	isWellKnownXmlNamespace(namespace) {
-		return namespace === CONSTANTS.XML_SCHEMA_NAMESPACE;
-	}
+  isWellKnownXmlNamespace(namespace) {
+    return namespace === CONSTANTS.XML_SCHEMA_NAMESPACE;
+  }
 
-	/**
-	 * 
-	 * @param {String} fullTypeName The name of the type to be returned.  One of the seven core JSON Schema types.
-	 * @param {JsonSchemaFile} parent The parent of this type.
-	 * @param {XsdFile} xsd - the XML schema file currently being processed.
-	 *
-	 * @returns {JsonSchemaFile} The requested custom type.
-	 */
-	getBuiltInType(fullTypeName, parent, xsd) {
-		const qname = new Qname(fullTypeName);
-		const typeName = qname.getLocal();
-		if (this.namespaces[CONSTANTS.XML_SCHEMA_NAMESPACE].types[typeName] === undefined) {
-			const newType = this.newJsonSchema();
-			// The 'node' parameter to the builtInTypeConverter's xml handler methods is not currently
-			// used so it is safe to pass in null for now.  This is likely a future bug!
-			debug(`Returning JSON Schema type [${typeName}]`);
-			this.builtInTypeConverter[typeName](null, newType, xsd);
-			this.namespaces[CONSTANTS.XML_SCHEMA_NAMESPACE].types[typeName] = newType;
-		}
-		const builtInType = this.namespaces[CONSTANTS.XML_SCHEMA_NAMESPACE].types[typeName].clone();
-		builtInType.parent = parent;
-		return builtInType;
-	}
+  /**
+   *
+   * @param {String} fullTypeName The name of the type to be returned.  One of the seven core JSON Schema types.
+   * @param {JsonSchemaFile} parent The parent of this type.
+   * @param {XsdFile} xsd - the XML schema file currently being processed.
+   *
+   * @returns {JsonSchemaFile} The requested custom type.
+   */
+  getBuiltInType(fullTypeName, parent, xsd) {
+    const qname = new Qname(fullTypeName);
+    const typeName = qname.getLocal();
+    if (
+      this.namespaces[CONSTANTS.XML_SCHEMA_NAMESPACE].types[typeName] ===
+      undefined
+    ) {
+      const newType = this.newJsonSchema();
+      // The 'node' parameter to the builtInTypeConverter's xml handler methods is not currently
+      // used so it is safe to pass in null for now.  This is likely a future bug!
+      debug(`Returning JSON Schema type [${typeName}]`);
+      this.builtInTypeConverter[typeName](null, newType, xsd);
+      this.namespaces[CONSTANTS.XML_SCHEMA_NAMESPACE].types[typeName] = newType;
+    }
+    const builtInType =
+      this.namespaces[CONSTANTS.XML_SCHEMA_NAMESPACE].types[typeName].clone();
+    builtInType.parent = parent;
+    return builtInType;
+  }
 
-	getNamespaceName(qname, xsd) {
-		let namespaceName = qname.getPrefix();
-		if (namespaceName == '' && xsd.resolveNamespace(namespaceName) == undefined) {
-			namespaceName = XsdAttributes.TARGET_NAMESPACE;
-		}
-		return namespaceName;
-	}
+  getNamespaceName(qname, xsd) {
+    let namespaceName = qname.getPrefix();
+    if (
+      namespaceName == '' &&
+      xsd.resolveNamespace(namespaceName) == undefined
+    ) {
+      namespaceName = XsdAttributes.TARGET_NAMESPACE;
+    }
+    return namespaceName;
+  }
 
-	getNamespaceValue(qname, xsd) {
-		let namespaceName = qname.getPrefix();
-		if (namespaceName == '' && xsd.resolveNamespace(namespaceName) == undefined) {
-			namespaceName = XsdAttributes.TARGET_NAMESPACE;
-		}
-		return xsd.resolveNamespace(namespaceName);
-	}
+  getNamespaceValue(qname, xsd) {
+    let namespaceName = qname.getPrefix();
+    if (
+      namespaceName == '' &&
+      xsd.resolveNamespace(namespaceName) == undefined
+    ) {
+      namespaceName = XsdAttributes.TARGET_NAMESPACE;
+    }
+    return xsd.resolveNamespace(namespaceName);
+  }
 
-	isBuiltInType(fullTypeName, xsd) {
-		const qname = new Qname(fullTypeName);
-		const namespace = this.getNamespaceValue(qname, xsd);
-		return this.isWellKnownXmlNamespace(namespace) && (this.builtInTypeConverter[qname.getLocal()] != undefined);
-	}
+  isBuiltInType(fullTypeName, xsd) {
+    const qname = new Qname(fullTypeName);
+    const namespace = this.getNamespaceValue(qname, xsd);
+    return (
+      this.isWellKnownXmlNamespace(namespace) &&
+      this.builtInTypeConverter[qname.getLocal()] != undefined
+    );
+  }
 
-	createForwardReference(namespace, typeName, parent, baseJsonSchema, xsd) {
-		debug('Creating FORWARD REFERENCE to [' + typeName + '] in namespace [' + namespace + '] from [' + xsd.uri.toString() + ']');
-		// Create the ForwardReference type, which will be resolved later after the type has been processed.
-		const forwardRef = new ForwardReference(this, namespace, typeName, parent, baseJsonSchema, xsd);
-		this.forwardReferences.push(forwardRef);
-		return forwardRef.ref;
-	}
+  createForwardReference(namespace, typeName, parent, baseJsonSchema, xsd) {
+    debug(
+      'Creating FORWARD REFERENCE to [' +
+        typeName +
+        '] in namespace [' +
+        namespace +
+        '] from [' +
+        xsd.uri.toString() +
+        ']'
+    );
+    // Create the ForwardReference type, which will be resolved later after the type has been processed.
+    const forwardRef = new ForwardReference(
+      this,
+      namespace,
+      typeName,
+      parent,
+      baseJsonSchema,
+      xsd
+    );
+    this.forwardReferences.push(forwardRef);
+    return forwardRef.ref;
+  }
 
-	/**
-	 * This method returns a reference to the requested type, which can be either a custom type or an 
-	 * XML built-in type.  If the type exists in the namesapce of xsd then a reference to the type is
-	 * retuned. If the type does not exist a forwardReference to the type is created and then returned.
-	 * 
-	 * @param {String} fullTypeName The name of the type to be returned.  The format of this
-	 * parameter is 'prefix:localName' as defined {@link http://www.w3.org/TR/xml-names/#NT-QName |here}. 
-	 * @param {JsonSchemaFile} parent The parent of this type.
-	 * @param {JsonSchemaFile} baseJsonSchema The JsonShemaFile being created as a result of converting an XML
-	 *  Schema file to JSON Schema.
-	 * @param {XsdFile} xsd - the XML schema file currently being processed.
-	 * 
-	 * @returns {JsonSchemaFile} The requested custom type.
-	 */
-	getTypeReference(fullTypeName, parent, baseJsonSchema, xsd, createType) {
-		if (fullTypeName === undefined) {
-			throw new Error('\'fullTypeName\' parameter required');
-		}
-		if (parent === undefined) {
-			throw new Error('\'parent\' parameter required');
-		}
-		if (baseJsonSchema === undefined) {
-			throw new Error('\'baseJsonSchema\' parameter required');
-		}
-		if (xsd === undefined) {
-			throw new Error('\'xsd\' parameter required');
-		}
-		if (createType != undefined) {
-			throw new Error('\'createType\' parameter not allowed');
-		}
-		const namespaceQname = new Qname(fullTypeName);
-		const namespace = this.getNamespaceValue(namespaceQname, xsd);
-		if (namespace == undefined) {
-			throw new Error('A namespace has not been defined for [' + fullTypeName + ']');
-		}
-		const typeName = namespaceQname.getLocal();
-		if (this.isWellKnownXmlNamespace(namespace)) {
-			return this.getBuiltInType(typeName, parent, xsd);
-		}
-		if (this.namespaces[namespace].types[typeName] === undefined) {
-			return this.createForwardReference(namespace, fullTypeName, parent, baseJsonSchema, xsd);
-		} else {
-			debug('Returning reference to existing type [' + fullTypeName + '] in namespace [' + namespace + ']');
-			const baseJsonSchemaForNamespace = this.jsonSchemas[xsd.imports[namespace]] == undefined ? baseJsonSchema : this.jsonSchemas[xsd.imports[namespace]];
-			const type = this.namespaces[namespace].types[typeName];
-			return type.get$RefToSchema(parent);
-		}
-	}
+  /**
+   * This method returns a reference to the requested type, which can be either a custom type or an
+   * XML built-in type.  If the type exists in the namesapce of xsd then a reference to the type is
+   * retuned. If the type does not exist a forwardReference to the type is created and then returned.
+   *
+   * @param {String} fullTypeName The name of the type to be returned.  The format of this
+   * parameter is 'prefix:localName' as defined {@link http://www.w3.org/TR/xml-names/#NT-QName |here}.
+   * @param {JsonSchemaFile} parent The parent of this type.
+   * @param {JsonSchemaFile} baseJsonSchema The JsonShemaFile being created as a result of converting an XML
+   *  Schema file to JSON Schema.
+   * @param {XsdFile} xsd - the XML schema file currently being processed.
+   *
+   * @returns {JsonSchemaFile} The requested custom type.
+   */
+  getTypeReference(fullTypeName, parent, baseJsonSchema, xsd, createType) {
+    if (fullTypeName === undefined) {
+      throw new Error("'fullTypeName' parameter required");
+    }
+    if (parent === undefined) {
+      throw new Error("'parent' parameter required");
+    }
+    if (baseJsonSchema === undefined) {
+      throw new Error("'baseJsonSchema' parameter required");
+    }
+    if (xsd === undefined) {
+      throw new Error("'xsd' parameter required");
+    }
+    if (createType != undefined) {
+      throw new Error("'createType' parameter not allowed");
+    }
+    const namespaceQname = new Qname(fullTypeName);
+    const namespace = this.getNamespaceValue(namespaceQname, xsd);
+    if (namespace === undefined) {
+      throw new Error(
+        'A namespace has not been defined for [' + fullTypeName + ']'
+      );
+    }
+    const typeName = namespaceQname.getLocal();
+    if (this.isWellKnownXmlNamespace(namespace)) {
+      return this.getBuiltInType(typeName, parent, xsd);
+    }
+    if (this.namespaces[namespace].types[typeName] === undefined) {
+      return this.createForwardReference(
+        namespace,
+        fullTypeName,
+        parent,
+        baseJsonSchema,
+        xsd
+      );
+    } else {
+      debug(
+        'Returning reference to existing type [' +
+          fullTypeName +
+          '] in namespace [' +
+          namespace +
+          ']'
+      );
+      const baseJsonSchemaForNamespace =
+        this.jsonSchemas[xsd.imports[namespace]] == undefined
+          ? baseJsonSchema
+          : this.jsonSchemas[xsd.imports[namespace]];
+      const type = this.namespaces[namespace].types[typeName];
+      return type.get$RefToSchema(parent);
+    }
+  }
 
-	createType(namespace, typeName, parent, baseJsonSchema, xsd) {
-		debug('Creating TYPE [' + typeName + '] in namespace [' + namespace + '] from [' + xsd.uri.toString() + ']');
-		// Create the type, which will be filled out later as the XSD is processed, and add it to the namespace.
-		const baseJsonSchemaForNamespace = this.jsonSchemas[xsd.imports[namespace]] == undefined ? baseJsonSchema : this.jsonSchemas[xsd.imports[namespace]];
-		const newType = this.newJsonSchema({
-			ref: new URI(baseJsonSchemaForNamespace.id + '#' + baseJsonSchemaForNamespace.getSubschemaJsonPointer() + '/' + typeName)
-		});
-		this.namespaces[namespace].types[typeName] = newType;
-		// const type = this.namespaces[namespace].types[typeName].clone();
-		const type = this.namespaces[namespace].types[typeName];
-		type.parent = parent;
-		// Add the type type to the anyOf in baseJsonSchema so it can be used directly for validation.
-		const baseId = new URI(baseJsonSchema.id);
-		const typeId = new URI(newType.ref);
-		if (baseId.filename() == typeId.filename()) {
-			baseJsonSchema.addRequiredAnyOfPropertyByReference(typeName, type.get$RefToSchema(baseJsonSchema));
-		}
-		return type;
-	}
+  createType(namespace, typeName, parent, baseJsonSchema, xsd) {
+    debug(
+      'Creating TYPE [' +
+        typeName +
+        '] in namespace [' +
+        namespace +
+        '] from [' +
+        xsd.uri.toString() +
+        ']'
+    );
+    // Create the type, which will be filled out later as the XSD is processed, and add it to the namespace.
+    const baseJsonSchemaForNamespace =
+      this.jsonSchemas[xsd.imports[namespace]] == undefined
+        ? baseJsonSchema
+        : this.jsonSchemas[xsd.imports[namespace]];
+    const newType = this.newJsonSchema({
+      ref: new URI(
+        baseJsonSchemaForNamespace.id +
+          '#' +
+          baseJsonSchemaForNamespace.getSubschemaJsonPointer() +
+          '/' +
+          typeName
+      ),
+    });
+    this.namespaces[namespace].types[typeName] = newType;
+    // const type = this.namespaces[namespace].types[typeName].clone();
+    const type = this.namespaces[namespace].types[typeName];
+    type.parent = parent;
+    // Add the type type to the anyOf in baseJsonSchema so it can be used directly for validation.
+    const baseId = new URI(baseJsonSchema.id);
+    const typeId = new URI(newType.ref);
+    if (baseId.filename() == typeId.filename()) {
+      baseJsonSchema.addRequiredAnyOfPropertyByReference(
+        typeName,
+        type.get$RefToSchema(baseJsonSchema)
+      );
+    }
+    return type;
+  }
 
-	/**
-	 * This method returns the requested type, which can be either a custom type or an 
-	 * XML built-in type.  If the type exists in the namesapce of xsd then the type is
-	 * retuned. If the type does not exist it is created and then returned.
-	 * 
-	 * @param {String} fullTypeName The name of the type to be returned.  The format of this
-	 * parameter is 'prefix:localName' as defined {@link http://www.w3.org/TR/xml-names/#NT-QName |here}. 
-	 * @param {JsonSchemaFile} parent The parent of this type.
-	 * @param {JsonSchemaFile} baseJsonSchema The JsonShemaFile being created as a result of converting an XML
-	 *  Schema file to JSON Schema.
-	 * @param {XsdFile} xsd - the XML schema file currently being processed.
-	 * 
-	 * @returns {JsonSchemaFile} The requested custom type.
-	 */
-	getType(fullTypeName, parent, baseJsonSchema, xsd, createType) {
-		if (fullTypeName === undefined) {
-			throw new Error('\'fullTypeName\' parameter required');
-		}
-		if (parent === undefined) {
-			throw new Error('\'parent\' parameter required');
-		}
-		if (baseJsonSchema === undefined) {
-			throw new Error('\'baseJsonSchema\' parameter required');
-		}
-		if (xsd === undefined) {
-			throw new Error('\'xsd\' parameter required');
-		}
-		if (createType != undefined) {
-			throw new Error('\'createType\' parameter not allowed');
-		}
-		const namespaceQname = new Qname(fullTypeName);
-		const namespace = this.getNamespaceValue(namespaceQname, xsd);
-		if (namespace == undefined) {
-			throw new Error('A namespace has not been defined for [' + fullTypeName + ']');
-		}
-		const typeName = namespaceQname.getLocal();
-		if (this.isWellKnownXmlNamespace(namespace)) {
-			return this.getBuiltInType(typeName, parent, xsd);
-		}
-		if (this.namespaces[namespace].types[typeName] === undefined) {
-			return this.createType(namespace, typeName, parent, baseJsonSchema, xsd);
-		} else {
-			debug('Returning existing type [' + typeName + '] in namespace [' + namespace + ']');
-			let type = this.namespaces[namespace].types[typeName]; //.clone();
-			if (type.isForwardRef()) {
-				// create the new type
-				const newType = this.createType(namespace, typeName, parent, baseJsonSchema, xsd);
-				debug(`Replacing forward reference [${type.ref}] with new type [${newType.ref}]`);
-				// resolve any references that were created.
-				type.resolveRef(newType)
-				// remove the forward reference because it does not need to be resolved later.
-				const index = this.forwardReferences.indexOf(type.forwardReference);
-				this.forwardReferences.splice(index, 1);
-				// replace the forward reference with the actual type in the namespace 
-				this.namespaces[namespace].types[typeName] = newType;
-				type = this.namespaces[namespace].types[typeName];
-			}
-			return type;
-		}
-	}
+  /**
+   * This method returns the requested type, which can be either a custom type or an
+   * XML built-in type.  If the type exists in the namesapce of xsd then the type is
+   * retuned. If the type does not exist it is created and then returned.
+   *
+   * @param {String} fullTypeName The name of the type to be returned.  The format of this
+   * parameter is 'prefix:localName' as defined {@link http://www.w3.org/TR/xml-names/#NT-QName |here}.
+   * @param {JsonSchemaFile} parent The parent of this type.
+   * @param {JsonSchemaFile} baseJsonSchema The JsonShemaFile being created as a result of converting an XML
+   *  Schema file to JSON Schema.
+   * @param {XsdFile} xsd - the XML schema file currently being processed.
+   *
+   * @returns {JsonSchemaFile} The requested custom type.
+   */
+  getType(fullTypeName, parent, baseJsonSchema, xsd, createType) {
+    if (fullTypeName === undefined) {
+      throw new Error("'fullTypeName' parameter required");
+    }
+    if (parent === undefined) {
+      throw new Error("'parent' parameter required");
+    }
+    if (baseJsonSchema === undefined) {
+      throw new Error("'baseJsonSchema' parameter required");
+    }
+    if (xsd === undefined) {
+      throw new Error("'xsd' parameter required");
+    }
+    if (createType != undefined) {
+      throw new Error("'createType' parameter not allowed");
+    }
+    const namespaceQname = new Qname(fullTypeName);
+    const namespace = this.getNamespaceValue(namespaceQname, xsd);
+    if (namespace == undefined) {
+      throw new Error(
+        'A namespace has not been defined for [' + fullTypeName + ']'
+      );
+    }
+    const typeName = namespaceQname.getLocal();
+    if (this.isWellKnownXmlNamespace(namespace)) {
+      return this.getBuiltInType(typeName, parent, xsd);
+    }
+    if (this.namespaces[namespace].types[typeName] === undefined) {
+      return this.createType(namespace, typeName, parent, baseJsonSchema, xsd);
+    } else {
+      debug(
+        'Returning existing type [' +
+          typeName +
+          '] in namespace [' +
+          namespace +
+          ']'
+      );
+      let type = this.namespaces[namespace].types[typeName]; //.clone();
+      if (type.isForwardRef()) {
+        // create the new type
+        const newType = this.createType(
+          namespace,
+          typeName,
+          parent,
+          baseJsonSchema,
+          xsd
+        );
+        debug(
+          `Replacing forward reference [${type.ref}] with new type [${newType.ref}]`
+        );
+        // resolve any references that were created.
+        type.resolveRef(newType);
+        // remove the forward reference because it does not need to be resolved later.
+        const index = this.forwardReferences.indexOf(type.forwardReference);
+        this.forwardReferences.splice(index, 1);
+        // replace the forward reference with the actual type in the namespace
+        this.namespaces[namespace].types[typeName] = newType;
+        type = this.namespaces[namespace].types[typeName];
+      }
+      return type;
+    }
+  }
 
-	compilePointer(pointer) {
-		if (typeof pointer === 'string') {
-			pointer = pointer.split('/')
-			if (Array.isArray(pointer)) {
-				return pointer
-			}
-		}
-		throw new Error(`Invalid JSON pointer [${pointer}}]`)
-	}
+  compilePointer(pointer) {
+    if (typeof pointer === 'string') {
+      pointer = pointer.split('/');
+      if (Array.isArray(pointer)) {
+        return pointer;
+      }
+    }
+    throw new Error(`Invalid JSON pointer [${pointer}}]`);
+  }
 
-	getReferencedTypeName(type) {
-		if (!type.isRef()) {
-			return new Error(`ref expected but found ${type.toString()}`);
-		}
-		var pointer = this.compilePointer(type.$ref);
-		return pointer[pointer.length - 1];
-	}
+  getReferencedTypeName(type) {
+    if (!type.isRef()) {
+      return new Error(`ref expected but found ${type.toString()}`);
+    }
+    var pointer = this.compilePointer(type.$ref);
+    return pointer[pointer.length - 1];
+  }
 
-	/**
-	 * This method returns the requested type, which can be either a custom type or an 
-	 * XML built-in type.  If the type exists in the namesapce of the xsd the type is
-	 * retuned. If the type does not exist it is created and then returned.
-	 * 
-	 * @param {String} fullTypeName The name of the type to be returned.  The format of this
-	 * parameter is 'prefix:localName' as defined {@link http://www.w3.org/TR/xml-names/#NT-QName |here}. 
-	 * @param {JsonSchemaFile} parent The parent of this type.
-	 * @param {JsonSchemaFile} baseJsonSchema The JsonShemaFile being created as a result of converting an XML
-	 *  Schema file to JSON Schema.
-	 * @param {XsdFile} xsd - the XML schema file currently being processed.
-	 * 
-	 * @returns {JsonSchemaFile} The requested custom type.
-	 */
-	getTypeReferenceFromRefChain(fullTypeName, parent, baseJsonSchema, xsd) {
-		if (fullTypeName === undefined) {
-			throw new Error('\'fullTypeName\' parameter required');
-		}
-		if (parent === undefined) {
-			throw new Error('\'parent\' parameter required');
-		}
-		if (baseJsonSchema === undefined) {
-			throw new Error('\'baseJsonSchema\' parameter required');
-		}
-		if (xsd === undefined) {
-			throw new Error('\'xsd\' parameter required');
-		}
-		const namespaceQname = new Qname(fullTypeName);
-		const namespace = this.getNamespaceValue(namespaceQname, xsd);
-		if (namespace == undefined) {
-			throw new Error('A namespace has not been defined for [' + fullTypeName + ']');
-		}
-		const typeName = namespaceQname.getLocal();
-		if (this.isWellKnownXmlNamespace(namespace)) {
-			return this.getBuiltInType(typeName, parent, xsd);
-		}
-		if (this.namespaces[namespace].types[typeName] === undefined) {
-			return this.createForwardReference(namespace, fullTypeName, parent, baseJsonSchema, xsd);
-		} else {
-			debug('Returning reference to existing type [' + fullTypeName + '] in namespace [' + namespace + ']');
-			const baseJsonSchemaForNamespace = this.jsonSchemas[xsd.imports[namespace]] == undefined ? baseJsonSchema : this.jsonSchemas[xsd.imports[namespace]];
-			const type = this.namespaces[namespace].types[typeName];
-			// Return a reference to a type.  Don't return a reference to a reference.
-			if (type.isRef()) {
-				return this.getTypeReferenceFromRefChain(this.getReferencedTypeName(type), parent, baseJsonSchema, xsd)
-			} else {
-				return type.get$RefToSchema(parent);
-			}
-		}
-	}
+  /**
+   * This method returns the requested type, which can be either a custom type or an
+   * XML built-in type.  If the type exists in the namesapce of the xsd the type is
+   * retuned. If the type does not exist it is created and then returned.
+   *
+   * @param {String} fullTypeName The name of the type to be returned.  The format of this
+   * parameter is 'prefix:localName' as defined {@link http://www.w3.org/TR/xml-names/#NT-QName |here}.
+   * @param {JsonSchemaFile} parent The parent of this type.
+   * @param {JsonSchemaFile} baseJsonSchema The JsonShemaFile being created as a result of converting an XML
+   *  Schema file to JSON Schema.
+   * @param {XsdFile} xsd - the XML schema file currently being processed.
+   *
+   * @returns {JsonSchemaFile} The requested custom type.
+   */
+  getTypeReferenceFromRefChain(fullTypeName, parent, baseJsonSchema, xsd) {
+    if (fullTypeName === undefined) {
+      throw new Error("'fullTypeName' parameter required");
+    }
+    if (parent === undefined) {
+      throw new Error("'parent' parameter required");
+    }
+    if (baseJsonSchema === undefined) {
+      throw new Error("'baseJsonSchema' parameter required");
+    }
+    if (xsd === undefined) {
+      throw new Error("'xsd' parameter required");
+    }
+    const namespaceQname = new Qname(fullTypeName);
+    const namespace = this.getNamespaceValue(namespaceQname, xsd);
+    if (namespace == undefined) {
+      throw new Error(
+        'A namespace has not been defined for [' + fullTypeName + ']'
+      );
+    }
+    const typeName = namespaceQname.getLocal();
+    if (this.isWellKnownXmlNamespace(namespace)) {
+      return this.getBuiltInType(typeName, parent, xsd);
+    }
+    if (this.namespaces[namespace].types[typeName] === undefined) {
+      return this.createForwardReference(
+        namespace,
+        fullTypeName,
+        parent,
+        baseJsonSchema,
+        xsd
+      );
+    } else {
+      debug(
+        'Returning reference to existing type [' +
+          fullTypeName +
+          '] in namespace [' +
+          namespace +
+          ']'
+      );
+      const baseJsonSchemaForNamespace =
+        this.jsonSchemas[xsd.imports[namespace]] == undefined
+          ? baseJsonSchema
+          : this.jsonSchemas[xsd.imports[namespace]];
+      const type = this.namespaces[namespace].types[typeName];
+      // Return a reference to a type.  Don't return a reference to a reference.
+      if (type.isRef()) {
+        return this.getTypeReferenceFromRefChain(
+          this.getReferencedTypeName(type),
+          parent,
+          baseJsonSchema,
+          xsd
+        );
+      } else {
+        return type.get$RefToSchema(parent);
+      }
+    }
+  }
 
-	dumpForwardReferences() {
-		debug('Begin Forward References (' + this.forwardReferences.length + ')');
-		this.forwardReferences.forEach(function (fRef, index, array) {
-			if (fRef.ref.ref == undefined) {
-				debug(index + ') $ref:' + fRef.ref.$ref.toString());
-			} else {
-				debug(index + ') ref:' + fRef.ref.ref.toString());
-			}
-		}, this);
-	}
+  dumpForwardReferences() {
+    debug('Begin Forward References (' + this.forwardReferences.length + ')');
+    this.forwardReferences.forEach(function (fRef, index, array) {
+      if (fRef.ref.ref == undefined) {
+        debug(index + ') $ref:' + fRef.ref.$ref.toString());
+      } else {
+        debug(index + ') ref:' + fRef.ref.ref.toString());
+      }
+    }, this);
+  }
 
-	resolveForwardReferenceOld(fRef) {
-		const type = this.getTypeReferenceFromRefChain(fRef.fullTypeName, fRef.parent, fRef.baseJsonSchema, fRef.xsd);
-		//const displayRef = type.ref == undefined ? type.$ref : type.ref;
-		const fromType = fRef.ref.$ref;
-		const toType = type.ref == undefined ? type.$ref : type.ref;
-		debug(`Resolving type [${fRef.ref.$ref}] to [${type.ref == undefined ? type.$ref : type.ref}]`);
-		if (type.resolved != undefined && type.resolved != true && fromType != toType) {
-			this.resolveForwardReference(type.forwardReference);
-		}
-		const newRef = (type.ref != undefined ? type.ref : type.$ref)
-		debug('Updating ' + fRef.ref.$ref.toString() + ' to ' + newRef.toString() + ', from ' + fRef.baseJsonSchema.filename);
-		fRef.ref.resolveRef(type);
-	}
+  resolveForwardReferenceOld(fRef) {
+    const type = this.getTypeReferenceFromRefChain(
+      fRef.fullTypeName,
+      fRef.parent,
+      fRef.baseJsonSchema,
+      fRef.xsd
+    );
+    //const displayRef = type.ref == undefined ? type.$ref : type.ref;
+    const fromType = fRef.ref.$ref;
+    const toType = type.ref == undefined ? type.$ref : type.ref;
+    debug(
+      `Resolving type [${fRef.ref.$ref}] to [${
+        type.ref == undefined ? type.$ref : type.ref
+      }]`
+    );
+    if (
+      type.resolved != undefined &&
+      type.resolved != true &&
+      fromType != toType
+    ) {
+      this.resolveForwardReference(type.forwardReference);
+    }
+    const newRef = type.ref != undefined ? type.ref : type.$ref;
+    debug(
+      'Updating ' +
+        fRef.ref.$ref.toString() +
+        ' to ' +
+        newRef.toString() +
+        ', from ' +
+        fRef.baseJsonSchema.filename
+    );
+    fRef.ref.resolveRef(type);
+  }
 
-	resolveForwardReference(fRef) {
-		const type = this.getTypeReferenceFromRefChain(fRef.fullTypeName, fRef.parent, fRef.baseJsonSchema, fRef.xsd);
-		const fromType = fRef.ref.$ref;
-		const toType = type.ref == undefined ? type.$ref : type.ref;
-		debug(`Resolving type [${fRef.ref.$ref}] to [${type.ref == undefined ? type.$ref : type.ref}]`);
-		if (type.resolved != undefined && type.resolved != true && fromType != toType) {
-			this.resolveForwardReference(type.forwardReference);
-		}
-		debug(`'Updating [${fromType}] to [${toType}] from ${fRef.baseJsonSchema.filename}`);
-		fRef.ref.resolveRef(type);
-	}
+  resolveForwardReference(fRef) {
+    const type = this.getTypeReferenceFromRefChain(
+      fRef.fullTypeName,
+      fRef.parent,
+      fRef.baseJsonSchema,
+      fRef.xsd
+    );
+    const fromType = fRef.ref.$ref;
+    const toType = type.ref == undefined ? type.$ref : type.ref;
+    debug(
+      `Resolving type [${fRef.ref.$ref}] to [${
+        type.ref == undefined ? type.$ref : type.ref
+      }]`
+    );
+    if (
+      type.resolved != undefined &&
+      type.resolved != true &&
+      fromType != toType
+    ) {
+      this.resolveForwardReference(type.forwardReference);
+    }
+    debug(
+      `'Updating [${fromType}] to [${toType}] from ${fRef.baseJsonSchema.filename}`
+    );
+    fRef.ref.resolveRef(type);
+  }
 
-	resolveForwardReferences() {
-		this.forwardReferences.forEach(function (fRef, index, array) {
-			this.resolveForwardReference(fRef);
-		}, this);
-		this.dumpForwardReferences();
-	}
+  resolveForwardReferences() {
+    this.forwardReferences.forEach(function (fRef, index, array) {
+      this.resolveForwardReference(fRef);
+    }, this);
+    this.dumpForwardReferences();
+  }
 
-	cloneForwardReference(forwardRef) {
-		for (let i = 0; i < this.forwardReferences.length; i++) {
-			const fRef = this.forwardReferences[i];
-			if (forwardRef.equals(fRef.ref)) {
-				const cloneRef = this.getTypeReference(fRef.fullTypeName, fRef.parent, fRef.baseJsonSchema, fRef.xsd);
-				return cloneRef;
-			}
-		}
-		return undefined;
-	}
+  cloneForwardReference(forwardRef) {
+    for (let i = 0; i < this.forwardReferences.length; i++) {
+      const fRef = this.forwardReferences[i];
+      if (forwardRef.equals(fRef.ref)) {
+        const cloneRef = this.getTypeReference(
+          fRef.fullTypeName,
+          fRef.parent,
+          fRef.baseJsonSchema,
+          fRef.xsd
+        );
+        return cloneRef;
+      }
+    }
+    return undefined;
+  }
 
-	/**
-	 * This method returns true if the type exists in the namespace of the .
-	 * 
-	 * @param {String} fullTypeName The name of the type to be returned.  The format of this
-	 * parameter is 'prefix:localName' as defined {@link http://www.w3.org/TR/xml-names/#NT-QName |here}. 
-	 * @param {XsdFile} xsd - the XML schema file currently being processed.
-	 * 
-	 * @returns {boolean} The requested custom type.
-	 */
-	typeExists(fullTypeName, xsd) {
-		if (fullTypeName === undefined) {
-			throw new Error('\'fullTypeName\' parameter required');
-		}
-		const namespaceQname = new Qname(fullTypeName);
-		const namespace = this.getNamespaceValue(namespaceQname, xsd);
-		if (namespace == undefined) {
-			throw new Error('A namespace has not been defined for [' + fullTypeName + ']');
-		}
-		const typeName = namespaceQname.getLocal();
-		return this.namespaces[namespace].types[typeName] != undefined;
-	}
+  /**
+   * This method returns true if the type exists in the namespace of the .
+   *
+   * @param {String} fullTypeName The name of the type to be returned.  The format of this
+   * parameter is 'prefix:localName' as defined {@link http://www.w3.org/TR/xml-names/#NT-QName |here}.
+   * @param {XsdFile} xsd - the XML schema file currently being processed.
+   *
+   * @returns {boolean} The requested custom type.
+   */
+  typeExists(fullTypeName, xsd) {
+    if (fullTypeName === undefined) {
+      throw new Error("'fullTypeName' parameter required");
+    }
+    const namespaceQname = new Qname(fullTypeName);
+    const namespace = this.getNamespaceValue(namespaceQname, xsd);
+    if (namespace == undefined) {
+      throw new Error(
+        'A namespace has not been defined for [' + fullTypeName + ']'
+      );
+    }
+    const typeName = namespaceQname.getLocal();
+    return this.namespaces[namespace].types[typeName] != undefined;
+  }
 
-	/**
-	 * This method inserts an entry into the given namespace by reference name rather than by type name.
-	 * This way it can be looked up by type name or by reference.
-	 * 
-	 * @param {String} fullTypeName - The name of the custom type to be used for references.   The format of this
-	 * parameter is 'prefix:localName' where localName is require and the prefix and separating colon are optional. 
-	 * @param {JsonSchemaFile} type - The type to be referenced by its name.
-	 * @param {JsonSchemaFile} baseJsonSchema - The JsonShemaFile being created as a result of converting an XML
-	 * Schema file to JSON Schema.
-	 * @param {XsdFile} xsd - the XML schema file currently being processed.
-	 * 
-	 * @returns {void}
-	 */
-	addTypeReference(fullTypeName, type, baseJsonSchema, xsd) {
-		const namespaceQname = new Qname(fullTypeName);
-		const namespaceName = this.getNamespaceName(namespaceQname, xsd);
-		const namespace = xsd.resolveNamespace(namespaceName);
-		const refName = namespaceQname.getLocal();
-		if (this.namespaces[namespace].types[refName] === undefined) {
-			debug('Creating reference [' + refName + '] in namespace [' + namespace + '] from [' + xsd.uri.toString() + ']');
-			this.namespaces[namespace].types[refName] = type;
-			baseJsonSchema.addRequiredAnyOfPropertyByReference(refName, type);
-		} else {
-			debug('Reference [' + refName + '] already exists in namespace [' + namespace + '] from [' + xsd.uri.toString() + ']');
-		}
-	}
+  /**
+   * This method inserts an entry into the given namespace by reference name rather than by type name.
+   * This way it can be looked up by type name or by reference.
+   *
+   * @param {String} fullTypeName - The name of the custom type to be used for references.   The format of this
+   * parameter is 'prefix:localName' where localName is require and the prefix and separating colon are optional.
+   * @param {JsonSchemaFile} type - The type to be referenced by its name.
+   * @param {JsonSchemaFile} baseJsonSchema - The JsonShemaFile being created as a result of converting an XML
+   * Schema file to JSON Schema.
+   * @param {XsdFile} xsd - the XML schema file currently being processed.
+   *
+   * @returns {void}
+   */
+  addTypeReference(fullTypeName, type, baseJsonSchema, xsd) {
+    const namespaceQname = new Qname(fullTypeName);
+    const namespaceName = this.getNamespaceName(namespaceQname, xsd);
+    const namespace = xsd.resolveNamespace(namespaceName);
+    const refName = namespaceQname.getLocal();
+    if (this.namespaces[namespace].types[refName] === undefined) {
+      debug(
+        'Creating reference [' +
+          refName +
+          '] in namespace [' +
+          namespace +
+          '] from [' +
+          xsd.uri.toString() +
+          ']'
+      );
+      this.namespaces[namespace].types[refName] = type;
+      baseJsonSchema.addRequiredAnyOfPropertyByReference(refName, type);
+    } else {
+      debug(
+        'Reference [' +
+          refName +
+          '] already exists in namespace [' +
+          namespace +
+          '] from [' +
+          xsd.uri.toString() +
+          ']'
+      );
+    }
+  }
 
-	/**
-	 * This method returns the requested global attribute.  If the attribute exists in the global attribute
-	 * namesapce the attribute is return.  If the attribute does not exist it is created and then returned.
-	 * 
-	 * @param {String} name The name of the global attribute to be returned.
-	 * @param {JsonSchemaFile} baseJsonSchema The JsonSchemaFile being created as a result of converting an XML
-	 * Schema file to JSON Schema.
-	 * 
-	 * @returns {JsonSchemaFile} The request global attribute.
-	 */
-	getGlobalAttribute(name, baseJsonSchema) {
-		if (name === undefined) {
-			throw new Error('\'name\' parameter required');
-		}
-		if (baseJsonSchema === undefined) {
-			throw new Error('\'baseJsonSchema\' parameter required');
-		}
-		var globalAttributesNamespace = this.namespaces.globalAttributes;
-		if (globalAttributesNamespace.types[name] === undefined) {
-			globalAttributesNamespace.types[name] = this.newJsonSchema({
-				ref: new URI(baseJsonSchema.id + '#/' + CONSTANTS.GLOBAL_ATTRIBUTES_SCHEMA_NAME + '/' + name)
-			});
-		}
-		return globalAttributesNamespace.types[name].clone();
-	}
+  /**
+   * This method returns the requested global attribute.  If the attribute exists in the global attribute
+   * namesapce the attribute is return.  If the attribute does not exist it is created and then returned.
+   *
+   * @param {String} name The name of the global attribute to be returned.
+   * @param {JsonSchemaFile} baseJsonSchema The JsonSchemaFile being created as a result of converting an XML
+   * Schema file to JSON Schema.
+   *
+   * @returns {JsonSchemaFile} The request global attribute.
+   */
+  getGlobalAttribute(name, baseJsonSchema) {
+    if (name === undefined) {
+      throw new Error("'name' parameter required");
+    }
+    if (baseJsonSchema === undefined) {
+      throw new Error("'baseJsonSchema' parameter required");
+    }
+    var globalAttributesNamespace = this.namespaces.globalAttributes;
+    if (globalAttributesNamespace.types[name] === undefined) {
+      globalAttributesNamespace.types[name] = this.newJsonSchema({
+        ref: new URI(
+          baseJsonSchema.id +
+            '#/' +
+            CONSTANTS.GLOBAL_ATTRIBUTES_SCHEMA_NAME +
+            '/' +
+            name
+        ),
+      });
+    }
+    return globalAttributesNamespace.types[name].clone();
+  }
 
-	toString() {
-		//return JSON.stringify(this.namespaces, null, '\n');
-	}
+  toString() {
+    //return JSON.stringify(this.namespaces, null, '\n');
+  }
 }
 
 module.exports = NamespaceManager;
@@ -21321,405 +21856,451 @@ const imports_NAME = Symbol();
  * TBD (xmldom)
  */
 class XsdFile {
-    constructor(options) {
-        if (options == undefined || typeof options !== 'object') {
-            throw new Error('Parameter "options" is required')
-        }
-        if (options.uri == undefined) {
-            throw new Error('"options.uri" is required');
-        }
-        if (options.xml == undefined) {
-            throw new Error('"options.xml" is required');
-        }
-        // Instantiate the URL just in case a string was passed in.
-        this.uri = new URI(options.uri);
-        this.xmlDoc = new DOMParser().parseFromString(options.xml, 'text/xml');
-        this.namespaces = {};
-        this.imports = {};
-        this.initilizeNamespaces();
-        this.initializeIncludes();
-        this.initializeImports();
+  constructor(options) {
+    if (options == undefined || typeof options !== 'object') {
+      throw new Error('Parameter "options" is required');
     }
+    if (options.uri == undefined) {
+      throw new Error('"options.uri" is required');
+    }
+    if (options.xml == undefined) {
+      throw new Error('"options.xml" is required');
+    }
+    // Instantiate the URL just in case a string was passed in.
+    this.uri = new URI(options.uri);
+    this.xmlDoc = new DOMParser().parseFromString(options.xml, 'text/xml');
+    this.namespaces = {};
+    this.imports = {};
+    this.initilizeNamespaces();
+    this.initializeIncludes();
+    this.initializeImports();
+  }
 
-    // Getters/Setters
+  // Getters/Setters
 
-    get uri() {
-        return this[uri_NAME];
-    }
-    set uri(newUri) {
-        this[uri_NAME] = newUri;
-    }
+  get uri() {
+    return this[uri_NAME];
+  }
+  set uri(newUri) {
+    this[uri_NAME] = newUri;
+  }
 
-    get xmlDoc() {
-        return this[xmlDoc_NAME];
-    }
-    set xmlDoc(newDoc) {
-        this[xmlDoc_NAME] = newDoc;
-    }
+  get xmlDoc() {
+    return this[xmlDoc_NAME];
+  }
+  set xmlDoc(newDoc) {
+    this[xmlDoc_NAME] = newDoc;
+  }
 
-    get includeUris() {
-        return this[includeUris_NAME];
-    }
-    set includeUris(newIncludeUris) {
-        this[includeUris_NAME] = newIncludeUris;
-    }
+  get includeUris() {
+    return this[includeUris_NAME];
+  }
+  set includeUris(newIncludeUris) {
+    this[includeUris_NAME] = newIncludeUris;
+  }
 
-    get importUris() {
-        return this[importUris_NAME];
-    }
-    set importUris(newIncludeUris) {
-        this[importUris_NAME] = newIncludeUris;
-    }
+  get importUris() {
+    return this[importUris_NAME];
+  }
+  set importUris(newIncludeUris) {
+    this[importUris_NAME] = newIncludeUris;
+  }
 
-    get namespaces() {
-        return this[namespaces_NAME];
-    }
-    set namespaces(newNamespaces) {
-        this[namespaces_NAME] = newNamespaces;
-    }
+  get namespaces() {
+    return this[namespaces_NAME];
+  }
+  set namespaces(newNamespaces) {
+    this[namespaces_NAME] = newNamespaces;
+  }
 
-    get imports() {
-        return this[imports_NAME];
-    }
-    set imports(newImports) {
-        this[imports_NAME] = newImports;
-    }
+  get imports() {
+    return this[imports_NAME];
+  }
+  set imports(newImports) {
+    this[imports_NAME] = newImports;
+  }
 
-    // read-only properties
+  // read-only properties
 
-    get filename() {
-        return this.uri.filename();
-    }
-    set filename(unused) {
-        throw new Error('Unsupported operation');
-    }
+  get filename() {
+    return this.uri.filename();
+  }
+  set filename(unused) {
+    throw new Error('Unsupported operation');
+  }
 
-    get directory() {
-        return this.uri.directory();
-    }
-    set directory(unused) {
-        throw new Error('Unsupported operation');
-    }
+  get directory() {
+    return this.uri.directory();
+  }
+  set directory(unused) {
+    throw new Error('Unsupported operation');
+  }
 
-    get schemaElement() {
-        return this.xmlDoc.documentElement;
-    }
-    set schemaElement(unused) {
-        throw new Error('Unsupported operation');
-    }
+  get schemaElement() {
+    return this.xmlDoc.documentElement;
+  }
+  set schemaElement(unused) {
+    throw new Error('Unsupported operation');
+  }
 
-    get targetNamespace() {
-        return this.xmlDoc.documentElement.getAttribute(XsdAttributes.TARGET_NAMESPACE);
-    }
-    set targetNamespace(unused) {
-        throw new Error('Unsupported operation');
-    }
+  get targetNamespace() {
+    return this.xmlDoc.documentElement.getAttribute(
+      XsdAttributes.TARGET_NAMESPACE
+    );
+  }
+  set targetNamespace(unused) {
+    throw new Error('Unsupported operation');
+  }
 
-    // 1	Map the XML Schmea Namespase to a prefix such as xsd or xs, and make the target namespace the default namespace.
-    // 2	Map a prefix to the target namespace, and make the  XML Schema Namespase the default namespace.
-    // 3	Map prefixes to all the namespaces.
-    initilizeNamespaces() {
-        const attrs = XsdFile.getAttributes(this.schemaElement);
-        Object.keys(attrs).forEach(function (key, index, array) {
-            const attr = attrs[key];
-            if (attr.nodeType === XsdNodeTypes.ATTRIBUTE_NODE) {
-                const attrValue = attr.value;
-                switch (attr.localName) {
-                    case XsdAttributes.TARGET_NAMESPACE:
-                        this.namespaces[XsdAttributes.TARGET_NAMESPACE] = attrValue;
-                        break;
-                    case XsdAttributeValues.XMLNS:
-                        this.namespaces[''] = attrValue;
-                        break;
-                    default:
-                        if (attr.prefix === 'xmlns') {
-                            const namespace = attr.localName;
-                            this.namespaces[namespace] = attrValue;
-                        }
-                        break;
-                }
+  addNamespace(key, value) {
+    this.namespaces[key] = value;
+  }
+
+  // 1	Map the XML Schmea Namespase to a prefix such as xsd or xs, and make the target namespace the default namespace.
+  // 2	Map a prefix to the target namespace, and make the  XML Schema Namespase the default namespace.
+  // 3	Map prefixes to all the namespaces.
+  initilizeNamespaces() {
+    const attrs = XsdFile.getAttributes(this.schemaElement);
+    Object.keys(attrs).forEach(function (key, index, array) {
+      const attr = attrs[key];
+      if (attr.nodeType === XsdNodeTypes.ATTRIBUTE_NODE) {
+        const attrValue = attr.value;
+        switch (attr.localName) {
+          case XsdAttributes.TARGET_NAMESPACE:
+            this.namespaces[XsdAttributes.TARGET_NAMESPACE] = attrValue;
+            break;
+          case XsdAttributeValues.XMLNS:
+            this.namespaces[''] = attrValue;
+            break;
+          default:
+            if (attr.prefix === 'xmlns') {
+              const namespace = attr.localName;
+              this.namespaces[namespace] = attrValue;
             }
-        }, this);
-        // Ensure values are set for targetNamespace, the default namespace, and the XML Schema Namespace
-        if (this.namespaces[XsdAttributes.TARGET_NAMESPACE] == undefined && this.namespaces[''] == undefined) {
-            this.namespaces[XsdAttributes.TARGET_NAMESPACE] = Constants.NO_NAMESPACE;
-            this.namespaces[''] = Constants.NO_NAMESPACE;
-        } else if (this.namespaces[XsdAttributes.TARGET_NAMESPACE] == undefined && this.namespaces[''] != undefined) {
-            this.namespaces[XsdAttributes.TARGET_NAMESPACE] = this.namespaces[''];
-        } else if (this.namespaces[XsdAttributes.TARGET_NAMESPACE] != undefined && this.namespaces[''] == undefined) {
-            this.namespaces[''] = this.namespaces[XsdAttributes.TARGET_NAMESPACE];
+            break;
         }
-        // If the XML Schema Namespace is missing setup a couple of defaults so we can try to convert the schema.  (not a good sign)
-        if (this.isMissingXmlSchemaNamespace()) {
-            this.namespaces[Constants.XML_SCHEMA_DEFAULT_NAMESPACE_NAME_XS] = Constants.XML_SCHEMA_NAMESPACE;
-            this.namespaces[Constants.XML_SCHEMA_DEFAULT_NAMESPACE_NAME_XSD] = Constants.XML_SCHEMA_NAMESPACE;
-        }
+      }
+    }, this);
+    // Ensure values are set for targetNamespace, the default namespace, and the XML Schema Namespace
+    if (
+      this.namespaces[XsdAttributes.TARGET_NAMESPACE] == undefined &&
+      this.namespaces[''] == undefined
+    ) {
+      this.namespaces[XsdAttributes.TARGET_NAMESPACE] = Constants.NO_NAMESPACE;
+      this.namespaces[''] = Constants.NO_NAMESPACE;
+    } else if (
+      this.namespaces[XsdAttributes.TARGET_NAMESPACE] == undefined &&
+      this.namespaces[''] != undefined
+    ) {
+      this.namespaces[XsdAttributes.TARGET_NAMESPACE] = this.namespaces[''];
+    } else if (
+      this.namespaces[XsdAttributes.TARGET_NAMESPACE] != undefined &&
+      this.namespaces[''] == undefined
+    ) {
+      this.namespaces[''] = this.namespaces[XsdAttributes.TARGET_NAMESPACE];
     }
-
-    isMissingXmlSchemaNamespace() {
-        const keys = Object.keys(this.namespaces);
-        for(const key of keys) {
-            if(this.namespaces[key] == Constants.XML_SCHEMA_NAMESPACE) {
-                return false;
-            }
-        }
-        return true;
+    // If the XML Schema Namespace is missing setup a couple of defaults so we can try to convert the schema.  (not a good sign)
+    if (this.isMissingXmlSchemaNamespace()) {
+      this.namespaces[Constants.XML_SCHEMA_DEFAULT_NAMESPACE_NAME_XS] =
+        Constants.XML_SCHEMA_NAMESPACE;
+      this.namespaces[Constants.XML_SCHEMA_DEFAULT_NAMESPACE_NAME_XSD] =
+        Constants.XML_SCHEMA_NAMESPACE;
     }
+  }
 
-    resolveNamespace(namespaceName) {
-        return this.namespaces[namespaceName];
+  isMissingXmlSchemaNamespace() {
+    const keys = Object.keys(this.namespaces);
+    for (const key of keys) {
+      if (this.namespaces[key] == Constants.XML_SCHEMA_NAMESPACE) {
+        return false;
+      }
     }
+    return true;
+  }
 
-    hasIncludes() {
-        return this.includeUris.length > 0;
+  resolveNamespace(namespaceName) {
+    return this.namespaces[namespaceName];
+  }
+
+  hasIncludes() {
+    return this.includeUris.length > 0;
+  }
+
+  hasImports() {
+    return this.importUris.length > 0;
+  }
+
+  initializeIncludes() {
+    if (this.includeUris === undefined) {
+      var includeNodes = this.schemaElement.getElementsByTagName(
+        this.schemaElement.prefix + ':include'
+      );
+      this.includeUris = [];
+      for (let i = 0; i < includeNodes.length; i++) {
+        const includeNode = includeNodes.item(i);
+        this.includeUris.push(
+          includeNode.getAttribute(XsdAttributes.SCHEMA_LOCATION)
+        );
+      }
     }
+    return this.includeUris;
+  }
 
-    hasImports() {
-        return this.importUris.length > 0;
+  initializeImports() {
+    if (this.importUris === undefined) {
+      var importNodes = this.schemaElement.getElementsByTagName(
+        this.schemaElement.prefix + ':import'
+      );
+      this.importUris = [];
+      for (let i = 0; i < importNodes.length; i++) {
+        const importNode = importNodes.item(i);
+        this.importUris.push(
+          importNode.getAttribute(XsdAttributes.SCHEMA_LOCATION)
+        );
+      }
     }
+    return this.importUris;
+  }
 
-    initializeIncludes() {
-        if (this.includeUris === undefined) {
-            var includeNodes = this.schemaElement.getElementsByTagName(this.schemaElement.prefix + ':include');
-            this.includeUris = [];
-            for (let i = 0; i < includeNodes.length; i++) {
-                const includeNode = includeNodes.item(i);
-                this.includeUris.push(includeNode.getAttribute(XsdAttributes.SCHEMA_LOCATION));
-            }
-        }
-        return this.includeUris;
+  select(xpath, ns, namespace) {
+    var nodes;
+    try {
+      const select = xpathProcessor.useNamespaces(this.namespaces);
+      nodes = select(xpath, this.xmlDoc);
+    } catch (error) {
+      debug(error);
+      throw error;
     }
+    return nodes;
+  }
 
-    initializeImports() {
-        if (this.importUris === undefined) {
-            var importNodes = this.schemaElement.getElementsByTagName(this.schemaElement.prefix + ':import');
-            this.importUris = [];
-            for (let i = 0; i < importNodes.length; i++) {
-                const importNode = importNodes.item(i);
-                this.importUris.push(importNode.getAttribute(XsdAttributes.SCHEMA_LOCATION));
-            }
-        }
-        return this.importUris;
+  select1(xpath, ns, namespace) {
+    var node;
+    try {
+      const select = xpathProcessor.useNamespaces(this.namespaces);
+      node = select(xpath, this.xmlDoc, true);
+    } catch (error) {
+      debug(error);
+      throw error;
     }
+    return node;
+  }
 
-    select(xpath, ns, namespace) {
-        var nodes;
-        try {
-            const select = xpathProcessor.useNamespaces(this.namespaces);
-            nodes = select(xpath, this.xmlDoc);
-        } catch (error) {
-            debug(error);
-            throw error;
-        }
-        return nodes
-    }
-
-    select1(xpath, ns, namespace) {
-        var node;
-        try {
-            const select = xpathProcessor.useNamespaces(this.namespaces);
-            node = select(xpath, this.xmlDoc, true);
-        } catch (error) {
-            debug(error);
-            throw error;
-        }
-        return node;
-    }
-
-    toString() {
-        const str =
-            `baseFilename=${this.filename}
+  toString() {
+    const str = `baseFilename=${this.filename}
 uri=${this.uri}
 includeUris=${this.includeUris}
 namespaces=${JSON.stringify(this.namespaces, null, '\t')}
-xmlDoc=${this.xmlDoc}`
-        return str;
-    }
+xmlDoc=${this.xmlDoc}`;
+    return str;
+  }
 
-    /**
-     *  xml interface
-     * 
-     * 1) dumpAttrs
-     * 2) getAttrValue
-     * 3) hasAttr
-     * 4) getAttrValue
-     * 5) getValueAttr
-     * 6) dumpNode
-     * 7) getNodeName
-     * 8) isNamed
-     * 9) isReference
-     * 10) countChildren
-     * 11) buildAttributeMap
-     * 12) getChildNodes
-     * 13) getAttributes
-     */
-    /* *********************************************************************************** */
+  /**
+   *  xml interface
+   *
+   * 1) dumpAttrs
+   * 2) getAttrValue
+   * 3) hasAttr
+   * 4) getAttrValue
+   * 5) getValueAttr
+   * 6) dumpNode
+   * 7) getNodeName
+   * 8) isNamed
+   * 9) isReference
+   * 10) countChildren
+   * 11) buildAttributeMap
+   * 12) getChildNodes
+   * 13) getAttributes
+   */
+  /* *********************************************************************************** */
 
-    static nodeQuickDumpStr(node) {
-        var retval = XsdFile.getNodeName(node) + ' [';
-        var attrs = node.attributes;
-        if (attrs != undefined) {
-            Object.keys(attrs).forEach(function (attr, index, array) {
-                if (attrs[attr].nodeType === XsdNodeTypes.ATTRIBUTE_NODE) {
-                    retval += attrs[attr].localName + '=' + attrs[attr].value + ' ';
-                }
-            }, this);
+  static nodeQuickDumpStr(node) {
+    var retval = XsdFile.getNodeName(node) + ' [';
+    var attrs = node.attributes;
+    if (attrs != undefined) {
+      Object.keys(attrs).forEach(function (attr, index, array) {
+        if (attrs[attr].nodeType === XsdNodeTypes.ATTRIBUTE_NODE) {
+          retval += attrs[attr].localName + '=' + attrs[attr].value + ' ';
         }
-        return retval.trim() + ']';
+      }, this);
     }
+    return retval.trim() + ']';
+  }
 
-    static dumpAttrs(node) {
-        var attrs = node.attributes;
-        debug('XML-TAG-Attributes:');
-        if (attrs != undefined) {
-            Object.keys(attrs).forEach(function (attr, index, array) {
-                if (attrs[attr].nodeType === XsdNodeTypes.ATTRIBUTE_NODE) {
-                    debug('\t' + index + ') ' + attrs[attr].localName + '=' + attrs[attr].value);
-                }
-            }, this);
+  static dumpAttrs(node) {
+    var attrs = node.attributes;
+    debug('XML-TAG-Attributes:');
+    if (attrs != undefined) {
+      Object.keys(attrs).forEach(function (attr, index, array) {
+        if (attrs[attr].nodeType === XsdNodeTypes.ATTRIBUTE_NODE) {
+          debug(
+            '\t' +
+              index +
+              ') ' +
+              attrs[attr].localName +
+              '=' +
+              attrs[attr].value
+          );
         }
+      }, this);
     }
+  }
 
-    static convertToNumber(value) {
-        var retval = Number(value);
-        if (isNaN(retval)) {
-            throw new Error(`Unable create a Number from [${value}]`);
-        }
-        return retval;
-
-    }    
-
-    static getAttrValueAsNumber(node, attrName) {
-        var value;
-        if (this.hasAttribute(node, attrName)) {
-            value = node.getAttribute(attrName);
-        }
-        return this.convertToNumber(value);
+  static convertToNumber(value) {
+    var retval = Number(value);
+    if (isNaN(retval)) {
+      return 0;
     }
+    return retval;
+  }
 
-    static getAttrValue(node, attrName) {
-        var retval;
-        if (this.hasAttribute(node, attrName)) {
-            retval = node.getAttribute(attrName);
-        }
-        return retval;
+  static getAttrValueAsNumber(node, attrName) {
+    var value;
+    if (this.hasAttribute(node, attrName)) {
+      value = node.getAttribute(attrName);
     }
+    return this.convertToNumber(value);
+  }
 
-    static hasAttribute(node, attrName) {
-        if (node.hasAttribute !== undefined) {
-            return node.hasAttribute(attrName);
-        } else {
-            return false;
-        }
+  static getAttrValue(node, attrName) {
+    var retval;
+    if (this.hasAttribute(node, attrName)) {
+      retval = node.getAttribute(attrName);
     }
+    return retval;
+  }
 
-    static getNameAttrValue(node) {
-        return this.getAttrValue(node, XsdAttributes.NAME);
+  static getAttrValueByPrefix(node, attrPrefix) {
+    var retval;
+    var attrs = node.attributes;
+    var attLength = attrs.length;
+    for (var i = attLength - 1; i >= 0; i--) {
+      if (attrs[i].prefix && attrs[i].prefix === attrPrefix) {
+        retval = attrs[i];
+      }
     }
+    return retval;
+  }
 
-    static getValueAttr(node) {
-        return this.getAttrValue(node, XsdAttributes.VALUE);
+  static hasAttribute(node, attrName) {
+    if (node.hasAttribute !== undefined) {
+      return node.hasAttribute(attrName);
+    } else {
+      return false;
     }
+  }
 
-    static getValueAttrAsNumber(node) {
-        if (node == XsdAttributeValues.UNBOUNDED) {
-            return undefined;
-        }
-        return this.getAttrValueAsNumber(node, XsdAttributes.VALUE);
-    }
+  static getNameAttrValue(node) {
+    return this.getAttrValue(node, XsdAttributes.NAME);
+  }
 
-    static getTypeNode(node) {
-        let typeNode = node;
-        while (typeNode.parentNode.localName != XsdElements.SCHEMA) {
-            typeNode = typeNode.parentNode;
-        }
-        return typeNode;
-    }
+  static getValueAttr(node) {
+    return this.getAttrValue(node, XsdAttributes.VALUE);
+  }
 
-    static dumpNode(node) {
-        debug('XML-Type= ' + XsdNodeTypes.getTypeName(node.nodeType));
-        debug('XML-TAG-Name= ' + node.nodeName);
-        debug('XML-TAG-NameSpace= ' + node.namespaceURI + '=' + node.namespaceURI);
-        var text = node.textContent;
-        if (text != undefined) {
-            const trimmed = text.trim();
-            debug('XML-Text= [' + (trimmed.length > 0 ? trimmed : 'it was all whitespace') + ']');
-        }
-        this.dumpAttrs(node);
-        debug('__________________________________________');
+  static getValueAttrAsNumber(node) {
+    if (node == XsdAttributeValues.UNBOUNDED) {
+      return undefined;
     }
+    return this.getAttrValueAsNumber(node, XsdAttributes.VALUE);
+  }
 
-    static getNodeName(node) {
-        var name;
-        switch (node.nodeType) {
-            case XsdNodeTypes.TEXT_NODE: // 3
-                name = 'text';
-                break;
-            case XsdNodeTypes.COMMENT_NODE: // 8
-                name = 'comment';
-                break;
-            default:
-                name = node.localName
-        }
-        return name;
+  static getTypeNode(node) {
+    let typeNode = node;
+    while (typeNode.parentNode.localName != XsdElements.SCHEMA) {
+      typeNode = typeNode.parentNode;
     }
+    return typeNode;
+  }
 
-    static isNamed(node) {
-        return this.hasAttribute(node, XsdAttributes.NAME);
+  static dumpNode(node) {
+    debug('XML-Type= ' + XsdNodeTypes.getTypeName(node.nodeType));
+    debug('XML-TAG-Name= ' + node.nodeName);
+    debug('XML-TAG-NameSpace= ' + node.namespaceURI + '=' + node.namespaceURI);
+    var text = node.textContent;
+    if (text != undefined) {
+      const trimmed = text.trim();
+      debug(
+        'XML-Text= [' +
+          (trimmed.length > 0 ? trimmed : 'it was all whitespace') +
+          ']'
+      );
     }
+    this.dumpAttrs(node);
+    debug('__________________________________________');
+  }
 
-    static isReference(node) {
-        return this.hasAttribute(node, XsdAttributes.REF);
+  static getNodeName(node) {
+    var name;
+    switch (node.nodeType) {
+      case XsdNodeTypes.TEXT_NODE: // 3
+        name = 'text';
+        break;
+      case XsdNodeTypes.COMMENT_NODE: // 8
+        name = 'comment';
+        break;
+      default:
+        name = node.localName;
     }
+    return name;
+  }
 
-    static isEmpty(node) {
-        return this.getChildNodes(node).length == 0;
-    }
+  static isNamed(node) {
+    return this.hasAttribute(node, XsdAttributes.NAME);
+  }
 
-    static countChildren(node, tagName) {
-        // return node.childNodes.length;
-        const nodeName = node.prefix + ':' + tagName;
-        var len = node.getElementsByTagName(nodeName).length;
-        return len;
-    }
+  static isReference(node) {
+    return this.hasAttribute(node, XsdAttributes.REF);
+  }
 
-    static buildAttributeMap(node) {
-        var map = {};
-        var attrs = node.attributes;
-        Object.keys(attrs).forEach(function (attr, index, array) {
-            if (attrs[attr].nodeType === XsdNodeTypes.ATTRIBUTE_NODE) {
-                map[attrs[attr].nodeName] = attrs[attr].value;
-            }
-        }, this);
-        return map;
-    }
+  static isEmpty(node) {
+    return this.getChildNodes(node).length == 0;
+  }
 
-    static getChildNodes(node) {
-        var retval = [];
-        var nodelist = node.childNodes;
-        if (nodelist != undefined) {
-            for (let i = 0; i < nodelist.length; i++) {
-                retval.push(nodelist.item(i));
-            }
-        }
-        return retval;
-    }
+  static countChildren(node, tagName) {
+    // return node.childNodes.length;
+    const nodeName = node.prefix + ':' + tagName;
+    var len = node.getElementsByTagName(nodeName).length;
+    return len;
+  }
 
-    static getAttributes(node) {
-        return node.attributes;
-    }
+  static buildAttributeMap(node) {
+    var map = {};
+    var attrs = node.attributes;
+    Object.keys(attrs).forEach(function (attr, index, array) {
+      if (attrs[attr].nodeType === XsdNodeTypes.ATTRIBUTE_NODE) {
+        map[attrs[attr].nodeName] = attrs[attr].value;
+      }
+    }, this);
+    return map;
+  }
 
-    static getFirstParentWithNameAttribute(node) {
-        if (!this.hasAttribute(node.parentNode, XsdAttributes.NAME)) {
-            return this.getFirstParentWithNameAttribute(node.parentNode);
-        }
-        return node.parentNode
+  static getChildNodes(node) {
+    var retval = [];
+    var nodelist = node.childNodes;
+    if (nodelist != undefined) {
+      for (let i = 0; i < nodelist.length; i++) {
+        retval.push(nodelist.item(i));
+      }
     }
+    return retval;
+  }
 
-    static getNameOfFirstParentWithNameAttribute(node) {
-        const firstParentWithName = this.getFirstParentWithNameAttribute(node);
-        return this.getAttrValue(firstParentWithName, XsdAttributes.NAME);
+  static getAttributes(node) {
+    return node.attributes;
+  }
+
+  static getFirstParentWithNameAttribute(node) {
+    if (!this.hasAttribute(node.parentNode, XsdAttributes.NAME)) {
+      return this.getFirstParentWithNameAttribute(node.parentNode);
     }
+    return node.parentNode;
+  }
+
+  static getNameOfFirstParentWithNameAttribute(node) {
+    const firstParentWithName = this.getFirstParentWithNameAttribute(node);
+    return this.getAttrValue(firstParentWithName, XsdAttributes.NAME);
+  }
 }
 
 module.exports = XsdFile;
