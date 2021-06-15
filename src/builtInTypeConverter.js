@@ -555,7 +555,7 @@ class BuiltInTypeConverter {
     jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
     jsonSchema.minimum = 0;
     jsonSchema.maximum = 4294967295;
-    jsonSchema.exclusiveMinimum = true;
+    jsonSchema.exclusiveMinimum = -1;
     return true;
   }
 
