@@ -258,12 +258,13 @@ class ConverterDraft04 extends Processor {
     const name = XsdFile.getAttrValue(node, XsdAttributes.NAME);
     const typeName = XsdFile.getAttrValue(node, XsdAttributes.TYPE);
     // TODO: id, default, fixed, inheritable (TBD)
+    var attributeJsonSchema;
     const fixed = XsdFile.getAttrValue(node, 'tns:fixed');
 
     this.parsingState.pushSchema(this.workingJsonSchema);
     if (typeName !== undefined) {
       const qualifiedTypeName = new Qname(typeName);
-      let attributeJsonSchema = this.namespaceManager.getGlobalAttribute(
+      attributeJsonSchema = this.namespaceManager.getGlobalAttribute(
         name,
         jsonSchema
       );
