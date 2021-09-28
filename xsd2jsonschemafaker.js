@@ -16027,6 +16027,11 @@ class BuiltInTypeConverter {
     return true;
   }
 
+  schema(node, jsonSchema, xsd) {
+    jsonSchema.type = JSON_SCHEMA_TYPES.OBJECT;
+    return true;
+  }
+
   /*
 		// 3.3.2 boolean: http://www.w3.org/TR/xmlschema11-2/#boolean
 		/ **
