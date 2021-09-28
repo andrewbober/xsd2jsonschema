@@ -16591,6 +16591,7 @@ const XsdFile = require('./xmlschema/xsdFileXmlDom');
 const BaseSpecialCaseIdentifier = require('./baseSpecialCaseIdentifier');
 const SpecialCases = require('./specialCases');
 const NamespaceManager = require('./namespaceManager');
+const xsdAttributes = require('./xmlschema/xsdAttributes');
 
 const namespaceManager_NAME = Symbol();
 const specialCaseIdentifier_NAME = Symbol();
@@ -16834,7 +16835,7 @@ class ConverterDraft04 extends Processor {
     const typeName = XsdFile.getAttrValue(node, XsdAttributes.TYPE);
     // TODO: id, default, fixed, inheritable (TBD)
     var attributeJsonSchema;
-    const fixed = XsdFile.getAttrValue(node, 'fixed');
+    const fixed = XsdFile.getAttrValue(node, xsdAttributes.FIXED);
 
     this.parsingState.pushSchema(this.workingJsonSchema);
     if (typeName !== undefined) {
