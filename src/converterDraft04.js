@@ -259,6 +259,7 @@ class ConverterDraft04 extends Processor {
     const typeName = XsdFile.getAttrValue(node, XsdAttributes.TYPE);
     // TODO: id, default, fixed, inheritable (TBD)
     var attributeJsonSchema;
+    const fixed = XsdFile.getAttrValue(node, XsdAttributes.FIXED);
 
     this.parsingState.pushSchema(this.workingJsonSchema);
     if (typeName !== undefined) {
@@ -270,6 +271,9 @@ class ConverterDraft04 extends Processor {
       jsonSchema
         .getGlobalAttributesSchema()
         .setSubSchema(name, attributeJsonSchema);
+        if (fixed) {
+          attributeJsonSchema.addEnum(fixed);
+        }
       return this.builtInTypeConverter[qualifiedTypeName.getLocal()](
         node,
         attributeJsonSchema
