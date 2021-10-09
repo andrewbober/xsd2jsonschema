@@ -3,6 +3,7 @@
 const XsdFile = require('./xmlschema/xsdFileXmlDom');
 
 const okayToContinue_NAME = Symbol();
+const NOT_PROCESSED_NODES = ['appinfo'];
 
 /**
  * Class represtending a depth first traversal algorithm.  This class is used as part of a visitor pattern 
@@ -46,7 +47,9 @@ const okayToContinue_NAME = Symbol();
 			visitor.enterState(node, jsonSchema, xsd);
 			this.okayToContinue = visitor.visit(node, jsonSchema, xsd);
 			if (this.okayToContinue) {
-				var children = XsdFile.getChildNodes(node);
+				var children = NOT_PROCESSED_NODES.includes(node.localName) ?
+					[] :
+					XsdFile.getChildNodes(node);
 				if (children !== null && children.length > 0) {
 					for(let child of children) {
 						this.walk(visitor, child, jsonSchema, xsd);
