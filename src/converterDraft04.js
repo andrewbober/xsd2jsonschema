@@ -208,8 +208,13 @@ class ConverterDraft04 extends Processor {
   appinfo(node, jsonSchema, xsd) {
     // TODO: source
     // (TBD)
-    this.workingJsonSchema.description = node.toString();
-    return false;
+    let appInfoJsonSchema = this.workingJsonSchema.newJsonSchemaFile();
+          appInfoJsonSchema.description = node.toString();
+          appInfoJsonSchema.type = 'appinfo';
+          this.workingJsonSchema.oneOf.push(appInfoJsonSchema);
+          this.parsingState.pushSchema(this.workingJsonSchema);
+          this.workingJsonSchema = appInfoJsonSchema;
+    return true;
   }
 
   assert(node, jsonSchema, xsd) {
