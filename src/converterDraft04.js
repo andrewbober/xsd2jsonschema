@@ -1419,9 +1419,15 @@ class ConverterDraft04 extends Processor {
   }
 
   totalDigits(node, jsonSchema, xsd) {
-    // TODO: id, value, fixed
-    // do nothing - there is no coresponding functionality in JSON Schema
-    return true;
+    // TODO: id, fixed
+     const len = XsdFile.getValueAttrAsNumber(node);
+     let max = '';
+     for (let index = 0; index < len; index++) {
+         max =+ '9'
+     }
+
+     this.workingJsonSchema.maximum = max * 1;
+     return true;
   }
 
   union(node, jsonSchema, xsd) {
