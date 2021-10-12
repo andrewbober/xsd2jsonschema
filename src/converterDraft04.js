@@ -1423,7 +1423,7 @@ class ConverterDraft04 extends Processor {
      const len = XsdFile.getValueAttrAsNumber(node);
      let max = '';
      for (let index = 0; index < len; index++) {
-         max =+ '9'
+         max += '9'
      }
 
      this.workingJsonSchema.maximum = max * 1;
