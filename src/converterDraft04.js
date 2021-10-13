@@ -1422,11 +1422,17 @@ class ConverterDraft04 extends Processor {
     // TODO: id, fixed
      const len = XsdFile.getValueAttrAsNumber(node);
      let max = '';
+     let min ='1';
      for (let index = 0; index < len; index++) {
-         max += '9'
+        max += '9'
+     }
+
+     for (let index = 0; index < len -1; index++) {
+         min += '0'
      }
 
      this.workingJsonSchema.maximum = max * 1;
+     this.workingJsonSchema.minimum = min * 1;
      return true;
   }
 
