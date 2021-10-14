@@ -17544,8 +17544,7 @@ class ConverterDraft04 extends Processor {
   }
 
   fractionDigits(node, jsonSchema, xsd) {
-    // TODO: id, value, fixed
-    // do nothing - there is no coresponding functionality in JSON Schema
+     
     return true;
   }
 
@@ -17987,19 +17986,17 @@ class ConverterDraft04 extends Processor {
 
   totalDigits(node, jsonSchema, xsd) {
     // TODO: id, fixed
-     const len = XsdFile.getValueAttrAsNumber(node);
+     let len = XsdFile.getValueAttrAsNumber(node);
+     if(len > 10)
+     {
+       len = 10;
+     }
      let max = '';
-     let min ='1';
      for (let index = 0; index < len; index++) {
         max += '9'
      }
 
-     for (let index = 0; index < len -1; index++) {
-         min += '0'
-     }
-
      this.workingJsonSchema.maximum = max * 1;
-     this.workingJsonSchema.minimum = min * 1;
      return true;
   }
 
