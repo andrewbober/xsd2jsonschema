@@ -5,6 +5,7 @@ const debug = require('debug')('xsd2jsonschema:JsonSchemaFileDraft07');
 const path = (process && typeof process.platform === 'string') ? require('path') : require('path-browserify');
 const URI = require('urijs');
 const JsonSchemaFileDraft06 = require('./jsonSchemaFileDraft06');
+const JsonSchemaSerializerDraft07 = require('./jsonSchemaSerializerDraft07');
 
 /**
  * JSON Schema file operations.  This is based on the JSON Schema meta-schema located at http://json-schema.org/draft-04/schema#.  
@@ -44,6 +45,18 @@ class JsonSchemaFileDraft07 extends JsonSchemaFileDraft06 {
 		} else {
 			return new JsonSchemaFileDraft07({ parent: this });
 		}
+	}
+
+	/**
+	 * Returns a POJO of this jsonSchema.  Items are added in the order we wouild like them to appear in the resulting JsonSchema.
+	 * 
+	 * @returns {Object} - POJO of this jsonSchema.
+	 */
+	 getJsonSchema(serializer) {
+		if (serializer == undefined) {
+			serializer = new JsonSchemaSerializerDraft07();
+		}
+		return super.getJsonSchema(serializer);
 	}
 
 	toString() {
