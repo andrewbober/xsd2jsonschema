@@ -55,7 +55,7 @@
     "fs-extra": "^3.0.1",
     "get-uri": "^2.0.3",
     "urijs": "^1.19.1",
-    "validator": "^9.4.1",
+    "validator": "^13.7.0",
     "xml2js": "^0.4.19",
     "xmldom": "^0.5.0",
     "xpath": "0.0.24"
