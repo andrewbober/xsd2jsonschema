@@ -544,7 +544,7 @@ const Options_NAME = Symbol();
 		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
 		jsonSchema.minimum = 0;
 		jsonSchema.maximum = 4294967295;
-		jsonSchema.exclusiveMinimum = true;
+		jsonSchema.exclusiveMinimum = 0;
 		return true;
 	}
 
