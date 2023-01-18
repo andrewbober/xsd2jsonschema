@@ -1,9 +1,5 @@
 <xsd:schema
-        xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-        xmlns:zoo="http://zooplus.com/generated/logistics"
-        targetNamespace="http://zooplus.com/generated/logistics"
-        elementFormDefault="qualified"
-        version="2.0.20210909">
+        xmlns:xsd="http://www.w3.org/2001/XMLSchema">
 <xsd:element name="quantity" type="xsd:positiveInteger" minOccurs="0" default="1">
             </xsd:element>
 </xsd:schema>

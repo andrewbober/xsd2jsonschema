@@ -23,10 +23,7 @@ function convert(file){
 
 
 function run_tests(){
-    convert('test/bug/positive_integer.xsd')
-    //convert('tests/boolean.xsd','target/boolean.yaml')
-    //convert('tests/sequence.xsd','target/sequence.yaml')
-    //convert('tests/error1.xsd','target/error1.yaml')
+    convert('test/bug/positive_integer.xsd')   
 }
 
 run_tests()

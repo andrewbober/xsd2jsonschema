@@ -542,9 +542,9 @@ const Options_NAME = Symbol();
 	// 3.4.25 positiveInteger: http://www.w3.org/TR/xmlschema11-2/#positiveInteger
 	positiveInteger(node, jsonSchema, xsd) {
 		jsonSchema.type = JSON_SCHEMA_TYPES.INTEGER;
-		jsonSchema.minimum = 0;
 		jsonSchema.maximum = 4294967295;
-		jsonSchema.exclusiveMinimum = 0;
+	    // http://json-schema.org/understanding-json-schema/reference/numeric.html#range
+	    jsonSchema.exclusiveMinimum = 0;
 		return true;
 	}
 
