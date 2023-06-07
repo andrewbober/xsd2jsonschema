@@ -49,26 +49,26 @@
     "jsdoc2": "jsdoc -c jsdoc-conf-better-docs.json -r ./src/"
   },
   "dependencies": {
+    "@xmldom/xmldom": "^0.8.8",
     "clone": "^2.1.2",
-    "debug": "^3.2.6",
-    "deep-eql": "^4.0.0",
-    "fs-extra": "^3.0.1",
-    "get-uri": "^2.0.3",
-    "urijs": "^1.19.1",
-    "validator": "^9.4.1",
-    "xml2js": "^0.4.19",
-    "xmldom": "^0.5.0",
-    "xpath": "0.0.24"
+    "debug": "^4.3.4",
+    "deep-eql": "^4.1.3",
+    "fs-extra": "^11.1.1",
+    "get-uri": "^6.0.1",
+    "urijs": "^1.19.11",
+    "validator": "^13.9.0",
+    "xml2js": "^0.6.0",
+    "xpath": "0.0.32"
   },
   "devDependencies": {
-    "ajv": "^4.11.5",
-    "better-docs": "^1.1.6",
-    "coveralls": "^3.0.3",
+    "ajv": "^8.12.0",
+    "better-docs": "^2.7.2",
+    "coveralls": "^3.1.1",
     "ink-docstrap": "^1.3.2",
-    "jasmine": "^3.4.0",
-    "jsdoc": "^3.6.3",
-    "jsdoc-oblivion": "0.0.4",
-    "nyc": "^14.1.0",
-    "require-self": "^0.1.0"
+    "jasmine": "^5.0.0",
+    "jsdoc": "^4.0.2",
+    "jsdoc-oblivion": "0.0.9",
+    "nyc": "^15.1.0",
+    "require-self": "^0.2.3"
   }
 }
