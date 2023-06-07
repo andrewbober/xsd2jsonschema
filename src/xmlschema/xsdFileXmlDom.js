@@ -2,7 +2,7 @@
 
 const debug = require('debug')('xsd2jsonschema:XsdFile');
 
-const DOMParser = require('xmldom').DOMParser;
+const DOMParser = require('@xmldom/xmldom').DOMParser;
 const xpathProcessor = require('xpath');
 const URI = require('urijs');
 const XsdAttributes = require('./xsdAttributes');
@@ -39,7 +39,7 @@ class XsdFile {
         this.xmlDoc = new DOMParser().parseFromString(options.xml, 'text/xml');
         this.namespaces = {};
         this.imports = {};
-        this.initilizeNamespaces();
+        this.initializeNamespaces();
         this.initializeIncludes();
         this.initializeImports();
     }
@@ -121,7 +121,7 @@ class XsdFile {
     // 1	Map the XML Schmea Namespase to a prefix such as xsd or xs, and make the target namespace the default namespace.
     // 2	Map a prefix to the target namespace, and make the  XML Schema Namespase the default namespace.
     // 3	Map prefixes to all the namespaces.
-    initilizeNamespaces() {
+    initializeNamespaces() {
         const attrs = XsdFile.getAttributes(this.schemaElement);
         Object.keys(attrs).forEach(function (key, index, array) {
             const attr = attrs[key];
